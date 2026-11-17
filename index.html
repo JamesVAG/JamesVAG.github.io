@@ -254,8 +254,17 @@
       <!-- ===== NAVEGADOR ===== -->
       <section class="view" id="view-navegador">
         <h2 class="view-title">🤖 AI Pro Max</h2>
-        <div class="card">
-          <div class="chat-head"><span class="dot"></span> AI Pro Max <small>en línea · responde en tu idioma</small></div>
+        <div class="card" id="lockCard">
+          <div class="chat-head"><span class="dot" style="background:#e74c3c;box-shadow:0 0 8px #e74c3c"></span> AI Pro Max <small>bloqueado 🔒</small></div>
+          <p style="margin:4px 0 12px;font-size:14.5px;line-height:1.5">Pega tu key pa' desbloquear la AI. La consigues en el bot <strong>@Vanguardia7_bot</strong> — la key empieza a correr cuando se genera.</p>
+          <form class="urlbar" id="keyForm">
+            <input id="keyInput" type="text" autocomplete="off" placeholder="VAG-XXXX-XXXX-XXXX" aria-label="Tu key de AI Pro Max" />
+            <button class="btn gold" type="submit">Activar</button>
+          </form>
+          <div class="status-line" id="keyStatus">Sin key no hay AI 🔒</div>
+        </div>
+        <div class="card" id="chatCard" style="display:none">
+          <div class="chat-head"><span class="dot"></span> AI Pro Max <small id="keyTime">en línea · responde en tu idioma</small><button type="button" id="keyOut" class="chip" style="margin-left:auto">🔒 Salir</button></div>
           <div id="chatBox" class="chat-box">
             <div class="msg ai">👑 Qué lo qué, Boss. Soy tu <strong>AI Pro Max</strong> — pregúntame lo que sea. Tarea, textos, cuentas… te lo entrego <strong>ordenado y bien hecho</strong>.</div>
           </div>
@@ -430,6 +439,72 @@
             });
           });
         });
+
+        /* ----- Candado de key (AI Pro Max) ----- */
+        var lockCard = document.getElementById('lockCard');
+        var chatCard = document.getElementById('chatCard');
+        var keyStatus = document.getElementById('keyStatus');
+        var keyTimeEl = document.getElementById('keyTime');
+        var myKeyExp = 0, keyTimer = null;
+        function sha256hex(str) {
+          return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+            return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+          });
+        }
+        function fmtLeft(sec) {
+          if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + ' min';
+          if (sec < 86400) return Math.floor(sec / 3600) + ' h ' + Math.floor((sec % 3600) / 60) + ' min';
+          return Math.floor(sec / 86400) + ' días';
+        }
+        function lockChat(msg) {
+          myKeyExp = 0;
+          if (keyTimer) clearInterval(keyTimer);
+          chatCard.style.display = 'none';
+          lockCard.style.display = '';
+          if (msg) keyStatus.textContent = msg;
+        }
+        function tickKey() {
+          var left = Math.floor(myKeyExp - Date.now() / 1000);
+          if (left <= 0) { localStorage.removeItem('promax_key'); lockChat('Tu key venció — genera otra en el bot.'); return; }
+          keyTimeEl.textContent = '⏳ te quedan ' + fmtLeft(left);
+        }
+        function unlockChat(exp) {
+          myKeyExp = exp;
+          lockCard.style.display = 'none';
+          chatCard.style.display = '';
+          tickKey();
+          if (keyTimer) clearInterval(keyTimer);
+          keyTimer = setInterval(tickKey, 30000);
+        }
+        function checkKey(code, quiet) {
+          var norm = code.trim().toUpperCase();
+          return sha256hex(norm).then(function (h) {
+            return fetch('ai/keys.json?ts=' + Date.now()).then(function (r) { return r.json(); }).then(function (data) {
+              var now = Date.now() / 1000;
+              var hit = null;
+              (data.keys || []).forEach(function (k) { if (k.h === h && k.exp > now) hit = k; });
+              if (hit) { localStorage.setItem('promax_key', norm); unlockChat(hit.exp); return true; }
+              if (!quiet) keyStatus.textContent = '❌ Key inválida o vencida — revisa que esté completa.';
+              return false;
+            });
+          }).catch(function () {
+            if (!quiet) keyStatus.textContent = 'No pude verificar la key — revisa tu internet.';
+            return false;
+          });
+        }
+        document.getElementById('keyForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var v = document.getElementById('keyInput').value;
+          if (!v.trim()) return;
+          keyStatus.textContent = 'Verificando…';
+          checkKey(v, false);
+        });
+        document.getElementById('keyOut').addEventListener('click', function () {
+          localStorage.removeItem('promax_key');
+          lockChat('Sesión cerrada — pega tu key pa\' seguir.');
+        });
+        var savedKey = localStorage.getItem('promax_key');
+        if (savedKey) { checkKey(savedKey, true).then(function (ok) { if (!ok) localStorage.removeItem('promax_key'); }); }
 
         /* ----- Vault (in-memory for this session) ----- */
         var vaultContent = '';
