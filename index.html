@@ -221,14 +221,6 @@
         color: #fff; padding: 13px 14px; font-size: 16px;
       }
       #gate .gate-err { color: #ff7070; font-size: 14px; min-height: 20px; margin-top: 12px; font-weight: 700; text-shadow: 0 1px 8px #000; }
-      /* ---------- Blackout ---------- */
-      #blackout {
-        position: fixed; inset: 0; z-index: 100; background: #000;
-        display: none; place-items: center; color: #2c2c2c;
-        font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase;
-        user-select: none; -webkit-user-select: none; touch-action: none;
-      }
-      #blackout.on { display: grid; }
     </style>
   </head>
   <body>
@@ -269,7 +261,7 @@
         <div class="name">JAMES</div>
         <div class="role">Admin Boss 👑</div>
       </div>
-      <button class="blackout-btn" id="streamBtn">🎥 Modo Stream: OFF</button>
+      <button class="blackout-btn" id="streamBtn">🎥 Modo Stream</button>
     </header>
 
     <div class="scrim" id="scrim"></div>
@@ -297,7 +289,7 @@
         </div>
         <div class="card">
           <h3>🛡️ Protección automática</h3>
-          <p>Con el <strong>🎥 Modo Stream</strong> encendido, el panel se tapa en negro y se vuelve a tapar solo cada vez que regresas a él.</p>
+          <p>Al tocar <strong>🎥 Modo Stream</strong>, la página se <strong>bloquea</strong> y pide la contraseña de entrada pa' volver a abrirla.</p>
         </div>
       </section>
 
@@ -359,13 +351,11 @@
 
     </main>
 
-    <div id="blackout" role="button" aria-label="Pantalla negra activa. Toca dos veces pa' quitarla.">Toca dos veces pa' salir</div>
 
     <script>
       (function () {
         var drawer = document.getElementById('drawer');
         var scrim = document.getElementById('scrim');
-        var blackout = document.getElementById('blackout');
 
         function openDrawer() { drawer.classList.add('open'); scrim.classList.add('open'); }
         function closeDrawer() { drawer.classList.remove('open'); scrim.classList.remove('open'); }
@@ -390,25 +380,20 @@
           b.addEventListener('click', function () { showView(b.getAttribute('data-goto')); });
         });
 
-        /* ----- Blackout ----- */
-        function blackOn() { blackout.classList.add('on'); hideSecret(); }
-        function blackOff() { blackout.classList.remove('on'); }
-        var lastTap = 0;
-        blackout.addEventListener('click', function () {
-          var now = Date.now();
-          if (now - lastTap < 450) { blackOff(); lastTap = 0; } else { lastTap = now; }
-        });
-        /* ----- Modo Stream ----- */
-        var streamMode = false;
-        var streamBtn = document.getElementById('streamBtn');
-        function setStream(on) {
-          streamMode = on;
-          streamBtn.textContent = on ? '🎥 Modo Stream: ON' : '🎥 Modo Stream: OFF';
-          if (on) blackOn();
+        /* ----- Modo Stream = bloquear y pedir la contraseña de entrada ----- */
+        function lockPage() {
+          try { sessionStorage.removeItem('gate_ok'); } catch (e) {}
+          var g = document.getElementById('gate');
+          var gi = document.getElementById('gateInput');
+          var ge = document.getElementById('gateErr');
+          if (gi) gi.value = '';
+          if (ge) ge.textContent = '';
+          hideSecret();
+          closeDrawer();
+          if (g) g.classList.remove('hide');
         }
-        streamBtn.addEventListener('click', function () { setStream(!streamMode); if (!streamMode) blackOff(); });
-        document.getElementById('navStream').addEventListener('click', function () { closeDrawer(); setStream(true); });
-        document.addEventListener('visibilitychange', function () { if (streamMode && !document.hidden) blackOn(); });
+        document.getElementById('streamBtn').addEventListener('click', lockPage);
+        document.getElementById('navStream').addEventListener('click', lockPage);
 
         /* ----- AI Chat Pro Max (gratis, sin clave) ----- */
         var chatBox = document.getElementById('chatBox');
