@@ -218,6 +218,7 @@
         <div class="role">Admin Boss 👑</div>
       </div>
       <button class="blackout-btn" id="blackoutBtn">⬛ Pantalla negra</button>
+      <button class="blackout-btn" id="streamBtn">🎥 Modo Stream: OFF</button>
     </header>
 
     <div class="scrim" id="scrim"></div>
@@ -232,6 +233,7 @@
         <button class="nav-item" data-view="boveda"><span class="ic">🔒</span> Bóveda protegida</button>
         <button class="nav-item" data-view="accesos"><span class="ic">⚡</span> Accesos rápidos</button>
         <button class="nav-item" id="navBlackout"><span class="ic">⬛</span> Pantalla negra</button>
+        <button class="nav-item" id="navStream"><span class="ic">🎥</span> Modo Stream</button>
       </nav>
       <div class="foot">Panel de James — Admin Boss.<br />Todo vive en esta página: navegador, bóveda y accesos en un solo lugar.</div>
     </aside>
@@ -364,6 +366,18 @@
         /* Auto-blackout: leaving the page covers everything */
         document.addEventListener('visibilitychange', function () { if (document.hidden) blackOn(); });
         window.addEventListener('blur', function () { blackOn(); });
+
+        /* ----- Modo Stream ----- */
+        var streamMode = false;
+        var streamBtn = document.getElementById('streamBtn');
+        function setStream(on) {
+          streamMode = on;
+          streamBtn.textContent = on ? '🎥 Modo Stream: ON' : '🎥 Modo Stream: OFF';
+          if (on) blackOn();
+        }
+        streamBtn.addEventListener('click', function () { setStream(!streamMode); if (!streamMode) blackOff(); });
+        document.getElementById('navStream').addEventListener('click', function () { closeDrawer(); setStream(true); });
+        document.addEventListener('visibilitychange', function () { if (streamMode && !document.hidden) blackOn(); });
 
         /* ----- In-page browser ----- */
         var urlInput = document.getElementById('urlInput');
