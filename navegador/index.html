@@ -428,8 +428,8 @@
     { name:'Buscador', sub:'Busca adentro', url:'#buscar', color:'#DE5833', letter:'🔍' },
     { name:'YouTube', sub:'Videos', url:'https://www.youtube.com', color:'#FF0000', letter:'▶' },
     { name:'Wikipedia', sub:'Se ve aquí ✓', url:'https://es.wikipedia.org', color:'#111111', letter:'W' },
-    { name:'Instagram', sub:'Abrir fuera', url:'https://www.instagram.com', color:'#C13584', letter:'◎' },
-    { name:'Facebook', sub:'Abrir fuera', url:'https://www.facebook.com', color:'#1877F2', letter:'f' },
+    { name:'Instagram', sub:'Red social', url:'https://www.instagram.com', color:'#C13584', letter:'◎' },
+    { name:'Facebook', sub:'Red social', url:'https://www.facebook.com', color:'#1877F2', letter:'f' },
     { name:'TikTok', sub:'Videos', url:'https://www.tiktok.com', color:'#111111', letter:'♪' },
     { name:'X', sub:'Posts', url:'https://x.com', color:'#000000', letter:'𝕏' },
     { name:'WhatsApp Web', sub:'Chats', url:'https://web.whatsapp.com', color:'#25D366', letter:'✆' }
@@ -609,7 +609,7 @@
     ];
     function tryProxy(i){
       if (i >= proxies.length){
-        load.textContent = 'El buscador no respondió. Revisa tu internet y toca Recargar, o usa Abrir fuera.';
+        load.textContent = 'El buscador no respondió. Revisa tu internet y toca Recargar, o inténtalo de nuevo.';
         return;
       }
       fetch(proxies[i] + encodeURIComponent(target)).then(function(r){ return r.text(); }).then(function(html){
