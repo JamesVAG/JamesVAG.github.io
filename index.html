@@ -1,21 +1,488 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VANGUARDIA — Instalaciones</title>
-<style>
-  body { background:#0b0b10; color:#fff; font-family:-apple-system,
-    Helvetica, Arial, sans-serif; text-align:center; padding:64px 24px; }
-  .marca { color:#b18cff; letter-spacing:4px; font-weight:800;
-    font-size:22px; }
-  p { color:#9a9aad; margin-top:18px; line-height:1.5; }
-</style>
-</head>
-<body>
-  <div class="marca">VANGUARDIA</div>
-  <p>Páginas de instalación de VANGUARDIA.<br>
-  Si tu bot te envió un enlace de instalación, úsalo directamente:
-  la app se instala con un solo toque.</p>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Panel James</title>
+    <style>
+      :root {
+        --bg: #101014;
+        --bg-2: #17171d;
+        --card: #1d1d24;
+        --card-2: #24242e;
+        --line: #33333f;
+        --text: #f2ead8;
+        --muted: #a89f8d;
+        --gold: #d4af37;
+        --gold-2: #f0d060;
+        --gold-dark: #8a6d1f;
+        --danger: #e5484d;
+        --ok: #3fb96f;
+        --radius: 14px;
+        color-scheme: dark;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f4f1ea;
+          --bg-2: #ece7db;
+          --card: #ffffff;
+          --card-2: #f7f3ea;
+          --line: #d9d2c0;
+          --text: #1c1a14;
+          --muted: #6f6753;
+          --gold: #a8842a;
+          --gold-2: #c9a227;
+          color-scheme: light;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]), textarea { min-height: 2.25rem; }
+      button { cursor: pointer; font: inherit; }
+
+      /* ---------- Top bar ---------- */
+      .topbar {
+        position: sticky; top: 0; z-index: 40;
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.6rem 0.9rem;
+        background: var(--bg-2);
+        border-bottom: 2px solid var(--gold);
+      }
+      .menu-btn {
+        flex: 0 0 auto;
+        width: 2.75rem; height: 2.75rem;
+        display: grid; place-items: center;
+        background: var(--card); color: var(--gold-2);
+        border: 1px solid var(--line); border-radius: 10px;
+        font-size: 1.35rem; line-height: 1;
+      }
+      .brand { flex: 1 1 auto; min-width: 0; }
+      .brand .name {
+        font-size: 1.3rem; font-weight: 800; letter-spacing: 0.14em;
+        color: var(--gold-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .brand .role { font-size: 0.78rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+      .blackout-btn {
+        flex: 0 0 auto;
+        padding: 0.55rem 0.8rem;
+        background: #000; color: #fff;
+        border: 1px solid var(--line); border-radius: 10px;
+        font-weight: 700; font-size: 0.85rem;
+      }
+
+      /* ---------- Drawer menu ---------- */
+      .scrim {
+        position: fixed; inset: 0; z-index: 50;
+        background: rgba(0,0,0,0.55);
+        opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+      }
+      .scrim.open { opacity: 1; pointer-events: auto; }
+      .drawer {
+        position: fixed; top: 0; left: 0; bottom: 0; z-index: 60;
+        width: min(19rem, 84vw);
+        background: var(--bg-2);
+        border-right: 2px solid var(--gold);
+        transform: translateX(-105%); visibility: hidden;
+        transition: transform 0.25s ease, visibility 0s linear 0.25s;
+        display: flex; flex-direction: column;
+        padding: 1rem 0.9rem calc(1rem + env(safe-area-inset-bottom));
+        overflow-y: auto;
+      }
+      .drawer.open { transform: translateX(0); visibility: visible; transition: transform 0.25s ease, visibility 0s; }
+      .drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
+      .drawer-head .t { font-weight: 800; letter-spacing: 0.14em; color: var(--gold-2); font-size: 1.05rem; }
+      .drawer-close {
+        width: 2.5rem; height: 2.5rem; border-radius: 9px;
+        background: var(--card); color: var(--text); border: 1px solid var(--line); font-size: 1.1rem;
+      }
+      .drawer nav { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.6rem; }
+      .nav-item {
+        display: flex; align-items: center; gap: 0.7rem;
+        width: 100%; text-align: left;
+        padding: 0.8rem 0.85rem; min-height: 3rem;
+        background: var(--card); color: var(--text);
+        border: 1px solid var(--line); border-radius: var(--radius);
+        font-size: 1rem; font-weight: 600;
+      }
+      .nav-item .ic { font-size: 1.25rem; width: 1.6rem; text-align: center; flex: 0 0 auto; }
+      .nav-item.active { border-color: var(--gold); background: var(--card-2); color: var(--gold-2); }
+      .drawer .foot { margin-top: auto; padding-top: 1rem; font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+      /* ---------- Layout / views ---------- */
+      main { max-width: 62rem; margin: 0 auto; padding: 1rem 0.9rem calc(2rem + env(safe-area-inset-bottom)); }
+      .view { display: none; }
+      .view.active { display: block; }
+      h2.view-title { font-size: 1.25rem; margin: 0.2rem 0 0.9rem; letter-spacing: 0.02em; }
+      .card {
+        background: var(--card); border: 1px solid var(--line);
+        border-radius: var(--radius); padding: 1rem; margin-bottom: 0.9rem;
+      }
+      .card h3 { margin: 0 0 0.5rem; font-size: 1.02rem; }
+      .card p { margin: 0.3rem 0; color: var(--muted); line-height: 1.55; font-size: 0.95rem; }
+      .card p strong { color: var(--text); }
+
+      .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+      @media (min-width: 640px) { .menu-grid { grid-template-columns: repeat(4, 1fr); } }
+      .tile {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem;
+        padding: 1rem 0.9rem; min-height: 6.2rem;
+        background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+        color: var(--text); text-align: left; font-weight: 700; font-size: 1rem;
+      }
+      .tile .ic { font-size: 1.7rem; }
+      .tile small { font-weight: 500; color: var(--muted); font-size: 0.82rem; line-height: 1.4; }
+      .tile:active { border-color: var(--gold); }
+
+      /* ---------- Browser ---------- */
+      .urlbar { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+      .urlbar input {
+        flex: 1 1 12rem; padding: 0.65rem 0.8rem;
+        background: var(--bg); color: var(--text);
+        border: 1px solid var(--line); border-radius: 10px; font-size: 1rem;
+      }
+      .btn {
+        padding: 0.6rem 1rem; border-radius: 10px; border: 1px solid var(--line);
+        background: var(--card-2); color: var(--text); font-weight: 700;
+      }
+      .btn.gold { background: var(--gold); border-color: var(--gold-dark); color: #191204; }
+      .btn.danger { background: var(--danger); border-color: #a02c30; color: #fff; }
+      .btn.block { width: 100%; }
+      .frame-wrap {
+        margin-top: 0.8rem; border: 1px solid var(--line); border-radius: var(--radius);
+        overflow: hidden; background: #fff; height: 62vh; min-height: 20rem;
+        display: flex; flex-direction: column;
+      }
+      .frame-wrap iframe { flex: 1; width: 100%; border: 0; }
+      .frame-empty { padding: 2rem 1.2rem; text-align: center; color: #555; background: var(--card-2); flex: 1; display: grid; place-items: center; }
+      .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.7rem; }
+      .chip {
+        padding: 0.5rem 0.85rem; min-height: 2.25rem;
+        border-radius: 999px; border: 1px solid var(--line);
+        background: var(--card-2); color: var(--text); font-weight: 600; font-size: 0.9rem;
+      }
+      .chip:active { border-color: var(--gold); color: var(--gold-2); }
+      .status-line { font-size: 0.85rem; color: var(--muted); margin-top: 0.55rem; min-height: 1.2em; }
+
+      /* ---------- Vault ---------- */
+      textarea {
+        width: 100%; min-height: 7rem; padding: 0.7rem 0.8rem;
+        background: var(--bg); color: var(--text);
+        border: 1px solid var(--line); border-radius: 10px; font-size: 1rem; resize: vertical;
+      }
+      .row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.7rem; }
+      .secret-box {
+        margin-top: 0.8rem; padding: 1rem;
+        border: 1px dashed var(--gold); border-radius: var(--radius);
+        background: var(--bg); white-space: pre-wrap; word-break: break-word;
+        font-size: 1.05rem; line-height: 1.6; display: none;
+      }
+      .secret-box.show { display: block; }
+      .count { font-variant-numeric: tabular-nums; color: var(--gold-2); font-weight: 800; }
+
+      /* ---------- Quick links ---------- */
+      .links-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+      @media (min-width: 640px) { .links-grid { grid-template-columns: repeat(3, 1fr); } }
+      a.link-card {
+        display: flex; flex-direction: column; gap: 0.35rem;
+        padding: 0.95rem; min-height: 4.6rem;
+        background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+        color: var(--text); text-decoration: none; font-weight: 700;
+      }
+      a.link-card .ic { font-size: 1.5rem; }
+      a.link-card small { color: var(--muted); font-weight: 500; font-size: 0.8rem; }
+
+      /* ---------- Blackout ---------- */
+      #blackout {
+        position: fixed; inset: 0; z-index: 100; background: #000;
+        display: none; place-items: center; color: #2c2c2c;
+        font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase;
+        user-select: none; -webkit-user-select: none; touch-action: none;
+      }
+      #blackout.on { display: grid; }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Abrir menú">☰</button>
+      <div class="brand">
+        <div class="name">JAMES</div>
+        <div class="role">Admin Boss 👑</div>
+      </div>
+      <button class="blackout-btn" id="blackoutBtn">⬛ Pantalla negra</button>
+    </header>
+
+    <div class="scrim" id="scrim"></div>
+    <aside class="drawer" id="drawer" aria-label="Menú del panel">
+      <div class="drawer-head">
+        <span class="t">MENÚ</span>
+        <button class="drawer-close" id="drawerClose" aria-label="Cerrar menú">✕</button>
+      </div>
+      <nav>
+        <button class="nav-item active" data-view="panel"><span class="ic">🏠</span> Panel</button>
+        <button class="nav-item" data-view="navegador"><span class="ic">🌐</span> Navegador</button>
+        <button class="nav-item" data-view="boveda"><span class="ic">🔒</span> Bóveda protegida</button>
+        <button class="nav-item" data-view="accesos"><span class="ic">⚡</span> Accesos rápidos</button>
+        <button class="nav-item" id="navBlackout"><span class="ic">⬛</span> Pantalla negra</button>
+      </nav>
+      <div class="foot">Panel de James — Admin Boss.<br />Todo vive en esta página: navegador, bóveda y accesos en un solo lugar.</div>
+    </aside>
+
+    <main>
+      <!-- ===== PANEL ===== -->
+      <section class="view active" id="view-panel">
+        <h2 class="view-title">Tu panel, Bro 👑</h2>
+        <div class="menu-grid">
+          <button class="tile" data-goto="navegador"><span class="ic">🌐</span> Navegador <small>Pega un link y ábrelo aquí mismo, sin salir del panel.</small></button>
+          <button class="tile" data-goto="boveda"><span class="ic">🔒</span> Bóveda <small>Guarda un texto y míralo solo manteniendo presionado o una sola vez.</small></button>
+          <button class="tile" id="tileBlackout"><span class="ic">⬛</span> Pantalla negra <small>Tapa todo en negro al instante, antes de compartir pantalla.</small></button>
+          <button class="tile" data-goto="accesos"><span class="ic">⚡</span> Accesos rápidos <small>Google, YouTube, TikTok y tus sitios de siempre, a un toque.</small></button>
+        </div>
+        <div class="card">
+          <h3>🛡️ Protección automática</h3>
+          <p>Si <strong>cambias de app o de pestaña</strong> con la bóveda abierta, el panel se tapa en negro solo. Y el botón <strong>⬛ Pantalla negra</strong> de arriba tapa todo al instante cuando lo tocas.</p>
+        </div>
+      </section>
+
+      <!-- ===== NAVEGADOR ===== -->
+      <section class="view" id="view-navegador">
+        <h2 class="view-title">🌐 Navegador</h2>
+        <div class="card">
+          <form class="urlbar" id="urlForm">
+            <input id="urlInput" type="text" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="Pega un link… ej: wikipedia.org" aria-label="Dirección web" />
+            <button class="btn gold" type="submit">Ir</button>
+            <button class="btn" type="button" id="openOutside">Abrir fuera ↗</button>
+          </form>
+          <div class="chips" id="quickChips">
+            <button class="chip" data-url="https://www.wikipedia.org">Wikipedia</button>
+            <button class="chip" data-url="https://www.bing.com">Bing</button>
+            <button class="chip" data-url="https://duckduckgo.com">DuckDuckGo</button>
+            <button class="chip" data-url="https://www.bbc.com/mundo">BBC Mundo</button>
+            <button class="chip" data-url="https://www.espn.com">ESPN</button>
+            <button class="chip" data-url="https://jamesvag.github.io">Mi sitio web</button>
+          </div>
+          <div class="status-line" id="browserStatus">Escribe o pega un link y toca <strong>Ir</strong>.</div>
+          <div class="frame-wrap" id="frameWrap">
+            <div class="frame-empty" id="frameEmpty">Aquí se abre la página que pidas 👆</div>
+            <iframe id="pageFrame" title="Página abierta" style="display:none" referrerpolicy="no-referrer"></iframe>
+          </div>
+          <p style="margin-top:0.7rem">Algunos sitios (Google, YouTube, Instagram, los bancos) <strong>no dejan verse dentro de otra página</strong> — si uno sale en blanco, toca <strong>Abrir fuera ↗</strong> y se abre normal en tu navegador.</p>
+        </div>
+      </section>
+
+      <!-- ===== BÓVEDA ===== -->
+      <section class="view" id="view-boveda">
+        <h2 class="view-title">🔒 Bóveda protegida</h2>
+        <div class="card">
+          <h3>Escribe lo que quieres guardar</h3>
+          <textarea id="vaultText" placeholder="Escribe aquí tu texto privado…"></textarea>
+          <div class="row">
+            <button class="btn gold" id="vaultSave">Guardar en la bóveda</button>
+            <button class="btn danger" id="vaultWipe">Borrar todo</button>
+          </div>
+          <div class="status-line" id="vaultStatus">La bóveda está vacía.</div>
+        </div>
+        <div class="card">
+          <h3>Ver el contenido</h3>
+          <p><strong>Mantén presionado</strong> el botón dorado pa' verlo — al soltar, se tapa. O usa <strong>Ver una vez</strong>: se muestra 30 segundos y se borra solo.</p>
+          <div class="row">
+            <button class="btn gold" id="holdView">👁️ Mantener pa' ver</button>
+            <button class="btn" id="onceView">Ver una vez (30 s)</button>
+          </div>
+          <div class="secret-box" id="secretBox"></div>
+          <div class="status-line" id="onceStatus"></div>
+        </div>
+      </section>
+
+      <!-- ===== ACCESOS ===== -->
+      <section class="view" id="view-accesos">
+        <h2 class="view-title">⚡ Accesos rápidos</h2>
+        <div class="links-grid">
+          <a class="link-card" href="https://www.google.com" target="_blank" rel="noopener"><span class="ic">🔎</span> Google <small>google.com</small></a>
+          <a class="link-card" href="https://www.youtube.com" target="_blank" rel="noopener"><span class="ic">▶️</span> YouTube <small>youtube.com</small></a>
+          <a class="link-card" href="https://www.tiktok.com" target="_blank" rel="noopener"><span class="ic">🎵</span> TikTok <small>tiktok.com</small></a>
+          <a class="link-card" href="https://www.instagram.com" target="_blank" rel="noopener"><span class="ic">📸</span> Instagram <small>instagram.com</small></a>
+          <a class="link-card" href="https://web.whatsapp.com" target="_blank" rel="noopener"><span class="ic">💬</span> WhatsApp Web <small>web.whatsapp.com</small></a>
+          <a class="link-card" href="https://web.telegram.org" target="_blank" rel="noopener"><span class="ic">✈️</span> Telegram Web <small>web.telegram.org</small></a>
+          <a class="link-card" href="https://jamesvag.github.io" target="_blank" rel="noopener"><span class="ic">👑</span> Mi sitio web <small>jamesvag.github.io</small></a>
+          <a class="link-card" href="https://app.prizepicks.com" target="_blank" rel="noopener"><span class="ic">🎯</span> PrizePicks <small>app.prizepicks.com</small></a>
+          <a class="link-card" href="https://github.com" target="_blank" rel="noopener"><span class="ic">🐙</span> GitHub <small>github.com</small></a>
+        </div>
+      </section>
+    </main>
+
+    <div id="blackout" role="button" aria-label="Pantalla negra activa. Toca dos veces pa' quitarla.">Toca dos veces pa' salir</div>
+
+    <script>
+      (function () {
+        var drawer = document.getElementById('drawer');
+        var scrim = document.getElementById('scrim');
+        var blackout = document.getElementById('blackout');
+
+        function openDrawer() { drawer.classList.add('open'); scrim.classList.add('open'); }
+        function closeDrawer() { drawer.classList.remove('open'); scrim.classList.remove('open'); }
+        document.getElementById('menuBtn').addEventListener('click', openDrawer);
+        document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+        scrim.addEventListener('click', closeDrawer);
+
+        /* ----- View switching ----- */
+        var navItems = Array.prototype.slice.call(document.querySelectorAll('.nav-item[data-view]'));
+        function showView(name) {
+          document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+          var el = document.getElementById('view-' + name);
+          if (el) el.classList.add('active');
+          navItems.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === name); });
+          closeDrawer();
+          window.scrollTo(0, 0);
+        }
+        navItems.forEach(function (b) {
+          b.addEventListener('click', function () { showView(b.getAttribute('data-view')); });
+        });
+        document.querySelectorAll('[data-goto]').forEach(function (b) {
+          b.addEventListener('click', function () { showView(b.getAttribute('data-goto')); });
+        });
+
+        /* ----- Blackout ----- */
+        function blackOn() { blackout.classList.add('on'); hideSecret(); }
+        function blackOff() { blackout.classList.remove('on'); }
+        document.getElementById('blackoutBtn').addEventListener('click', blackOn);
+        document.getElementById('navBlackout').addEventListener('click', function () { closeDrawer(); blackOn(); });
+        document.getElementById('tileBlackout').addEventListener('click', blackOn);
+        var lastTap = 0;
+        blackout.addEventListener('click', function () {
+          var now = Date.now();
+          if (now - lastTap < 450) { blackOff(); lastTap = 0; } else { lastTap = now; }
+        });
+        /* Auto-blackout: leaving the page covers everything */
+        document.addEventListener('visibilitychange', function () { if (document.hidden) blackOn(); });
+        window.addEventListener('blur', function () { blackOn(); });
+
+        /* ----- In-page browser ----- */
+        var urlInput = document.getElementById('urlInput');
+        var frame = document.getElementById('pageFrame');
+        var frameEmpty = document.getElementById('frameEmpty');
+        var browserStatus = document.getElementById('browserStatus');
+        var currentUrl = '';
+
+        function normalize(raw) {
+          var u = (raw || '').trim();
+          if (!u) return '';
+          if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) {
+            if (u.indexOf('.') === -1) {
+              u = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(u);
+            } else {
+              u = 'https://' + u;
+            }
+          }
+          return u;
+        }
+        var PROXY = 'https://api.allorigins.win/raw?url=';
+        var NEVER_HOSTS = ['google','youtube','youtu','instagram','facebook','fb','tiktok','twitter','x','whatsapp','netflix','snapchat','pinterest','linkedin','twitch','spotify','bing'];
+        function isNeverEmbed(u) {
+          try {
+            var h = new URL(u).hostname;
+            var parts = h.split('.');
+            var sld = parts.length >= 2 ? parts[parts.length - 2] : h;
+            return NEVER_HOSTS.indexOf(sld) !== -1;
+          } catch (e) { return false; }
+        }
+        function loadUrl(u) {
+          if (!u) return;
+          currentUrl = u;
+          urlInput.value = u;
+          // Sitios que jamás se ven dentro de otra página: se abren fuera solos.
+          if (isNeverEmbed(u)) {
+            window.open(u, '_blank', 'noopener');
+            browserStatus.textContent = 'Ese sitio no permite verse adentro — te lo abrí fuera, en tu navegador. 👆';
+            return;
+          }
+          frameEmpty.style.display = 'none';
+          frame.style.display = 'block';
+          // Modo compatible: puente que quita el bloqueo de verse adentro.
+          frame.src = PROXY + encodeURIComponent(u);
+          browserStatus.textContent = 'Abriendo ' + u + ' … si sale en blanco, toca «Abrir fuera ↗».';
+        }
+        document.getElementById('urlForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          loadUrl(normalize(urlInput.value));
+        });
+        document.getElementById('quickChips').addEventListener('click', function (e) {
+          var b = e.target.closest('[data-url]');
+          if (b) loadUrl(b.getAttribute('data-url'));
+        });
+        document.getElementById('openOutside').addEventListener('click', function () {
+          var u = currentUrl || normalize(urlInput.value);
+          if (u) window.open(u, '_blank', 'noopener');
+          else browserStatus.textContent = 'Primero escribe o pega un link.';
+        });
+
+        /* ----- Vault (in-memory for this session) ----- */
+        var vaultContent = '';
+        var vaultText = document.getElementById('vaultText');
+        var vaultStatus = document.getElementById('vaultStatus');
+        var secretBox = document.getElementById('secretBox');
+        var onceStatus = document.getElementById('onceStatus');
+        var onceTimer = null, tickTimer = null;
+
+        function hideSecret() {
+          secretBox.classList.remove('show');
+          secretBox.textContent = '';
+          if (onceTimer) { clearTimeout(onceTimer); onceTimer = null; }
+          if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+          onceStatus.textContent = '';
+        }
+        function showSecret() {
+          if (!vaultContent) { vaultStatus.textContent = 'La bóveda está vacía — escribe algo y guárdalo primero.'; return false; }
+          secretBox.textContent = vaultContent;
+          secretBox.classList.add('show');
+          return true;
+        }
+        document.getElementById('vaultSave').addEventListener('click', function () {
+          vaultContent = vaultText.value;
+          vaultText.value = '';
+          hideSecret();
+          vaultStatus.textContent = vaultContent ? 'Guardado ✔ Ya no se ve en la caja — usa los botones de abajo pa\' verlo.' : 'La bóveda está vacía.';
+        });
+        document.getElementById('vaultWipe').addEventListener('click', function () {
+          vaultContent = '';
+          vaultText.value = '';
+          hideSecret();
+          vaultStatus.textContent = 'Bóveda borrada. No queda nada.';
+        });
+        var holdBtn = document.getElementById('holdView');
+        function holdStart(e) { e.preventDefault(); showSecret(); }
+        function holdEnd() { if (!onceTimer) hideSecret(); }
+        holdBtn.addEventListener('pointerdown', holdStart);
+        holdBtn.addEventListener('pointerup', holdEnd);
+        holdBtn.addEventListener('pointerleave', holdEnd);
+        holdBtn.addEventListener('pointercancel', holdEnd);
+        holdBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+        document.getElementById('onceView').addEventListener('click', function () {
+          if (!showSecret()) return;
+          var left = 30;
+          onceStatus.innerHTML = 'Se borra en <span class="count">' + left + '</span> s…';
+          tickTimer = setInterval(function () {
+            left -= 1;
+            if (left <= 0) {
+              vaultContent = '';
+              hideSecret();
+              vaultStatus.textContent = 'Visto una vez y borrado ✔ La bóveda quedó vacía.';
+            } else {
+              onceStatus.innerHTML = 'Se borra en <span class="count">' + left + '</span> s…';
+            }
+          }, 1000);
+          onceTimer = setTimeout(function () {}, 31000);
+        });
+      })();
+    </script>
+  </body>
 </html>
