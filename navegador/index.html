@@ -427,6 +427,7 @@
   var tabsBar = document.getElementById('tabsBar');
   var loadingBar = document.getElementById('loadingBar');
   var statusBar = document.getElementById('statusBar');
+  var statusText = document.getElementById('statusText');
   var statusOpenBtn = document.getElementById('statusOpenBtn');
   var footStatus = document.getElementById('footStatus');
   var historyList = document.getElementById('historyList');
@@ -536,12 +537,31 @@
     statusBar.classList.remove('show');
     loadingBar.className = 'loadingbar';
   }
+  var PROXY = 'https://api.allorigins.win/raw?url=';
+  var NEVER_HOSTS = ['google','youtube','youtu','instagram','facebook','fb','tiktok','twitter','x','whatsapp','netflix','snapchat','pinterest','linkedin','twitch','spotify'];
+  function isNeverEmbed(url){
+    var h = hostOf(url);
+    var parts = h.split('.');
+    var sld = parts.length >= 2 ? parts[parts.length-2] : h;
+    return NEVER_HOSTS.indexOf(sld) !== -1;
+  }
   function showFrame(url, record){
+    // Sitios que JAMÁS se pueden ver dentro de otra página (regla de ellos):
+    // se abren fuera automáticamente, sin dejar la pantalla en blanco.
+    if (isNeverEmbed(url)){
+      window.open(url, '_blank', 'noopener');
+      showHome();
+      statusText.textContent = 'Ese sitio no permite verse adentro — te lo abrí fuera, en tu navegador. 👆';
+      statusBar.classList.add('show');
+      return;
+    }
     homePage.style.display = 'none';
     frame.classList.add('show');
     loadingBar.className = 'loadingbar on';
     statusBar.classList.remove('show');
-    frame.src = url;
+    // Modo compatible: la página se trae por un puente que quita el bloqueo
+    // de verse dentro de otra página (así la mayoría de sitios SÍ abren aquí).
+    frame.src = PROXY + encodeURIComponent(url);
     if (record !== false){
       var now = new Date();
       sessionHistory.unshift({ url:url, time: now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) });
