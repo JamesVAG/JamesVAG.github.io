@@ -387,7 +387,22 @@
           }
           return u;
         }
-        var PROXY = 'https://api.allorigins.win/raw?url=';
+        var PROXIES = [
+          'https://api.allorigins.win/raw?url=',
+          'https://api.codetabs.com/v1/proxy?quest=',
+          'https://corsproxy.io/?url=',
+          'https://api.cors.lol/?url='
+        ];
+        function pickProxy(u, i) {
+          if (i >= PROXIES.length) { browserStatus.textContent = 'Ese sitio no respondió por ningún puente.'; return; }
+          var p = PROXIES[i] + encodeURIComponent(u);
+          var ctrl = new AbortController(); var to = setTimeout(function () { ctrl.abort(); }, 9000);
+          fetch(p, { signal: ctrl.signal }).then(function (r) { return r.text(); }).then(function (txt) {
+            clearTimeout(to);
+            if (txt && txt.length > 400 && /<html|<!doctype/i.test(txt)) { frame.src = p; }
+            else pickProxy(u, i + 1);
+          }).catch(function () { clearTimeout(to); pickProxy(u, i + 1); });
+        }
         var NEVER_HOSTS = ['google','youtube','youtu','instagram','facebook','fb','tiktok','twitter','x','whatsapp','netflix','snapchat','pinterest','linkedin','twitch','spotify','bing'];
         function isNeverEmbed(u) {
           try {
@@ -403,8 +418,9 @@
           urlInput.value = u;
           frameEmpty.style.display = 'none';
           frame.style.display = 'block';
-          // Modo compatible: puente que quita el bloqueo de verse adentro.
-          frame.src = PROXY + encodeURIComponent(u);
+          // Modo compatible: se prueban los puentes hasta que uno responda.
+          frame.removeAttribute('src');
+          pickProxy(u, 0);
           browserStatus.textContent = 'Abriendo ' + u + ' …';
         }
         document.getElementById('urlForm').addEventListener('submit', function (e) {
