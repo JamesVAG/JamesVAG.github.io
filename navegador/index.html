@@ -526,7 +526,65 @@
     homePage.style.display = 'block';
     loadingBar.className = 'loadingbar';
   }
-  var PROXY = 'https://api.allorigins.win/raw?url=';
+  var PROXIES = [
+    'https://api.allorigins.win/raw?url=',
+    'https://api.codetabs.com/v1/proxy?quest=',
+    'https://corsproxy.io/?url=',
+    'https://api.cors.lol/?url='
+  ];
+  function pickProxy(url, i){
+    if (i >= PROXIES.length){ renderReader(url); return; }
+    var p = PROXIES[i] + encodeURIComponent(url);
+    var ctrl = new AbortController(); var to = setTimeout(function(){ ctrl.abort(); }, 9000);
+    fetch(p, { signal: ctrl.signal }).then(function(r){ return r.text(); }).then(function(txt){
+      clearTimeout(to);
+      if (txt && txt.length > 400 && /<html|<!doctype/i.test(txt)){ frame.src = p; }
+      else pickProxy(url, i+1);
+    }).catch(function(){ clearTimeout(to); pickProxy(url, i+1); });
+  }
+  function fetchText(url, i, cb){
+    if (i >= PROXIES.length){ cb(null); return; }
+    var ctrl = new AbortController(); var to = setTimeout(function(){ ctrl.abort(); }, 9000);
+    fetch(PROXIES[i] + encodeURIComponent(url), { signal: ctrl.signal }).then(function(r){ return r.text(); }).then(function(txt){
+      clearTimeout(to);
+      if (txt && txt.length > 200) cb(txt); else fetchText(url, i+1, cb);
+    }).catch(function(){ clearTimeout(to); fetchText(url, i+1, cb); });
+  }
+  function renderReader(url){
+    var box = document.getElementById('searchResults');
+    frame.classList.remove('show'); frame.removeAttribute('src');
+    homePage.style.display = 'none';
+    box.style.display = 'block';
+    box.innerHTML = '';
+    var head = document.createElement('div'); head.className = 'sr-head';
+    head.textContent = 'Modo lectura — ' + hostOf(url);
+    var load = document.createElement('div'); load.className = 'sr-load';
+    load.textContent = 'Trayendo el texto de la página…';
+    box.appendChild(head); box.appendChild(load);
+    fetchText(url, 0, function(html){
+      if (!html){ load.textContent = 'Ese sitio no respondió por ningún puente.'; return; }
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var main = doc.querySelector('article') || doc.querySelector('main') || doc.body;
+      load.remove();
+      var title = document.createElement('div'); title.className = 'sr-title';
+      title.style.fontSize = '19px'; title.textContent = (doc.title || hostOf(url));
+      box.appendChild(title);
+      var nodes = main.querySelectorAll('h1,h2,h3,p,li');
+      var n = 0;
+      nodes.forEach(function(el){
+        if (n >= 140) return;
+        var t = (el.textContent || '').trim().replace(/\s+/g, ' ');
+        if (t.length < 2) return;
+        n++;
+        var p = document.createElement('div');
+        p.className = (el.tagName === 'P' || el.tagName === 'LI') ? 'sr-snip' : 'sr-title';
+        p.style.marginBottom = '8px';
+        p.textContent = t;
+        box.appendChild(p);
+      });
+      if (!n){ var e = document.createElement('div'); e.className = 'sr-load'; e.textContent = 'La página no trajo texto legible.'; box.appendChild(e); }
+    });
+  }
   var NEVER_HOSTS = ['google','youtube','youtu','instagram','facebook','fb','tiktok','twitter','x','whatsapp','netflix','snapchat','pinterest','linkedin','twitch','spotify','openai','chatgpt','claude','anthropic','gemini','perplexity'];
   function isNeverEmbed(url){
     var h = hostOf(url);
@@ -541,9 +599,10 @@
     var sr2 = document.getElementById('searchResults'); if (sr2) sr2.style.display = 'none';
     frame.classList.add('show');
     loadingBar.className = 'loadingbar on';
-    // Modo compatible: la página se trae por un puente que quita el bloqueo
-    // de verse dentro de otra página (así la mayoría de sitios SÍ abren aquí).
-    frame.src = PROXY + encodeURIComponent(url);
+    // Modo compatible: se prueba cada puente hasta que uno responda con la
+    // página de verdad; si ninguno la trae, se muestra en modo lectura.
+    frame.removeAttribute('src');
+    pickProxy(url, 0);
     if (record !== false){
       var now = new Date();
       sessionHistory.unshift({ url:url, time: now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) });
@@ -553,7 +612,7 @@
     clearTimeout(showFrame._t);
     showFrame._t = setTimeout(function(){
       loadingBar.className = 'loadingbar';
-    }, 4500);
+    }, 15000);
   }
 
   function isWords(raw){
