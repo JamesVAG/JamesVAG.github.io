@@ -346,16 +346,8 @@
         </form>
       </div>
 
-      <button class="ext-btn" id="openOutBtn" title="Abrir esta página en Safari / Chrome">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4L10 14"/><path d="M20 14v6H4V4h6"/></svg>
-        <span>Abrir fuera</span>
-      </button>
     </div>
     <div class="loadingbar" id="loadingBar"></div>
-    <div class="statusbar" id="statusBar">
-      <span id="statusText">Si la página sale en blanco, ese sitio bloquea la vista dentro de otra página.</span>
-      <button id="statusOpenBtn" type="button">Abrir fuera</button>
-    </div>
   </div>
 
   <!-- Viewport -->
@@ -371,7 +363,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/></svg>
           </div>
           <h2>¿Qué quieres <em>abrir</em>, Boss?</h2>
-          <p>Pega cualquier link arriba — o escribe una palabra y te la busco aquí adentro. Muchos sitios se ven aquí mismo; los que bloquean la vista interna se abren con “Abrir fuera”.</p>
+          <p>Pega cualquier link arriba — o escribe una palabra y te la busco aquí adentro. Muchos sitios se ven aquí mismo; algunos sitios grandes no dejan verse adentro.</p>
           <form class="bigsearch" id="bigSearchForm">
             <input id="bigSearchInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ej: youtube.com · o busca “resultados NBA hoy”" aria-label="Buscar o abrir link" />
             <button type="submit">Buscar / Abrir</button>
@@ -395,9 +387,8 @@
             <li><b>Pega el link</b> en la barra de arriba (ej: <b>wikipedia.org</b>) y toca <b>Ir →</b></li>
             <li>Sin link, <b>escribe palabras</b> y se busca aquí adentro.</li>
             <li>Usa <b>‹ Atrás</b>, <b>Recargar</b> y las <b>pestañas +</b> como en Safari o Chrome.</li>
-            <li>Con <b>Abrir fuera</b> la misma página se abre en tu navegador real.</li>
           </ol>
-          <div class="warn"><b>Ojo:</b> algunos sitios grandes (Google, Instagram, Facebook, bancos) bloquean por seguridad que se vean dentro de otra página y salen en blanco. En ese caso toca <b>“Abrir fuera”</b> y se te abre normal en Safari/Chrome — es regla de esos sitios, no un fallo de aquí.</div>
+          <div class="warn"><b>Ojo:</b> algunos sitios grandes (Google, Instagram, Facebook, bancos) bloquean por seguridad que se vean dentro de otra página y pueden salir en blanco — es regla de esos sitios, no un fallo de aquí.</div>
         </div>
       </div>
     </div>
@@ -425,12 +416,8 @@
   var fwdBtn = document.getElementById('fwdBtn');
   var reloadBtn = document.getElementById('reloadBtn');
   var homeBtn = document.getElementById('homeBtn');
-  var openOutBtn = document.getElementById('openOutBtn');
   var tabsBar = document.getElementById('tabsBar');
   var loadingBar = document.getElementById('loadingBar');
-  var statusBar = document.getElementById('statusBar');
-  var statusText = document.getElementById('statusText');
-  var statusOpenBtn = document.getElementById('statusOpenBtn');
   var footStatus = document.getElementById('footStatus');
   var historyList = document.getElementById('historyList');
   var historyEmpty = document.getElementById('historyEmpty');
@@ -537,7 +524,6 @@
     frame.classList.remove('show'); frame.removeAttribute('src');
     var sr0 = document.getElementById('searchResults'); if (sr0) sr0.style.display = 'none';
     homePage.style.display = 'block';
-    statusBar.classList.remove('show');
     loadingBar.className = 'loadingbar';
   }
   var PROXY = 'https://api.allorigins.win/raw?url=';
@@ -551,19 +537,10 @@
   function showFrame(url, record){
     // Sitios que JAMÁS se pueden ver dentro de otra página (regla de ellos):
     // se abren fuera automáticamente, sin dejar la pantalla en blanco.
-    if (isNeverEmbed(url)){
-      clearTimeout(showFrame._t);
-      window.open(url, '_blank', 'noopener');
-      showHome();
-      statusText.textContent = 'Ese sitio no permite verse adentro — te lo abrí fuera, en tu navegador. 👆';
-      statusBar.classList.add('show');
-      return;
-    }
     homePage.style.display = 'none';
     var sr2 = document.getElementById('searchResults'); if (sr2) sr2.style.display = 'none';
     frame.classList.add('show');
     loadingBar.className = 'loadingbar on';
-    statusBar.classList.remove('show');
     // Modo compatible: la página se trae por un puente que quita el bloqueo
     // de verse dentro de otra página (así la mayoría de sitios SÍ abren aquí).
     frame.src = PROXY + encodeURIComponent(url);
@@ -576,10 +553,6 @@
     clearTimeout(showFrame._t);
     showFrame._t = setTimeout(function(){
       loadingBar.className = 'loadingbar';
-      if (frame.classList.contains('show')){
-        statusText.textContent = 'Si quedó en blanco, ese sitio tampoco deja verse adentro — toca Abrir fuera.';
-        statusBar.classList.add('show');
-      }
     }, 4500);
   }
 
@@ -707,14 +680,6 @@
     addressInput.value=''; renderTabs(); updateNavButtons(); showHome();
   });
 
-  function openOutside(){
-    var t = activeTab();
-    var url = (t && t.url) ? t.url : normalize(addressInput.value);
-    if (!url){ addressInput.focus(); return; }
-    window.open(url, '_blank', 'noopener');
-  }
-  openOutBtn.addEventListener('click', openOutside);
-  statusOpenBtn.addEventListener('click', openOutside);
 
   copyLinkBtn.addEventListener('click', function(){
     var t = activeTab();
@@ -820,7 +785,6 @@
 <div id="jpanel">
   <div class="jph"><b>JAMES PANEL</b><button id="jpclose" type="button" aria-label="Cerrar">✕</button></div>
   <button class="jpo" id="jpstream" type="button">🎥<span>Modo Stream<small id="jpstreamstate">Apagado — actívalo cuando vayas a streamear</small></span></button>
-  <button class="jpo" id="jpout" type="button">↗️<span>Abrir fuera<small>La página actual en Safari / Chrome</small></span></button>
   <button class="jpo" id="jphome" type="button">🏠<span>Inicio<small>Volver a la portada del navegador</small></span></button>
   <button class="jpo" id="jpcopy" type="button">🔗<span>Copiar link<small>Copia la dirección actual</small></span></button>
 </div>
@@ -849,7 +813,6 @@
   document.addEventListener('visibilitychange',function(){
     if (streamMode && !document.hidden){ veilEl.style.display = 'flex'; }
   });
-  document.getElementById('jpout').addEventListener('click',function(){ panel.classList.remove('open'); var b=document.getElementById('openOutBtn'); if(b) b.click(); });
   document.getElementById('jphome').addEventListener('click',function(){ panel.classList.remove('open'); var b=document.getElementById('homeBtn'); if(b) b.click(); });
   document.getElementById('jpcopy').addEventListener('click',function(){ panel.classList.remove('open'); var b=document.getElementById('copyLinkBtn'); if(b) b.click(); });
 })();
