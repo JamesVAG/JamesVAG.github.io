@@ -424,10 +424,41 @@
         #gameHost .hang-keys button:disabled { opacity: .3; }
         #gameHost .bj-hand { font-size: 34px; letter-spacing: 3px; margin: 4px 0; }
         #gameHost .g-input { width: 100%; box-sizing: border-box; background: #12121a; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 15px; margin: 8px 0; font-family: inherit; }
-        #gameHost .geo-frame { width: 100%; height: 340px; border: 0; border-radius: 12px; background: #0b0c12; display: block; }
-        #gameHost #geoMap { height: 320px; border-radius: 12px; margin: 10px 0; position: relative; z-index: 0; background: #0b0c12; }
+        /* Geo: stage a pantalla completa */
+        #gameStage.geo-full { position: fixed; inset: 0; z-index: 45; background: #0b0c12; overflow: hidden; }
+        #gameStage.geo-full #gameBack { position: absolute; top: 10px; left: 10px; z-index: 1500; margin: 0; background: rgba(13,13,22,.78); color: #fff; border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(4px); }
+        #gameStage.geo-full #gameName { display: none; }
+        #gameStage.geo-full #gameHost { position: absolute; inset: 0; overflow-y: auto; padding: 58px 14px 16px; box-sizing: border-box; }
+        #gameHost .geo-stage { position: absolute; inset: 0; overflow: hidden; background: #0b0c12; }
+        #gameHost .geo-view { position: absolute; inset: 0; }
+        #gameHost .geo-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #0b0c12; display: block; }
+        #gameHost .geo-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8,8,14,.55); color: #fff; font-size: 17px; font-weight: 700; pointer-events: none; z-index: 5; text-align: center; padding: 0 20px; }
+        #gameHost .geo-score { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1400; background: rgba(13,13,22,.78); color: #f5c542; font-weight: 800; font-size: 14px; padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); white-space: nowrap; backdrop-filter: blur(4px); max-width: calc(100vw - 150px); overflow: hidden; text-overflow: ellipsis; }
+        #gameHost .geo-hint { position: absolute; left: 10px; bottom: 64px; z-index: 1400; background: rgba(13,13,22,.72); color: #fff; font-size: 12.5px; padding: 6px 10px; border-radius: 999px; pointer-events: none; max-width: 62vw; }
+        #gameHost .geo-viewhint { position: absolute; left: 10px; bottom: 10px; z-index: 4; background: rgba(13,13,22,.6); color: #ddd; font-size: 12px; padding: 5px 9px; border-radius: 999px; pointer-events: none; max-width: 55vw; }
+        #gameHost .geo-swap { position: absolute; left: 10px; bottom: 108px; z-index: 1400; background: rgba(13,13,22,.82); color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 9px 13px; font-size: 14px; font-weight: 700; cursor: pointer; }
+        #gameHost .geo-swap:disabled { opacity: .45; }
+        /* Minimapa tipo Free Fire */
+        #gameHost .geo-mapbox { position: absolute; right: 10px; bottom: 10px; z-index: 1300; width: 200px; display: flex; flex-direction: column; gap: 8px; }
+        #gameHost #geoMapWrap { position: relative; width: 100%; height: 140px; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.55); border: 2px solid rgba(245,197,66,.75); background: #0b0c12; transition: width .35s ease, height .35s ease; cursor: pointer; }
+        #gameHost #geoMapWrap.big { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 880px); height: 70dvh; z-index: 1450; cursor: default; }
+        #gameHost #geoMap { width: 100%; height: 100%; position: relative; z-index: 0; background: #0b0c12; }
+        #gameHost .geo-maptag { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1100; background: rgba(13,13,22,.72); color: #fff; font-size: 11.5px; font-weight: 700; text-align: center; padding: 4px 2px; pointer-events: none; }
+        #gameHost #geoMapWrap.big .geo-maptag { display: none; }
+        #gameHost .geo-shrink { position: absolute; top: 6px; right: 6px; z-index: 1200; display: none; background: rgba(13,13,22,.85); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 7px 11px; font-size: 13px; font-weight: 800; cursor: pointer; }
+        #gameHost #geoMapWrap.big .geo-shrink { display: block; }
+        #gameHost #geoGuess { width: 100%; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+        #gameHost #geoGuess:disabled { opacity: .5; }
+        #gameHost .geo-panel { position: absolute; top: 56px; left: 10px; right: 10px; z-index: 1420; background: rgba(11,11,19,.9); border: 1px solid rgba(245,197,66,.5); border-radius: 14px; padding: 12px 14px; max-height: 42dvh; overflow-y: auto; backdrop-filter: blur(4px); }
+        #gameHost .geo-panel .g-msg { margin: 0; }
         #gameHost .geo-pin-wrap { background: none; border: none; }
         #gameHost .geo-pin { font-size: 26px; line-height: 32px; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+        @media (max-width: 640px) {
+          #gameHost .geo-mapbox { width: 150px; }
+          #gameHost #geoMapWrap { height: 110px; }
+          #gameHost #geoMapWrap.big { height: 68dvh; }
+          #gameHost .geo-score { font-size: 12.5px; padding: 6px 10px; }
+        }
         #duelBanner { background: #1b1c29; border: 1px solid #f5c542; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; }
         #duelBanner .g-msg { font-size: 15px; }
         #duelBanner .g-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -758,6 +789,7 @@
   function openGame(name) {
     stopAll();
     host.innerHTML = '';
+    stage.classList.remove('geo-full');
     grid.style.display = 'none';
     stage.style.display = '';
     nameEl.textContent = NAMES[name] || name;
@@ -767,6 +799,7 @@
   function closeGame() {
     stopAll();
     host.innerHTML = '';
+    stage.classList.remove('geo-full');
     stage.style.display = 'none';
     grid.style.display = '';
   }
@@ -1270,17 +1303,47 @@
   }
   function geoPin(emoji) { return L.divIcon({ className: 'geo-pin-wrap', html: '<div class="geo-pin">' + emoji + '</div>', iconSize: [32, 32], iconAnchor: [16, 16] }); }
 
-  function geoFetchImage(place, widened, cb) {
+  function geoFetchCands(place, widened, cb) {
     var dLat = widened ? 0.009 : 0.003, dLng = widened ? 0.012 : 0.004;
     var bbox = (place[1] - dLng) + ',' + (place[0] - dLat) + ',' + (place[1] + dLng) + ',' + (place[0] + dLat);
-    fetch('https://graph.mapillary.com/images?access_token=' + encodeURIComponent(GEO_TOKEN) + '&fields=id&bbox=' + bbox + '&limit=20')
+    fetch('https://graph.mapillary.com/images?access_token=' + encodeURIComponent(GEO_TOKEN) + '&fields=id,sequence,is_pano&bbox=' + bbox + '&limit=50')
       .then(function (r) { return r.json(); })
       .then(function (j) {
         var arr = (j && j.data) || [];
-        if (!arr.length) { if (!widened) geoFetchImage(place, true, cb); else cb(null); return; }
-        cb(arr[Math.floor(Math.random() * arr.length)].id);
+        var withSeq = [], without = [];
+        arr.forEach(function (x) { if (!x || x.id == null) return; if (x.sequence) withSeq.push(x.id); else without.push(x.id); });
+        cb({ seq: shuffle(withSeq), any: shuffle(withSeq.concat(without)) });
       })
-      .catch(function () { if (!widened) geoFetchImage(place, true, cb); else cb(null); });
+      .catch(function () { cb({ seq: [], any: [] }); });
+  }
+  /* Devuelve hasta 10 ids candidatos del lugar, TODOS de sequence
+     (navegables: se puede caminar con las flechas del visor). Sin
+     sequence no sirve — se descarta. Si ni ampliando el bbox x3 hay
+     imágenes con sequence, cb(null) y la ronda salta a otro lugar. */
+  function geoFetchImage(place, cb) {
+    geoFetchCands(place, false, function (small) {
+      if (small.seq.length) { cb(small.seq.slice(0, 10)); return; }
+      geoFetchCands(place, true, function (wide) {
+        if (wide.seq.length) { cb(wide.seq.slice(0, 10)); return; }
+        cb(null);
+      });
+    });
+  }
+  function geoShowImg(S, overlayMs) {
+    var fw = document.getElementById('geoFrame');
+    if (!fw || !S.imgs || !S.imgs.length) return;
+    var id = S.imgs[S.imgIdx];
+    var ifr = fw.querySelector('iframe.geo-frame');
+    var src = 'https://www.mapillary.com/embed?map_style=Mapillary%20light&image_key=' + id + '&style=photo';
+    if (ifr) ifr.src = src;
+    else fw.insertAdjacentHTML('afterbegin', '<iframe class="geo-frame" src="' + src + '" allowfullscreen></iframe>');
+    var ov = document.getElementById('geoLoading');
+    if (ov) {
+      ov.style.display = 'flex';
+      later(function () { var o = document.getElementById('geoLoading'); if (o) o.style.display = 'none'; }, overlayMs || 4000);
+    }
+    var sw = document.getElementById('geoSwap');
+    if (sw) sw.disabled = S.imgs.length < 2;
   }
 
   function geoRandomLocs() {
@@ -1289,6 +1352,7 @@
   }
 
   GAMES.geo = function () {
+    stage.classList.add('geo-full');
     var pending = geoStartMode; geoStartMode = null;
     if (pending && pending.type === 'answer') { geoNameScreen('answer', pending.data); return; }
     host.innerHTML = '';
@@ -1328,56 +1392,79 @@
   function geoRound(S) {
     var myRound = S.round, myLoc = S.locs[S.round];
     var place = GEO_PLACES[myLoc];
+    S.imgs = null; S.imgIdx = 0;
     host.innerHTML = '';
     var scoreLine = S.mode === 'solo' ? ('Total: ' + S.total + ' pts')
       : S.mode === 'create' ? ('Tus puntos: ' + S.total + ' pts')
       : ('Tú ' + S.myDuel + ' · ' + geoEsc(S.reto.n) + ' ' + S.rivalDuel);
     host.appendChild(el(
-      '<div class="g-score">Ronda ' + (S.round + 1) + '/5 · <span>' + scoreLine + '</span></div>' +
-      '<div id="geoFrame"><div class="g-msg">📸 Cargando la calle…</div></div>' +
-      '<div id="geoMap"></div>' +
-      '<div class="g-msg" id="geoHint">Toca el mapa pa\' poner tu pin 📍</div>' +
-      '<div class="g-row"><button class="g-btn gold" id="geoGuess" disabled>✅ Adivinar</button></div>' +
-      '<div class="g-msg" id="geoResult"></div>' +
-      '<div class="g-row" id="geoNextRow"></div>'
+      '<div class="geo-stage">' +
+      '<div class="geo-view" id="geoFrame"><div class="geo-loading" id="geoLoading">📸 Cargando la calle…</div><div class="geo-viewhint" id="geoViewHint" style="display:none">🚶 Camina con las flechas del visor · Arrastra pa\' mirar alrededor</div></div>' +
+      '<div class="geo-score">Ronda ' + (S.round + 1) + '/5 · <span>' + scoreLine + '</span></div>' +
+      '<button class="geo-swap" id="geoSwap" type="button" disabled>🔄 Otra foto</button>' +
+      '<div class="geo-hint" id="geoHint">Toca el minimapa 🗺️ pa\' agrandarlo y poner tu pin 📍</div>' +
+      '<div class="geo-mapbox"><div id="geoMapWrap"><div id="geoMap"></div><div class="geo-maptag">🗺️ Toca pa\' agrandar</div><button class="geo-shrink" id="geoShrink" type="button">🔽 Encoger</button></div>' +
+      '<button class="g-btn gold" id="geoGuess" disabled>✅ Adivinar</button></div>' +
+      '<div class="geo-panel" id="geoPanel" style="display:none"><div class="g-msg" id="geoResult"></div></div>' +
+      '</div>'
     ));
-    geoFetchImage(place, false, function (imgId) {
+    document.getElementById('geoSwap').addEventListener('click', function () {
+      if (!S.imgs || S.imgs.length < 2) return;
+      S.imgIdx = (S.imgIdx + 1) % S.imgs.length;
+      geoShowImg(S, 2500);
+    });
+    geoFetchImage(place, function (cands) {
       if (S.round !== myRound || S.locs[S.round] !== myLoc) return;
       var fw = document.getElementById('geoFrame');
       if (!fw) return;
-      if (imgId) {
-        fw.innerHTML = '<iframe class="geo-frame" src="https://www.mapillary.com/embed?map_style=Mapillary%20light&image_key=' + imgId + '&style=photo" allowfullscreen></iframe>' +
-          '<div class="g-msg" style="font-size:12.5px">Arrastra pa\' mirar alrededor y usa las flechas del visor pa\' avanzar por la calle 🚶</div>';
+      if (cands && cands.length) {
+        S.imgs = cands; S.imgIdx = 0;
+        var vh = document.getElementById('geoViewHint');
+        if (vh) vh.style.display = '';
+        geoShowImg(S, 4000);
       } else if (S.mode !== 'answer') {
         var used = {}; S.locs.forEach(function (x) { used[x] = 1; });
         var alt = -1;
         for (var i = 0; i < GEO_PLACES.length; i++) if (!used[i]) { alt = i; break; }
         if (alt >= 0) { S.locs[S.round] = alt; geoRound(S); return; }
-        fw.innerHTML = '<div class="g-msg">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
+        fw.innerHTML = '<div class="geo-loading">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
       } else {
-        fw.innerHTML = '<div class="g-msg">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
+        fw.innerHTML = '<div class="geo-loading">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
       }
     });
     geoLoadLeaflet(function () {
       if (S.round !== myRound || S.locs[S.round] !== myLoc) return;
       var mapEl = document.getElementById('geoMap');
       if (!mapEl || !window.L || mapEl._leaflet_id) return;
-      var map = L.map('geoMap').setView([22, 0], 2);
+      var wrap = document.getElementById('geoMapWrap');
+      var map = L.map('geoMap', { zoomControl: false }).setView([22, 0], 2);
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
       later(function () { try { map.invalidateSize(); } catch (e) {} }, 250);
       var guess = null, guessMarker = null, locked = false;
+      function setBig(big) {
+        if (!wrap) return;
+        if (wrap.classList.contains('big') === big) { try { map.invalidateSize(); } catch (e) {} return; }
+        wrap.classList.toggle('big', big);
+        try { map.invalidateSize(); } catch (e) {}
+        later(function () { try { map.invalidateSize(); } catch (e) {} }, 380);
+      }
+      var shrinkBtn = document.getElementById('geoShrink');
+      if (shrinkBtn) shrinkBtn.addEventListener('click', function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); setBig(false); });
       map.on('click', function (e) {
         if (locked) return;
+        if (wrap && !wrap.classList.contains('big')) { setBig(true); return; }
         guess = [e.latlng.lat, e.latlng.lng];
         if (guessMarker) guessMarker.setLatLng(e.latlng);
         else guessMarker = L.marker(e.latlng, { icon: geoPin('📍') }).addTo(map);
         var gb = document.getElementById('geoGuess');
         if (gb) gb.disabled = false;
       });
-      document.getElementById('geoGuess').addEventListener('click', function () {
-        if (locked || !guess) return;
+      var guessBtn = document.getElementById('geoGuess');
+      if (!guessBtn) return;
+      guessBtn.addEventListener('click', function () {
+        if (locked) { S.round++; if (S.round >= 5) geoEnd(S); else geoRound(S); return; }
+        if (!guess) return;
         locked = true;
-        this.disabled = true;
         var dist = geoHavKm(guess[0], guess[1], place[0], place[1]);
         var pts = geoPts(dist);
         S.myPins.push([Math.round(guess[0] * 10000) / 10000, Math.round(guess[1] * 10000) / 10000]);
@@ -1398,16 +1485,19 @@
           msg += '<br>🟣 ' + geoEsc(S.reto.n) + ': a ' + geoFmtDist(rDist) + ' (' + rPts + ' pts)<br>' + roundTxt + '<br><b>Marcador: Tú ' + S.myDuel + ' · ' + geoEsc(S.reto.n) + ' ' + S.rivalDuel + '</b>';
         }
         L.polyline([[guess[0], guess[1]], [place[0], place[1]]], { color: '#f5c542', weight: 2, dashArray: '6 6' }).addTo(map);
-        map.fitBounds(L.latLngBounds(ptsArr).pad(0.25));
+        setBig(true);
+        var bounds = L.latLngBounds(ptsArr).pad(0.25);
+        try { map.fitBounds(bounds); } catch (e) {}
+        later(function () { try { map.invalidateSize(); map.fitBounds(bounds); } catch (e) {} }, 420);
+        var panel = document.getElementById('geoPanel');
+        if (panel) panel.style.display = '';
         document.getElementById('geoResult').innerHTML = msg;
-        document.getElementById('geoHint').textContent = '';
-        var last = S.round >= 4;
-        document.getElementById('geoNextRow').innerHTML = '<button class="g-btn gold" id="geoNext">' + (last ? '🏁 Ver resultado' : 'Siguiente ronda ➡') + '</button>';
-        document.getElementById('geoNext').addEventListener('click', function () {
-          S.round++;
-          if (S.round >= 5) geoEnd(S); else geoRound(S);
-        });
-        window.scrollTo(0, 0);
+        var hint = document.getElementById('geoHint');
+        if (hint) hint.style.display = 'none';
+        var sw = document.getElementById('geoSwap');
+        if (sw) sw.disabled = true;
+        guessBtn.textContent = (S.round >= 4) ? '🏁 Ver resultado' : 'Siguiente ronda ➡';
+        guessBtn.disabled = false;
       });
     });
   }
