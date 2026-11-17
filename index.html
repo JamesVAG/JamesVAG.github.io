@@ -258,7 +258,6 @@
           <form class="urlbar" id="urlForm">
             <input id="urlInput" type="text" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="Pega un link… ej: wikipedia.org" aria-label="Dirección web" />
             <button class="btn gold" type="submit">Ir</button>
-            <button class="btn" type="button" id="openOutside">Abrir fuera ↗</button>
           </form>
           <div class="chips" id="quickChips">
             <button class="chip" data-url="https://www.wikipedia.org">Wikipedia</button>
@@ -273,7 +272,7 @@
             <div class="frame-empty" id="frameEmpty">Aquí se abre la página que pidas 👆</div>
             <iframe id="pageFrame" title="Página abierta" style="display:none" referrerpolicy="no-referrer"></iframe>
           </div>
-          <p style="margin-top:0.7rem">Algunos sitios (Google, YouTube, Instagram, los bancos) <strong>no dejan verse dentro de otra página</strong> — si uno sale en blanco, toca <strong>Abrir fuera ↗</strong> y se abre normal en tu navegador.</p>
+          <p style="margin-top:0.7rem">Algunos sitios (Google, YouTube, Instagram, los bancos) <strong>no dejan verse dentro de otra página</strong> y pueden salir en blanco — es regla de esos sitios.</p>
         </div>
       </section>
 
@@ -402,17 +401,11 @@
           if (!u) return;
           currentUrl = u;
           urlInput.value = u;
-          // Sitios que jamás se ven dentro de otra página: se abren fuera solos.
-          if (isNeverEmbed(u)) {
-            window.open(u, '_blank', 'noopener');
-            browserStatus.textContent = 'Ese sitio no permite verse adentro — te lo abrí fuera, en tu navegador. 👆';
-            return;
-          }
           frameEmpty.style.display = 'none';
           frame.style.display = 'block';
           // Modo compatible: puente que quita el bloqueo de verse adentro.
           frame.src = PROXY + encodeURIComponent(u);
-          browserStatus.textContent = 'Abriendo ' + u + ' … si sale en blanco, toca «Abrir fuera ↗».';
+          browserStatus.textContent = 'Abriendo ' + u + ' …';
         }
         document.getElementById('urlForm').addEventListener('submit', function (e) {
           e.preventDefault();
@@ -421,11 +414,6 @@
         document.getElementById('quickChips').addEventListener('click', function (e) {
           var b = e.target.closest('[data-url]');
           if (b) loadUrl(b.getAttribute('data-url'));
-        });
-        document.getElementById('openOutside').addEventListener('click', function () {
-          var u = currentUrl || normalize(urlInput.value);
-          if (u) window.open(u, '_blank', 'noopener');
-          else browserStatus.textContent = 'Primero escribe o pega un link.';
         });
 
         /* ----- Vault (in-memory for this session) ----- */
