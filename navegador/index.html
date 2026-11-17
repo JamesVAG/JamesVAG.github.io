@@ -369,7 +369,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/></svg>
           </div>
           <h2>¿Qué quieres <em>abrir</em>, Boss?</h2>
-          <p>Pega cualquier link arriba — o escribe una palabra y te lo busco en Google. Muchos sitios se ven aquí mismo; los que bloquean la vista interna se abren con “Abrir fuera”.</p>
+          <p>Pega cualquier link arriba — o escribe una palabra y te la busco aquí adentro. Muchos sitios se ven aquí mismo; los que bloquean la vista interna se abren con “Abrir fuera”.</p>
           <form class="bigsearch" id="bigSearchForm">
             <input id="bigSearchInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ej: youtube.com · o busca “resultados NBA hoy”" aria-label="Buscar o abrir link" />
             <button type="submit">Buscar / Abrir</button>
@@ -391,7 +391,7 @@
           <h3>Cómo se usa</h3>
           <ol>
             <li><b>Pega el link</b> en la barra de arriba (ej: <b>wikipedia.org</b>) y toca <b>Ir →</b></li>
-            <li>Sin link, <b>escribe palabras</b> y se busca en Google.</li>
+            <li>Sin link, <b>escribe palabras</b> y se busca aquí adentro.</li>
             <li>Usa <b>‹ Atrás</b>, <b>Recargar</b> y las <b>pestañas +</b> como en Safari o Chrome.</li>
             <li>Con <b>Abrir fuera</b> la misma página se abre en tu navegador real.</li>
           </ol>
@@ -436,7 +436,7 @@
   var clearHistBtn = document.getElementById('clearHistBtn');
 
   var QUICK = [
-    { name:'Google', sub:'Buscador', url:'https://www.google.com', color:'#4285F4', letter:'G' },
+    { name:'Buscador', sub:'Busca adentro', url:'https://html.duckduckgo.com/html/', color:'#DE5833', letter:'🔍' },
     { name:'YouTube', sub:'Videos', url:'https://www.youtube.com', color:'#FF0000', letter:'▶' },
     { name:'Wikipedia', sub:'Se ve aquí ✓', url:'https://es.wikipedia.org', color:'#111111', letter:'W' },
     { name:'Instagram', sub:'Abrir fuera', url:'https://www.instagram.com', color:'#C13584', letter:'◎' },
@@ -528,7 +528,7 @@
     if (/^https?:\/\//i.test(raw)) return raw;
     if (looksUrl) return 'https://' + raw;
     // Es búsqueda
-    return 'https://www.google.com/search?q=' + encodeURIComponent(raw);
+    return 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(raw);
   }
 
   function showHome(){
@@ -538,7 +538,7 @@
     loadingBar.className = 'loadingbar';
   }
   var PROXY = 'https://api.allorigins.win/raw?url=';
-  var NEVER_HOSTS = ['google','youtube','youtu','instagram','facebook','fb','tiktok','twitter','x','whatsapp','netflix','snapchat','pinterest','linkedin','twitch','spotify'];
+  var NEVER_HOSTS = ['google','youtube','youtu','instagram','facebook','fb','tiktok','twitter','x','whatsapp','netflix','snapchat','pinterest','linkedin','twitch','spotify','openai','chatgpt','claude','anthropic','gemini','perplexity'];
   function isNeverEmbed(url){
     var h = hostOf(url);
     var parts = h.split('.');
@@ -549,6 +549,7 @@
     // Sitios que JAMÁS se pueden ver dentro de otra página (regla de ellos):
     // se abren fuera automáticamente, sin dejar la pantalla en blanco.
     if (isNeverEmbed(url)){
+      clearTimeout(showFrame._t);
       window.open(url, '_blank', 'noopener');
       showHome();
       statusText.textContent = 'Ese sitio no permite verse adentro — te lo abrí fuera, en tu navegador. 👆';
@@ -571,7 +572,10 @@
     clearTimeout(showFrame._t);
     showFrame._t = setTimeout(function(){
       loadingBar.className = 'loadingbar';
-      if (frame.classList.contains('show')) statusBar.classList.add('show');
+      if (frame.classList.contains('show')){
+        statusText.textContent = 'Si quedó en blanco, ese sitio tampoco deja verse adentro — toca Abrir fuera.';
+        statusBar.classList.add('show');
+      }
     }, 4500);
   }
 
