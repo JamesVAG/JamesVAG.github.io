@@ -227,10 +227,10 @@
 
     <div id="gate">
       <div class="gate-title">JAMES</div>
-      <p class="gate-sub">🔒 Sitio protegido — escribe la contraseña pa' entrar</p>
+      <p class="gate-sub" data-i18n="gate_sub">🔒 Sitio protegido — escribe la contraseña pa' entrar</p>
       <form id="gateForm">
-        <input id="gateInput" type="password" autocomplete="off" placeholder="Contraseña" aria-label="Contraseña de entrada" />
-        <button class="btn gold" type="submit">Entrar</button>
+        <input id="gateInput" type="password" autocomplete="off" placeholder="Contraseña" data-i18n-ph="gate_ph" aria-label="Contraseña de entrada" />
+        <button class="btn gold" type="submit" data-i18n="gate_btn">Entrar</button>
       </form>
       <div class="gate-err" id="gateErr"></div>
     </div>
@@ -261,7 +261,7 @@
         <div class="name">JAMES</div>
         <div class="role">Admin Boss 👑</div>
       </div>
-      <button class="blackout-btn" id="streamBtn">🎥 Modo Stream</button>
+      <button class="blackout-btn" id="streamBtn" data-i18n="stream">🎥 Modo Stream</button>
     </header>
 
     <div class="scrim" id="scrim"></div>
@@ -271,25 +271,35 @@
         <button class="drawer-close" id="drawerClose" aria-label="Cerrar menú">✕</button>
       </div>
       <nav>
-        <button class="nav-item active" data-view="panel"><span class="ic">🏠</span> Panel</button>
+        <button class="nav-item active" data-view="panel"><span class="ic">🏠</span> <span data-i18n="nav_panel">Panel</span></button>
         <button class="nav-item" data-view="navegador"><span class="ic">🤖</span> AI Pro Max</button>
-        <button class="nav-item" data-view="boveda"><span class="ic">🔒</span> Bóveda protegida</button>
-        <button class="nav-item" id="navStream"><span class="ic">🎥</span> Modo Stream</button>
+        <button class="nav-item" data-view="boveda"><span class="ic">🔒</span> <span data-i18n="nav_vault">Bóveda protegida</span></button>
+        <button class="nav-item" data-view="juegos"><span class="ic">🎮</span> <span data-i18n="nav_games">Juegos</span></button>
+        <button class="nav-item" id="navStream"><span class="ic">🎥</span> <span data-i18n="nav_stream">Modo Stream</span></button>
       </nav>
-      <div class="foot">Panel de James — Admin Boss.<br />Todo vive en esta página: panel, AI y bóveda en un solo lugar.</div>
+      <div class="foot" style="margin-top:12px">
+        <span data-i18n="lang_label">Idioma / Language</span>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn lang-btn" data-lang="es" style="padding:8px 10px;font-size:13px">🇪🇸 Español</button>
+          <button class="btn lang-btn" data-lang="en" style="padding:8px 10px;font-size:13px">🇺🇸 English</button>
+          <button class="btn lang-btn" data-lang="ht" style="padding:8px 10px;font-size:13px">🇭🇹 Kreyòl</button>
+        </div>
+      </div>
+      <div class="foot" data-i18n="drawer_foot">Panel de James — Admin Boss.<br />Todo vive en esta página: panel, AI y bóveda en un solo lugar.</div>
     </aside>
 
     <main>
       <!-- ===== PANEL ===== -->
       <section class="view active" id="view-panel">
-        <h2 class="view-title">Tu panel, Bro 👑</h2>
+        <h2 class="view-title" data-i18n="panel_title">Tu panel, Bro 👑</h2>
         <div class="menu-grid">
-          <button class="tile" data-goto="navegador"><span class="ic">🤖</span> AI Pro Max <small>Inteligente y ordenada — tarea, textos, cuentas… bien hecho.</small></button>
-          <button class="tile" data-goto="boveda"><span class="ic">🔒</span> Bóveda <small>Guarda un texto y míralo solo manteniendo presionado o una sola vez.</small></button>
+          <button class="tile" data-goto="navegador"><span class="ic">🤖</span> AI Pro Max <small data-i18n="tile_ai_desc">Inteligente y ordenada — tarea, textos, cuentas… bien hecho.</small></button>
+          <button class="tile" data-goto="boveda"><span class="ic">🔒</span> <span data-i18n="tile_vault_name">Bóveda</span> <small data-i18n="tile_vault_desc">Guarda un texto y míralo solo manteniendo presionado o una sola vez.</small></button>
+          <button class="tile" data-goto="juegos"><span class="ic">🎮</span> <span data-i18n="tile_games_name">Juegos</span> <small data-i18n="tile_games_desc">12 juegos dentro de la página y enlaces a juegos online.</small></button>
         </div>
         <div class="card">
-          <h3>🛡️ Protección automática</h3>
-          <p>Al tocar <strong>🎥 Modo Stream</strong>, la página se <strong>bloquea</strong> y pide la contraseña de entrada pa' volver a abrirla.</p>
+          <h3 data-i18n="prot_title">🛡️ Protección automática</h3>
+          <p data-i18n="prot_text">Al tocar <strong>🎥 Modo Stream</strong>, la página se <strong>bloquea</strong> y pide la contraseña de entrada pa' volver a abrirla.</p>
         </div>
       </section>
 
@@ -299,55 +309,119 @@
         <h2 class="view-title">🤖 AI Pro Max</h2>
         <div class="card" id="lockCard">
           <div class="chat-head"><span class="dot" style="background:#e74c3c;box-shadow:0 0 8px #e74c3c"></span> AI Pro Max <small>bloqueado 🔒</small></div>
-          <p style="margin:4px 0 12px;font-size:14.5px;line-height:1.5">Pega tu key pa' desbloquear la AI. La consigues en el bot <strong>@Vanguardia7_bot</strong> — la key empieza a correr cuando se genera.</p>
+          <p style="margin:4px 0 12px;font-size:14.5px;line-height:1.5" data-i18n="lock_text">Pega tu key pa' desbloquear la AI. La consigues en el bot <strong>@Vanguardia7_bot</strong> — la key empieza a correr cuando se genera.</p>
           <form class="urlbar" id="keyForm">
             <input id="keyInput" type="text" autocomplete="off" placeholder="VAG-XXXX-XXXX-XXXX" aria-label="Tu key de AI Pro Max" />
-            <button class="btn gold" type="submit">Activar</button>
+            <button class="btn gold" type="submit" data-i18n="key_btn">Activar</button>
           </form>
-          <div class="status-line" id="keyStatus">Sin key no hay AI 🔒</div>
+          <div class="status-line" id="keyStatus" data-i18n="key_status">Sin key no hay AI 🔒</div>
         </div>
         <div class="card" id="chatCard" style="display:none">
-          <div class="chat-head"><span class="dot"></span> AI Pro Max <small id="keyTime">en línea · responde en tu idioma</small><button type="button" id="keyOut" class="chip" style="margin-left:auto">🔒 Salir</button></div>
+          <div class="chat-head"><span class="dot"></span> AI Pro Max <small id="keyTime" data-i18n="key_time">en línea · responde en tu idioma</small><button type="button" id="keyOut" class="chip" style="margin-left:auto" data-i18n="key_out">🔒 Salir</button></div>
           <div id="chatBox" class="chat-box">
-            <div class="msg ai">👑 Qué lo qué, Boss. Soy tu <strong>AI Pro Max</strong> — pregúntame lo que sea. Tarea, textos, cuentas… te lo entrego <strong>ordenado y bien hecho</strong>.</div>
+            <div class="msg ai" data-i18n="chat_welcome">👑 Qué lo qué, Boss. Soy tu <strong>AI Pro Max</strong> — pregúntame lo que sea. Tarea, textos, cuentas… te lo entrego <strong>ordenado y bien hecho</strong>.</div>
           </div>
           <form class="urlbar" id="chatForm">
-            <input id="chatInput" type="text" autocomplete="off" placeholder="Escribe tu mensaje…" aria-label="Mensaje pa' la AI" />
-            <button class="btn gold" type="submit">Enviar</button>
+            <input id="chatInput" type="text" autocomplete="off" placeholder="Escribe tu mensaje…" data-i18n-ph="chat_ph" aria-label="Mensaje pa' la AI" />
+            <button class="btn gold" type="submit" data-i18n="chat_send">Enviar</button>
           </form>
           <div class="chips" id="chatChips">
-            <button type="button" class="chip" data-fill="Resuelve paso a paso: ">🧮 Resuelve paso a paso</button>
-            <button type="button" class="chip" data-fill="Explícame en orden y simple: ">💡 Explícame</button>
-            <button type="button" class="chip" data-fill="Escribe un texto sobre: ">✍️ Escribe un texto</button>
-            <button type="button" class="chip" data-fill="Traduce al inglés: ">🌎 Traduce</button>
+            <button type="button" class="chip" data-fill="Resuelve paso a paso: " data-i18n="chip1" data-i18n-fill="chip1_fill">🧮 Resuelve paso a paso</button>
+            <button type="button" class="chip" data-fill="Explícame en orden y simple: " data-i18n="chip2" data-i18n-fill="chip2_fill">💡 Explícame</button>
+            <button type="button" class="chip" data-fill="Escribe un texto sobre: " data-i18n="chip3" data-i18n-fill="chip3_fill">✍️ Escribe un texto</button>
+            <button type="button" class="chip" data-fill="Traduce al inglés: " data-i18n="chip4" data-i18n-fill="chip4_fill">🌎 Traduce</button>
           </div>
-          <div class="status-line" id="chatStatus">AI Pro Max — inteligente, precisa y ordenada.</div>
+          <div class="status-line" id="chatStatus" data-i18n="chat_status">AI Pro Max — inteligente, precisa y ordenada.</div>
         </div>
       </section>
 
       <!-- ===== BÓVEDA ===== -->
       <section class="view" id="view-boveda">
-        <h2 class="view-title">🔒 Bóveda protegida</h2>
+        <h2 class="view-title" data-i18n="vault_title">🔒 Bóveda protegida</h2>
         <div class="card">
-          <h3>Escribe lo que quieres guardar</h3>
-          <textarea id="vaultText" placeholder="Escribe aquí tu texto privado…"></textarea>
+          <h3 data-i18n="vault_save_title">Escribe lo que quieres guardar</h3>
+          <textarea id="vaultText" placeholder="Escribe aquí tu texto privado…" data-i18n-ph="vault_ph"></textarea>
           <div class="row">
-            <button class="btn gold" id="vaultSave">Guardar en la bóveda</button>
-            <button class="btn danger" id="vaultWipe">Borrar todo</button>
+            <button class="btn gold" id="vaultSave" data-i18n="vault_save">Guardar en la bóveda</button>
+            <button class="btn danger" id="vaultWipe" data-i18n="vault_wipe">Borrar todo</button>
           </div>
-          <div class="status-line" id="vaultStatus">La bóveda está vacía.</div>
+          <div class="status-line" id="vaultStatus" data-i18n="vault_status">La bóveda está vacía.</div>
         </div>
         <div class="card">
-          <h3>Ver el contenido</h3>
-          <p><strong>Mantén presionado</strong> el botón dorado pa' verlo — al soltar, se tapa. O usa <strong>Ver una vez</strong>: se muestra 30 segundos y se borra solo.</p>
+          <h3 data-i18n="vault_view_title">Ver el contenido</h3>
+          <p data-i18n="vault_view_text"><strong>Mantén presionado</strong> el botón dorado pa' verlo — al soltar, se tapa. O usa <strong>Ver una vez</strong>: se muestra 30 segundos y se borra solo.</p>
           <div class="row">
-            <button class="btn gold" id="holdView">👁️ Mantener pa' ver</button>
-            <button class="btn" id="onceView">Ver una vez (30 s)</button>
+            <button class="btn gold" id="holdView" data-i18n="vault_hold">👁️ Mantener pa' ver</button>
+            <button class="btn" id="onceView" data-i18n="vault_once">Ver una vez (30 s)</button>
           </div>
           <div class="secret-box" id="secretBox"></div>
           <div class="status-line" id="onceStatus"></div>
         </div>
       </section>
+
+      <!-- ===== JUEGOS ===== -->
+      <section class="view" id="view-juegos">
+        <h2 class="view-title" data-i18n="games_title">🎮 Juegos</h2>
+        <div id="gamesGrid">
+          <p style="color:var(--muted);font-size:14px;margin:0 0 12px" data-i18n="games_sub">Juegos dentro de la página — no necesitan internet.</p>
+          <div class="links-grid">
+            <button class="link-card game-card" data-game="snake"><span class="ic">🐍</span> <span data-i18n="g_snake">Serpiente</span></button>
+            <button class="link-card game-card" data-game="g2048"><span class="ic">🔢</span> <span>2048</span></button>
+            <button class="link-card game-card" data-game="memory"><span class="ic">🃏</span> <span data-i18n="g_memory">Memoria</span></button>
+            <button class="link-card game-card" data-game="mines"><span class="ic">💣</span> <span data-i18n="g_mines">Buscaminas</span></button>
+            <button class="link-card game-card" data-game="ttt"><span class="ic">❌</span> <span data-i18n="g_ttt">Tres en raya</span></button>
+            <button class="link-card game-card" data-game="simon"><span class="ic">🎨</span> <span data-i18n="g_simon">Simon dice</span></button>
+            <button class="link-card game-card" data-game="breakout"><span class="ic">🧱</span> <span data-i18n="g_breakout">Rompe bloques</span></button>
+            <button class="link-card game-card" data-game="flappy"><span class="ic">🐤</span> <span>Flappy</span></button>
+            <button class="link-card game-card" data-game="hangman"><span class="ic">🔤</span> <span data-i18n="g_hangman">Ahorcado</span></button>
+            <button class="link-card game-card" data-game="trivia"><span class="ic">❓</span> <span>Trivia</span></button>
+            <button class="link-card game-card" data-game="rps"><span class="ic">✂️</span> <span data-i18n="g_rps">Piedra, papel o tijera</span></button>
+            <button class="link-card game-card" data-game="blackjack"><span class="ic">🂡</span> <span>Blackjack 21</span></button>
+          </div>
+          <h3 style="margin:22px 0 10px" data-i18n="games_online">🌐 Juegos online</h3>
+          <div class="links-grid">
+            <a class="link-card" href="https://poki.com" target="_blank" rel="noopener"><span class="ic">🎮</span> Poki <small>poki.com</small></a>
+            <a class="link-card" href="https://www.crazygames.com" target="_blank" rel="noopener"><span class="ic">🕹️</span> CrazyGames <small>crazygames.com</small></a>
+            <a class="link-card" href="https://www.minijuegos.com" target="_blank" rel="noopener"><span class="ic">👾</span> Minijuegos <small>minijuegos.com</small></a>
+            <a class="link-card" href="https://www.y8.com" target="_blank" rel="noopener"><span class="ic">🎯</span> Y8 <small>y8.com</small></a>
+            <a class="link-card" href="https://www.kizi.com" target="_blank" rel="noopener"><span class="ic">⭐</span> Kizi <small>kizi.com</small></a>
+            <a class="link-card" href="https://www.friv.com" target="_blank" rel="noopener"><span class="ic">🔥</span> Friv <small>friv.com</small></a>
+          </div>
+        </div>
+        <div id="gameStage" style="display:none">
+          <button class="btn" id="gameBack" style="margin-bottom:12px">← <span data-i18n="games_back">Volver a los juegos</span></button>
+          <h3 id="gameName" style="margin:0 0 10px"></h3>
+          <div id="gameHost"></div>
+        </div>
+      </section>
+      <style>
+        .game-card { text-align: left; font: inherit; cursor: pointer; width: 100%; }
+        #gameHost .g-score { font-weight: 800; font-size: 16px; margin: 8px 0; color: #f5c542; }
+        #gameHost .g-msg { font-size: 15px; margin: 8px 0; min-height: 20px; }
+        #gameHost .g-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+        #gameHost .g-btn { background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        #gameHost .g-btn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
+        #gameHost .g-pad { display: grid; grid-template-columns: repeat(3, 56px); gap: 6px; justify-content: center; margin: 10px 0; }
+        #gameHost .g-pad button { height: 48px; font-size: 20px; background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; cursor: pointer; }
+        #gameHost canvas { background: #0b0c12; border: 1px solid #2c2d3d; border-radius: 12px; display: block; margin: 0 auto; max-width: 100%; touch-action: none; }
+        #gameHost .mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 340px; margin: 0 auto; }
+        #gameHost .mem-card { height: 64px; font-size: 30px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 10px; cursor: pointer; color: #fff; }
+        #gameHost .mine-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; max-width: 340px; margin: 0 auto; }
+        #gameHost .mine-cell { height: 38px; font-size: 17px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 7px; cursor: pointer; color: #fff; font-weight: 800; padding: 0; }
+        #gameHost .mine-cell.open { background: #0e0f16; }
+        #gameHost .ttt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 300px; margin: 0 auto; }
+        #gameHost .ttt-cell { height: 84px; font-size: 38px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 12px; cursor: pointer; color: #fff; }
+        #gameHost .g2048-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; max-width: 320px; margin: 0 auto; background: #14151f; padding: 7px; border-radius: 12px; }
+        #gameHost .g2048-cell { height: 66px; display: grid; place-items: center; font-size: 21px; font-weight: 900; border-radius: 8px; background: #1e1f2b; color: #fff; }
+        #gameHost .simon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 280px; margin: 0 auto; }
+        #gameHost .simon-pad { height: 110px; border-radius: 16px; border: none; cursor: pointer; opacity: .45; }
+        #gameHost .simon-pad.lit { opacity: 1; }
+        #gameHost .hang-word { font-size: 30px; letter-spacing: 6px; font-weight: 900; text-align: center; margin: 12px 0; }
+        #gameHost .hang-keys { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; max-width: 360px; margin: 0 auto; }
+        #gameHost .hang-keys button { width: 38px; height: 38px; font-size: 15px; font-weight: 800; background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 8px; cursor: pointer; }
+        #gameHost .hang-keys button:disabled { opacity: .3; }
+        #gameHost .bj-hand { font-size: 34px; letter-spacing: 3px; margin: 4px 0; }
+      </style>
 
     </main>
 
@@ -653,5 +727,625 @@
 </style>
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script>
+/* ===== JUEGOS (offline, dentro de la página) ===== */
+(function () {
+  var host = document.getElementById('gameHost');
+  var stage = document.getElementById('gameStage');
+  var grid = document.getElementById('gamesGrid');
+  var nameEl = document.getElementById('gameName');
+  var timers = [];
+  function every(fn, ms) { var id = setInterval(fn, ms); timers.push(id); return id; }
+  function later(fn, ms) { var id = setTimeout(fn, ms); timers.push(id); return id; }
+  function stopAll() { timers.forEach(function (id) { clearInterval(id); clearTimeout(id); }); timers = []; }
+  function el(html) { var d = document.createElement('div'); d.innerHTML = html; return d; }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  var NAMES = { snake: '🐍 Serpiente', g2048: '🔢 2048', memory: '🃏 Memoria', mines: '💣 Buscaminas', ttt: '❌ Tres en raya', simon: '🎨 Simon dice', breakout: '🧱 Rompe bloques', flappy: '🐤 Flappy', hangman: '🔤 Ahorcado', trivia: '❓ Trivia', rps: '✂️ Piedra, papel o tijera', blackjack: '🂡 Blackjack 21' };
+
+  function openGame(name) {
+    stopAll();
+    host.innerHTML = '';
+    grid.style.display = 'none';
+    stage.style.display = '';
+    nameEl.textContent = NAMES[name] || name;
+    GAMES[name]();
+    window.scrollTo(0, 0);
+  }
+  function closeGame() {
+    stopAll();
+    host.innerHTML = '';
+    stage.style.display = 'none';
+    grid.style.display = '';
+  }
+  document.querySelectorAll('.game-card').forEach(function (b) {
+    b.addEventListener('click', function () { openGame(b.getAttribute('data-game')); });
+  });
+  document.getElementById('gameBack').addEventListener('click', closeGame);
+
+  var GAMES = {};
+
+  /* ---------- Serpiente ---------- */
+  GAMES.snake = function () {
+    host.appendChild(el('<div class="g-score">Puntos: <span id="snScore">0</span></div><canvas id="snCv" width="300" height="300"></canvas><div class="g-pad"><span></span><button data-d="up">▲</button><span></span><button data-d="left">◀</button><button data-d="down">▼</button><button data-d="right">▶</button></div><div class="g-row"><button class="g-btn gold" id="snStart">▶ Jugar</button></div><div class="g-msg" id="snMsg"></div>'));
+    var cv = document.getElementById('snCv'), ctx = cv.getContext('2d');
+    var N = 15, S = 20, snake, dir, food, score, alive = false;
+    function placeFood() { food = { x: Math.floor(Math.random() * N), y: Math.floor(Math.random() * N) }; }
+    function reset() { snake = [{ x: 7, y: 7 }]; dir = { x: 1, y: 0 }; score = 0; document.getElementById('snScore').textContent = '0'; placeFood(); draw(); }
+    function draw() {
+      ctx.fillStyle = '#0b0c12'; ctx.fillRect(0, 0, 300, 300);
+      ctx.fillStyle = '#e74c3c'; ctx.fillRect(food.x * S + 2, food.y * S + 2, S - 4, S - 4);
+      ctx.fillStyle = '#2ecc71';
+      snake.forEach(function (p) { ctx.fillRect(p.x * S + 1, p.y * S + 1, S - 2, S - 2); });
+    }
+    function step() {
+      if (!alive) return;
+      var h = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+      if (h.x < 0 || h.y < 0 || h.x >= N || h.y >= N || snake.some(function (p) { return p.x === h.x && p.y === h.y; })) {
+        alive = false; document.getElementById('snMsg').textContent = '💀 Fin del juego — ' + score + ' puntos'; return;
+      }
+      snake.unshift(h);
+      if (h.x === food.x && h.y === food.y) { score += 10; document.getElementById('snScore').textContent = score; placeFood(); } else { snake.pop(); }
+      draw();
+    }
+    host.querySelectorAll('[data-d]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var d = b.getAttribute('data-d');
+        if (d === 'up' && dir.y !== 1) dir = { x: 0, y: -1 };
+        if (d === 'down' && dir.y !== -1) dir = { x: 0, y: 1 };
+        if (d === 'left' && dir.x !== 1) dir = { x: -1, y: 0 };
+        if (d === 'right' && dir.x !== -1) dir = { x: 1, y: 0 };
+      });
+    });
+    document.getElementById('snStart').addEventListener('click', function () { reset(); alive = true; document.getElementById('snMsg').textContent = ''; });
+    reset();
+    every(step, 150);
+  };
+
+  /* ---------- 2048 ---------- */
+  GAMES.g2048 = function () {
+    host.appendChild(el('<div class="g-score">Puntos: <span id="g2Score">0</span></div><div class="g2048-grid" id="g2Grid"></div><div class="g-pad"><span></span><button data-m="up">▲</button><span></span><button data-m="left">◀</button><button data-m="down">▼</button><button data-m="right">▶</button></div><div class="g-row"><button class="g-btn gold" id="g2New">↻ Nuevo juego</button></div><div class="g-msg" id="g2Msg"></div>'));
+    var gridEl = document.getElementById('g2Grid'), b, score;
+    var COLORS = { 2: '#3a3f58', 4: '#4a548a', 8: '#e67e22', 16: '#e25822', 32: '#e74c3c', 64: '#c0392b', 128: '#f1c40f', 256: '#d4ac0d', 512: '#2ecc71', 1024: '#27ae60', 2048: '#f5c542' };
+    function addTile() { var e = []; b.forEach(function (v, i) { if (!v) e.push(i); }); if (e.length) b[e[Math.floor(Math.random() * e.length)]] = Math.random() < 0.9 ? 2 : 4; }
+    function draw() {
+      gridEl.innerHTML = '';
+      b.forEach(function (v) { var d = document.createElement('div'); d.className = 'g2048-cell'; d.textContent = v || ''; d.style.background = v ? (COLORS[v] || '#8e44ad') : '#1e1f2b'; if (v >= 128) d.style.color = '#111'; gridEl.appendChild(d); });
+      document.getElementById('g2Score').textContent = score;
+    }
+    function slide(row) {
+      var a = row.filter(function (v) { return v; });
+      for (var i = 0; i < a.length - 1; i++) { if (a[i] === a[i + 1]) { a[i] *= 2; score += a[i]; a.splice(i + 1, 1); } }
+      while (a.length < 4) a.push(0);
+      return a;
+    }
+    function move(dir) {
+      var before = b.join(','), nb = b.slice();
+      for (var k = 0; k < 4; k++) {
+        var line;
+        if (dir === 'left') line = [b[k * 4], b[k * 4 + 1], b[k * 4 + 2], b[k * 4 + 3]];
+        if (dir === 'right') line = [b[k * 4 + 3], b[k * 4 + 2], b[k * 4 + 1], b[k * 4]];
+        if (dir === 'up') line = [b[k], b[k + 4], b[k + 8], b[k + 12]];
+        if (dir === 'down') line = [b[k + 12], b[k + 8], b[k + 4], b[k]];
+        var s = slide(line);
+        for (var j = 0; j < 4; j++) {
+          if (dir === 'left') nb[k * 4 + j] = s[j];
+          if (dir === 'right') nb[k * 4 + 3 - j] = s[j];
+          if (dir === 'up') nb[j * 4 + k] = s[j];
+          if (dir === 'down') nb[(3 - j) * 4 + k] = s[j];
+        }
+      }
+      b = nb;
+      if (b.join(',') !== before) { addTile(); draw(); checkEnd(); }
+    }
+    function checkEnd() {
+      if (b.some(function (v) { return v === 2048; })) { document.getElementById('g2Msg').textContent = '🏆 ¡Llegaste a 2048! Sigue si quieres.'; return; }
+      if (b.every(function (v) { return v; })) {
+        var can = false;
+        for (var i = 0; i < 16; i++) { if (i % 4 < 3 && b[i] === b[i + 1]) can = true; if (i < 12 && b[i] === b[i + 4]) can = true; }
+        if (!can) document.getElementById('g2Msg').textContent = '💀 Sin movimientos — fin del juego.';
+      }
+    }
+    function reset() { b = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; score = 0; document.getElementById('g2Msg').textContent = ''; addTile(); addTile(); draw(); }
+    host.querySelectorAll('[data-m]').forEach(function (btn) { btn.addEventListener('click', function () { move(btn.getAttribute('data-m')); }); });
+    document.getElementById('g2New').addEventListener('click', reset);
+    reset();
+  };
+
+  /* ---------- Memoria ---------- */
+  GAMES.memory = function () {
+    host.appendChild(el('<div class="g-score">Movimientos: <span id="meMoves">0</span> · Pares: <span id="mePairs">0</span>/6</div><div class="mem-grid" id="meGrid"></div><div class="g-row"><button class="g-btn gold" id="meNew">↻ Nuevo juego</button></div><div class="g-msg" id="meMsg"></div>'));
+    var EMO = ['🍕', '🚀', '🎸', '🐶', '⚽', '🍩'];
+    var gridEl = document.getElementById('meGrid'), first = null, lock = false, moves, pairs;
+    function reset() {
+      moves = 0; pairs = 0; first = null; lock = false;
+      document.getElementById('meMoves').textContent = '0'; document.getElementById('mePairs').textContent = '0'; document.getElementById('meMsg').textContent = '';
+      var cards = shuffle(EMO.concat(EMO));
+      gridEl.innerHTML = '';
+      cards.forEach(function (e) {
+        var btn = document.createElement('button'); btn.className = 'mem-card'; btn.textContent = '❓'; btn.setAttribute('data-e', e);
+        btn.addEventListener('click', function () {
+          if (lock || btn.classList.contains('done') || btn === first) return;
+          btn.textContent = e;
+          if (!first) { first = btn; return; }
+          moves++; document.getElementById('meMoves').textContent = moves;
+          if (first.getAttribute('data-e') === e) {
+            first.classList.add('done'); btn.classList.add('done'); first = null;
+            pairs++; document.getElementById('mePairs').textContent = pairs;
+            if (pairs === 6) document.getElementById('meMsg').textContent = '🏆 ¡Completado en ' + moves + ' movimientos!';
+          } else {
+            lock = true; var f = first; first = null;
+            later(function () { f.textContent = '❓'; btn.textContent = '❓'; lock = false; }, 650);
+          }
+        });
+        gridEl.appendChild(btn);
+      });
+    }
+    document.getElementById('meNew').addEventListener('click', reset);
+    reset();
+  };
+
+  /* ---------- Buscaminas ---------- */
+  GAMES.mines = function () {
+    host.appendChild(el('<div class="g-score">Minas: 10 · Abiertas: <span id="miOpen">0</span></div><div class="g-row"><button class="g-btn" id="miMode">Modo: Abrir 👆</button><button class="g-btn gold" id="miNew">↻ Nuevo juego</button></div><div class="mine-grid" id="miGrid"></div><div class="g-msg" id="miMsg"></div>'));
+    var N = 8, MINES = 10, gridEl = document.getElementById('miGrid');
+    var mines, open, flagMode = false, dead = false;
+    function idx(x, y) { return y * N + x; }
+    function neighbors(x, y) { var c = 0; for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { var nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && nx < N && ny < N && mines[idx(nx, ny)]) c++; } return c; }
+    function reset() {
+      mines = []; open = 0; dead = false; document.getElementById('miOpen').textContent = '0'; document.getElementById('miMsg').textContent = '';
+      var placed = 0; while (placed < MINES) { var i = Math.floor(Math.random() * N * N); if (!mines[i]) { mines[i] = true; placed++; } }
+      gridEl.innerHTML = '';
+      for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) (function (x, y) {
+        var btn = document.createElement('button'); btn.className = 'mine-cell'; btn.setAttribute('data-x', x); btn.setAttribute('data-y', y);
+        btn.addEventListener('click', function () { clickCell(x, y, btn); });
+        gridEl.appendChild(btn);
+      })(x, y);
+    }
+    function clickCell(x, y, btn) {
+      if (dead || btn.classList.contains('open')) return;
+      if (flagMode) { btn.textContent = btn.textContent === '🚩' ? '' : '🚩'; return; }
+      if (btn.textContent === '🚩') return;
+      if (mines[idx(x, y)]) {
+        btn.textContent = '💥'; dead = true; document.getElementById('miMsg').textContent = '💀 ¡Boom! Pisaste una mina.';
+        gridEl.querySelectorAll('.mine-cell').forEach(function (c) { var cx = +c.getAttribute('data-x'), cy = +c.getAttribute('data-y'); if (mines[idx(cx, cy)] && c.textContent !== '💥') c.textContent = '💣'; });
+        return;
+      }
+      flood(x, y);
+      document.getElementById('miOpen').textContent = open;
+      if (open === N * N - MINES) document.getElementById('miMsg').textContent = '🏆 ¡Ganaste! Campo limpio.';
+    }
+    function flood(x, y) {
+      var stack = [[x, y]];
+      while (stack.length) {
+        var cur = stack.pop(), cx = cur[0], cy = cur[1];
+        var cells = gridEl.children, btn = cells[idx(cx, cy)];
+        if (!btn || btn.classList.contains('open')) continue;
+        btn.classList.add('open'); open++;
+        var n = neighbors(cx, cy);
+        btn.textContent = n ? n : '';
+        if (n === 0) for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { var nx = cx + dx, ny = cy + dy; if (nx >= 0 && ny >= 0 && nx < N && ny < N) stack.push([nx, ny]); }
+      }
+    }
+    document.getElementById('miMode').addEventListener('click', function () { flagMode = !flagMode; this.textContent = flagMode ? 'Modo: Bandera 🚩' : 'Modo: Abrir 👆'; });
+    document.getElementById('miNew').addEventListener('click', reset);
+    reset();
+  };
+
+  /* ---------- Tres en raya ---------- */
+  GAMES.ttt = function () {
+    host.appendChild(el('<div class="g-msg" id="ttMsg">Tu turno — eres ❌</div><div class="ttt-grid" id="ttGrid"></div><div class="g-row"><button class="g-btn gold" id="ttNew">↻ Nuevo juego</button></div>'));
+    var gridEl = document.getElementById('ttGrid'), board, over;
+    var LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+    function winner(bd) { for (var i = 0; i < LINES.length; i++) { var L = LINES[i]; if (bd[L[0]] && bd[L[0]] === bd[L[1]] && bd[L[1]] === bd[L[2]]) return bd[L[0]]; } return null; }
+    function cpuMove() {
+      var free = []; board.forEach(function (v, i) { if (!v) free.push(i); });
+      if (!free.length) return;
+      function findFor(mark) { for (var i = 0; i < free.length; i++) { var t = board.slice(); t[free[i]] = mark; if (winner(t) === mark) return free[i]; } return -1; }
+      var mv = findFor('⭕'); if (mv < 0) mv = findFor('❌');
+      if (mv < 0 && !board[4]) mv = 4;
+      if (mv < 0) mv = free[Math.floor(Math.random() * free.length)];
+      board[mv] = '⭕';
+    }
+    function draw() {
+      gridEl.innerHTML = '';
+      board.forEach(function (v, i) {
+        var btn = document.createElement('button'); btn.className = 'ttt-cell'; btn.textContent = v || '';
+        btn.addEventListener('click', function () {
+          if (over || board[i]) return;
+          board[i] = '❌';
+          if (!finish()) { cpuMove(); finish(); }
+          draw();
+        });
+        gridEl.appendChild(btn);
+      });
+    }
+    function finish() {
+      var w = winner(board);
+      if (w) { over = true; document.getElementById('ttMsg').textContent = w === '❌' ? '🏆 ¡Ganaste!' : '💀 Ganó la máquina.'; return true; }
+      if (board.every(function (v) { return v; })) { over = true; document.getElementById('ttMsg').textContent = '🤝 Empate.'; return true; }
+      return false;
+    }
+    function reset() { board = ['', '', '', '', '', '', '', '', '']; over = false; document.getElementById('ttMsg').textContent = 'Tu turno — eres ❌'; draw(); }
+    document.getElementById('ttNew').addEventListener('click', reset);
+    reset();
+  };
+
+  /* ---------- Simon dice ---------- */
+  GAMES.simon = function () {
+    host.appendChild(el('<div class="g-score">Nivel: <span id="siLvl">0</span></div><div class="simon-grid" id="siGrid"></div><div class="g-row"><button class="g-btn gold" id="siStart">▶ Empezar</button></div><div class="g-msg" id="siMsg">Mira la secuencia y repítela.</div>'));
+    var COLORS = ['#2ecc71', '#e74c3c', '#f1c40f', '#3498db'];
+    var gridEl = document.getElementById('siGrid'), seq = [], pos = 0, playing = false, accepting = false;
+    var pads = [];
+    COLORS.forEach(function (c, i) {
+      var b = document.createElement('button'); b.className = 'simon-pad'; b.style.background = c;
+      b.addEventListener('click', function () { tap(i); });
+      gridEl.appendChild(b); pads.push(b);
+    });
+    function light(i, done) { pads[i].classList.add('lit'); later(function () { pads[i].classList.remove('lit'); if (done) done(); }, 380); }
+    function playSeq() {
+      accepting = false; var i = 0;
+      document.getElementById('siMsg').textContent = 'Mira… 👀';
+      function next() { if (i >= seq.length) { accepting = true; pos = 0; document.getElementById('siMsg').textContent = 'Tu turno 👆'; return; } light(seq[i], function () { i++; later(next, 180); }); }
+      later(next, 450);
+    }
+    function tap(i) {
+      if (!accepting) return;
+      light(i);
+      if (seq[pos] === i) {
+        pos++;
+        if (pos === seq.length) { document.getElementById('siMsg').textContent = '✅ ¡Bien! Siguiente nivel…'; seq.push(Math.floor(Math.random() * 4)); document.getElementById('siLvl').textContent = seq.length; later(playSeq, 900); }
+      } else {
+        accepting = false; playing = false;
+        document.getElementById('siMsg').textContent = '💀 Fallaste — llegaste al nivel ' + seq.length + '.';
+      }
+    }
+    document.getElementById('siStart').addEventListener('click', function () { seq = [Math.floor(Math.random() * 4)]; document.getElementById('siLvl').textContent = '1'; playing = true; playSeq(); });
+  };
+
+  /* ---------- Rompe bloques ---------- */
+  GAMES.breakout = function () {
+    host.appendChild(el('<div class="g-score">Puntos: <span id="bkScore">0</span> · Vidas: <span id="bkLives">3</span></div><canvas id="bkCv" width="320" height="400"></canvas><div class="g-row"><button class="g-btn gold" id="bkStart">▶ Jugar</button></div><div class="g-msg">Mueve la barra con el dedo o el mouse.</div>'));
+    var cv = document.getElementById('bkCv'), ctx = cv.getContext('2d');
+    var W = 320, H = 400, paddle, ball, bricks, score, lives, running = false;
+    function buildBricks() { bricks = []; var cols = 6, rows = 4; for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) bricks.push({ x: 8 + c * 51, y: 30 + r * 22, w: 46, h: 15, on: true }); }
+    function reset(full) {
+      paddle = { x: W / 2 - 35, w: 70 };
+      ball = { x: W / 2, y: H - 40, dx: 2.4, dy: -2.4, r: 6 };
+      if (full) { score = 0; lives = 3; buildBricks(); }
+      document.getElementById('bkScore').textContent = score; document.getElementById('bkLives').textContent = lives;
+    }
+    function draw() {
+      ctx.fillStyle = '#0b0c12'; ctx.fillRect(0, 0, W, H);
+      var cols = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71'];
+      bricks.forEach(function (br, i) { if (br.on) { ctx.fillStyle = cols[Math.floor(i / 6) % 4]; ctx.fillRect(br.x, br.y, br.w, br.h); } });
+      ctx.fillStyle = '#f5c542'; ctx.fillRect(paddle.x, H - 18, paddle.w, 10);
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, 7); ctx.fill();
+    }
+    function step() {
+      if (!running) { draw(); return; }
+      ball.x += ball.dx; ball.y += ball.dy;
+      if (ball.x < ball.r || ball.x > W - ball.r) ball.dx *= -1;
+      if (ball.y < ball.r) ball.dy *= -1;
+      if (ball.y > H - 18 - ball.r && ball.y < H - 8 && ball.x > paddle.x && ball.x < paddle.x + paddle.w) { ball.dy = -Math.abs(ball.dy); ball.dx += (ball.x - (paddle.x + paddle.w / 2)) / 28; }
+      if (ball.y > H) { lives--; document.getElementById('bkLives').textContent = lives; if (lives <= 0) { running = false; alert('💀 Fin del juego — ' + score + ' puntos'); } reset(false); draw(); return; }
+      bricks.forEach(function (br) {
+        if (br.on && ball.x > br.x && ball.x < br.x + br.w && ball.y > br.y && ball.y < br.y + br.h) { br.on = false; ball.dy *= -1; score += 10; document.getElementById('bkScore').textContent = score; }
+      });
+      if (bricks.every(function (br) { return !br.on; })) { running = false; alert('🏆 ¡Ganaste! ' + score + ' puntos'); }
+      draw();
+    }
+    function moveTo(clientX) { var r = cv.getBoundingClientRect(); var x = (clientX - r.left) * (W / r.width); paddle.x = Math.max(0, Math.min(W - paddle.w, x - paddle.w / 2)); }
+    cv.addEventListener('touchmove', function (e) { e.preventDefault(); moveTo(e.touches[0].clientX); }, { passive: false });
+    cv.addEventListener('mousemove', function (e) { moveTo(e.clientX); });
+    document.getElementById('bkStart').addEventListener('click', function () { reset(true); running = true; });
+    reset(true);
+    every(step, 16);
+  };
+
+  /* ---------- Flappy ---------- */
+  GAMES.flappy = function () {
+    host.appendChild(el('<div class="g-score">Puntos: <span id="flScore">0</span></div><canvas id="flCv" width="320" height="400"></canvas><div class="g-row"><button class="g-btn gold" id="flStart">▶ Jugar</button></div><div class="g-msg">Toca la pantalla pa\' volar 🐤</div>'));
+    var cv = document.getElementById('flCv'), ctx = cv.getContext('2d');
+    var W = 320, H = 400, bird, pipes, score, alive = false, frame;
+    function reset() { bird = { y: 200, v: 0 }; pipes = []; score = 0; frame = 0; document.getElementById('flScore').textContent = '0'; draw(); }
+    function draw() {
+      ctx.fillStyle = '#0b0c12'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#2ecc71';
+      pipes.forEach(function (p) { ctx.fillRect(p.x, 0, 52, p.top); ctx.fillRect(p.x, p.top + 110, 52, H - p.top - 110); });
+      ctx.font = '26px serif'; ctx.fillText('🐤', 52, bird.y + 8);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 20px sans-serif'; ctx.fillText(score, 12, 26);
+    }
+    function step() {
+      if (!alive) return;
+      frame++;
+      bird.v += 0.45; bird.y += bird.v;
+      if (frame % 95 === 0) pipes.push({ x: W, top: 50 + Math.random() * 190, passed: false });
+      pipes.forEach(function (p) {
+        p.x -= 2.2;
+        if (!p.passed && p.x + 52 < 64) { p.passed = true; score++; document.getElementById('flScore').textContent = score; }
+        if (64 > p.x && 64 < p.x + 52 && (bird.y - 10 < p.top || bird.y + 10 > p.top + 110)) alive = false;
+      });
+      pipes = pipes.filter(function (p) { return p.x > -60; });
+      if (bird.y > H - 8 || bird.y < 0) alive = false;
+      if (!alive) alert('💀 Fin — ' + score + ' puntos');
+      draw();
+    }
+    function flap() { if (alive) bird.v = -7.5; }
+    cv.addEventListener('touchstart', function (e) { e.preventDefault(); flap(); }, { passive: false });
+    cv.addEventListener('mousedown', flap);
+    document.getElementById('flStart').addEventListener('click', function () { reset(); alive = true; });
+    reset();
+    every(step, 20);
+  };
+
+  /* ---------- Ahorcado ---------- */
+  GAMES.hangman = function () {
+    host.appendChild(el('<div class="g-score">Vidas: <span id="haLives">❤️❤️❤️❤️❤️❤️</span></div><div class="hang-word" id="haWord"></div><div class="hang-keys" id="haKeys"></div><div class="g-row"><button class="g-btn gold" id="haNew">↻ Nueva palabra</button></div><div class="g-msg" id="haMsg"></div>'));
+    var WORDS = ['VANGUARDIA', 'JAMES', 'TELEFONO', 'GUITARRA', 'PLAYA', 'FUTBOL', 'PIZZA', 'DRAGON', 'LUNA', 'ESTRELLA', 'BIBLIOTECA', 'MARIPOSA', 'VOLCAN', 'TIBURON', 'GUITARRA', 'ZAPATO', 'VENTANA', 'COHETE', 'DIAMANTE'];
+    var word, guessed, lives;
+    var keysEl = document.getElementById('haKeys');
+    function draw() {
+      document.getElementById('haWord').textContent = word.split('').map(function (ch) { return guessed.indexOf(ch) >= 0 ? ch : '_'; }).join(' ');
+      document.getElementById('haLives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(6 - lives);
+    }
+    function reset() {
+      word = WORDS[Math.floor(Math.random() * WORDS.length)]; guessed = []; lives = 6;
+      document.getElementById('haMsg').textContent = '';
+      keysEl.innerHTML = '';
+      'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('').forEach(function (ch) {
+        var b = document.createElement('button'); b.textContent = ch;
+        b.addEventListener('click', function () {
+          b.disabled = true; guessed.push(ch);
+          if (word.indexOf(ch) < 0) { lives--; }
+          draw();
+          if (word.split('').every(function (c) { return guessed.indexOf(c) >= 0; })) { document.getElementById('haMsg').textContent = '🏆 ¡Ganaste! La palabra era ' + word; keysEl.querySelectorAll('button').forEach(function (x) { x.disabled = true; }); }
+          else if (lives <= 0) { document.getElementById('haMsg').textContent = '💀 Perdiste — la palabra era ' + word; keysEl.querySelectorAll('button').forEach(function (x) { x.disabled = true; }); }
+        });
+        keysEl.appendChild(b);
+      });
+      draw();
+    }
+    document.getElementById('haNew').addEventListener('click', reset);
+    reset();
+  };
+
+  /* ---------- Trivia ---------- */
+  GAMES.trivia = function () {
+    host.appendChild(el('<div class="g-score">Puntos: <span id="trScore">0</span> · Pregunta <span id="trNum">1</span>/10</div><div class="g-msg" id="trQ" style="font-size:17px;font-weight:700"></div><div id="trOpts"></div><div class="g-msg" id="trMsg"></div><div class="g-row"><button class="g-btn gold" id="trNew">↻ Jugar de nuevo</button></div>'));
+    var QS = [
+      { q: '¿Cuál es la capital de Francia?', o: ['Londres', 'París', 'Roma', 'Berlín'], a: 1 },
+      { q: '¿Cuántos lados tiene un hexágono?', o: ['5', '7', '6', '8'], a: 2 },
+      { q: '¿Qué planeta es el más grande del sistema solar?', o: ['Saturno', 'Marte', 'Júpiter', 'Neptuno'], a: 2 },
+      { q: '¿En qué año llegó el hombre a la Luna?', o: ['1969', '1959', '1975', '1981'], a: 0 },
+      { q: '¿Cuál es el océano más grande?', o: ['Atlántico', 'Índico', 'Ártico', 'Pacífico'], a: 3 },
+      { q: '¿Quién pintó la Mona Lisa?', o: ['Picasso', 'Da Vinci', 'Van Gogh', 'Dalí'], a: 1 },
+      { q: '¿Cuántos minutos tiene una hora y media?', o: ['80', '100', '90', '75'], a: 2 },
+      { q: '¿Cuál es el animal terrestre más rápido?', o: ['León', 'Guepardo', 'Caballo', 'Antílope'], a: 1 },
+      { q: '¿Qué gas respiramos del aire?', o: ['Dióxido de carbono', 'Nitrógeno', 'Oxígeno', 'Helio'], a: 2 },
+      { q: '¿Cuántos jugadores de un equipo de fútbol están en la cancha?', o: ['9', '10', '11', '12'], a: 2 },
+      { q: '¿Cuál es el río más largo del mundo?', o: ['Amazonas', 'Nilo', 'Yangtsé', 'Misisipi'], a: 1 },
+      { q: '¿De qué color es una esmeralda?', o: ['Roja', 'Azul', 'Verde', 'Amarilla'], a: 2 }
+    ];
+    var qs, idx, score;
+    var optsEl = document.getElementById('trOpts');
+    function show() {
+      document.getElementById('trNum').textContent = idx + 1;
+      document.getElementById('trScore').textContent = score;
+      document.getElementById('trMsg').textContent = '';
+      var item = qs[idx];
+      document.getElementById('trQ').textContent = item.q;
+      optsEl.innerHTML = '';
+      item.o.forEach(function (op, i) {
+        var b = document.createElement('button'); b.className = 'g-btn'; b.style.display = 'block'; b.style.width = '100%'; b.style.margin = '6px 0'; b.textContent = op;
+        b.addEventListener('click', function () {
+          if (i === item.a) { score += 10; b.style.background = '#2ecc71'; document.getElementById('trMsg').textContent = '✅ ¡Correcto!'; }
+          else { b.style.background = '#e74c3c'; document.getElementById('trMsg').textContent = '❌ Era: ' + item.o[item.a]; }
+          optsEl.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+          document.getElementById('trScore').textContent = score;
+          later(function () { idx++; if (idx < qs.length) show(); else { document.getElementById('trQ').textContent = '🏁 Fin de la trivia'; optsEl.innerHTML = ''; document.getElementById('trMsg').textContent = 'Puntaje final: ' + score + ' de ' + (qs.length * 10); } }, 1100);
+        });
+        optsEl.appendChild(b);
+      });
+    }
+    function reset() { qs = shuffle(QS.slice()).slice(0, 10); idx = 0; score = 0; show(); }
+    document.getElementById('trNew').addEventListener('click', reset);
+    reset();
+  };
+
+  /* ---------- Piedra, papel o tijera ---------- */
+  GAMES.rps = function () {
+    host.appendChild(el('<div class="g-score">Tú: <span id="rpW">0</span> · Máquina: <span id="rpL">0</span> · Empates: <span id="rpD">0</span></div><div class="g-msg" id="rpMsg">Elige tu jugada 👇</div><div class="g-row" style="justify-content:center"><button class="g-btn" data-r="0" style="font-size:26px">🪨</button><button class="g-btn" data-r="1" style="font-size:26px">📄</button><button class="g-btn" data-r="2" style="font-size:26px">✂️</button></div>'));
+    var EMO = ['🪨 Piedra', '📄 Papel', '✂️ Tijera'];
+    var w = 0, l = 0, d = 0;
+    host.querySelectorAll('[data-r]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var me = +b.getAttribute('data-r'), cpu = Math.floor(Math.random() * 3);
+        var res;
+        if (me === cpu) { d++; res = '🤝 Empate'; }
+        else if ((me - cpu + 3) % 3 === 1) { w++; res = '🏆 ¡Ganaste!'; }
+        else { l++; res = '💀 Perdiste'; }
+        document.getElementById('rpMsg').textContent = 'Tú: ' + EMO[me] + ' · Máquina: ' + EMO[cpu] + ' → ' + res;
+        document.getElementById('rpW').textContent = w; document.getElementById('rpL').textContent = l; document.getElementById('rpD').textContent = d;
+      });
+    });
+  };
+
+  /* ---------- Blackjack 21 ---------- */
+  GAMES.blackjack = function () {
+    host.appendChild(el('<div class="g-score">Fichas: <span id="bjChips">100</span> · Apuesta: 10</div><div>Casa:</div><div class="bj-hand" id="bjDealer"></div><div class="g-msg" id="bjDScore"></div><div>Tú:</div><div class="bj-hand" id="bjPlayer"></div><div class="g-msg" id="bjPScore"></div><div class="g-row"><button class="g-btn gold" id="bjDeal">🂡 Repartir</button><button class="g-btn" id="bjHit" disabled>Pedir</button><button class="g-btn" id="bjStand" disabled>Plantarse</button></div><div class="g-msg" id="bjMsg"></div>'));
+    var SUITS = ['♠️', '♥️', '♦️', '♣️'], RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    var chips = 100, deck, player, dealer, inRound = false;
+    function buildDeck() { var d = []; SUITS.forEach(function (s) { RANKS.forEach(function (r) { d.push(r + s); }); }); return shuffle(d); }
+    function val(hand) {
+      var t = 0, aces = 0;
+      hand.forEach(function (c) { var r = c.replace(/[^A-Z0-9]/g, ''); if (r === 'A') { aces++; t += 11; } else if ('KQJ'.indexOf(r) >= 0) t += 10; else t += +r; });
+      while (t > 21 && aces) { t -= 10; aces--; }
+      return t;
+    }
+    function draw(hideDealer) {
+      document.getElementById('bjDealer').textContent = dealer.map(function (c, i) { return hideDealer && i === 1 ? '🂠' : c; }).join(' ');
+      document.getElementById('bjPlayer').textContent = player.join(' ');
+      document.getElementById('bjDScore').textContent = hideDealer ? '' : 'Casa tiene ' + val(dealer);
+      document.getElementById('bjPScore').textContent = 'Tú tienes ' + val(player);
+      document.getElementById('bjChips').textContent = chips;
+    }
+    function endRound(msg) { inRound = false; document.getElementById('bjHit').disabled = true; document.getElementById('bjStand').disabled = true; document.getElementById('bjDeal').disabled = false; document.getElementById('bjMsg').textContent = msg; draw(false); }
+    document.getElementById('bjDeal').addEventListener('click', function () {
+      if (chips < 10) { document.getElementById('bjMsg').textContent = 'Sin fichas — recarga la página pa\' jugar de nuevo.'; return; }
+      deck = buildDeck(); player = [deck.pop(), deck.pop()]; dealer = [deck.pop(), deck.pop()];
+      chips -= 10; inRound = true;
+      document.getElementById('bjHit').disabled = false; document.getElementById('bjStand').disabled = false; document.getElementById('bjDeal').disabled = true;
+      document.getElementById('bjMsg').textContent = '';
+      draw(true);
+      if (val(player) === 21) { chips += 25; endRound('🂡 ¡Blackjack! +25 fichas'); }
+    });
+    document.getElementById('bjHit').addEventListener('click', function () {
+      if (!inRound) return;
+      player.push(deck.pop()); draw(true);
+      if (val(player) > 21) endRound('💀 Te pasaste de 21 — pierdes la apuesta.');
+    });
+    document.getElementById('bjStand').addEventListener('click', function () {
+      if (!inRound) return;
+      while (val(dealer) < 17) dealer.push(deck.pop());
+      var pv = val(player), dv = val(dealer);
+      if (dv > 21) { chips += 20; endRound('🏆 La casa se pasó — ¡ganaste! +20'); }
+      else if (pv > dv) { chips += 20; endRound('🏆 ' + pv + ' contra ' + dv + ' — ¡ganaste! +20'); }
+      else if (pv < dv) endRound('💀 ' + dv + ' contra ' + pv + ' — gana la casa.');
+      else { chips += 10; endRound('🤝 Empate — recuperas tu apuesta.'); }
+    });
+    draw(false);
+    document.getElementById('bjDealer').textContent = '—';
+    document.getElementById('bjPlayer').textContent = '—';
+    document.getElementById('bjDScore').textContent = '';
+    document.getElementById('bjPScore').textContent = 'Toca Repartir pa\' empezar.';
+  };
+})();
+
+    </script>
+    <script>
+/* ===== Idiomas: Español / English / Kreyòl ===== */
+(function () {
+  var I18N = {
+    es: {
+      gate_sub: "🔒 Sitio protegido — escribe la contraseña pa' entrar", gate_ph: "Contraseña", gate_btn: "Entrar",
+      stream: "🎥 Modo Stream", nav_panel: "Panel", nav_vault: "Bóveda protegida", nav_stream: "Modo Stream", nav_games: "Juegos",
+      drawer_foot: "Panel de James — Admin Boss.<br />Todo vive en esta página: panel, AI y bóveda en un solo lugar.",
+      lang_label: "Idioma / Language",
+      panel_title: "Tu panel, Bro 👑",
+      tile_ai_desc: "Inteligente y ordenada — tarea, textos, cuentas… bien hecho.",
+      tile_vault_name: "Bóveda", tile_vault_desc: "Guarda un texto y míralo solo manteniendo presionado o una sola vez.",
+      tile_games_name: "Juegos", tile_games_desc: "12 juegos dentro de la página y enlaces a juegos online.",
+      prot_title: "🛡️ Protección automática",
+      prot_text: "Al tocar <strong>🎥 Modo Stream</strong>, la página se <strong>bloquea</strong> y pide la contraseña de entrada pa' volver a abrirla.",
+      lock_text: "Pega tu key pa' desbloquear la AI. La consigues en el bot <strong>@Vanguardia7_bot</strong> — la key empieza a correr cuando se genera.",
+      key_btn: "Activar", key_status: "Sin key no hay AI 🔒", key_out: "🔒 Salir", key_time: "en línea · responde en tu idioma",
+      chat_ph: "Escribe tu mensaje…", chat_send: "Enviar",
+      chat_welcome: "👑 Qué lo qué, Boss. Soy tu <strong>AI Pro Max</strong> — pregúntame lo que sea. Tarea, textos, cuentas… te lo entrego <strong>ordenado y bien hecho</strong>.",
+      chat_status: "AI Pro Max — inteligente, precisa y ordenada.",
+      chip1: "🧮 Resuelve paso a paso", chip1_fill: "Resuelve paso a paso: ",
+      chip2: "💡 Explícame", chip2_fill: "Explícame en orden y simple: ",
+      chip3: "✍️ Escribe un texto", chip3_fill: "Escribe un texto sobre: ",
+      chip4: "🌎 Traduce", chip4_fill: "Traduce al inglés: ",
+      vault_title: "🔒 Bóveda protegida", vault_save_title: "Escribe lo que quieres guardar", vault_ph: "Escribe aquí tu texto privado…",
+      vault_save: "Guardar en la bóveda", vault_wipe: "Borrar todo", vault_status: "La bóveda está vacía.",
+      vault_view_title: "Ver el contenido",
+      vault_view_text: "<strong>Mantén presionado</strong> el botón dorado pa' verlo — al soltar, se tapa. O usa <strong>Ver una vez</strong>: se muestra 30 segundos y se borra solo.",
+      vault_hold: "👁️ Mantener pa' ver", vault_once: "Ver una vez (30 s)",
+      games_title: "🎮 Juegos", games_sub: "Juegos dentro de la página — no necesitan internet.",
+      g_snake: "Serpiente", g_memory: "Memoria", g_mines: "Buscaminas", g_ttt: "Tres en raya", g_simon: "Simon dice",
+      g_breakout: "Rompe bloques", g_hangman: "Ahorcado", g_rps: "Piedra, papel o tijera",
+      games_online: "🌐 Juegos online", games_back: "Volver a los juegos"
+    },
+    en: {
+      gate_sub: "🔒 Protected site — enter the password to get in", gate_ph: "Password", gate_btn: "Enter",
+      stream: "🎥 Stream Mode", nav_panel: "Panel", nav_vault: "Protected Vault", nav_stream: "Stream Mode", nav_games: "Games",
+      drawer_foot: "James's Panel — Admin Boss.<br />Everything lives on this page: panel, AI and vault in one place.",
+      lang_label: "Language / Idioma",
+      panel_title: "Your panel, Bro 👑",
+      tile_ai_desc: "Smart and tidy — homework, texts, math… done right.",
+      tile_vault_name: "Vault", tile_vault_desc: "Save a text and see it only by holding the button, or just once.",
+      tile_games_name: "Games", tile_games_desc: "12 games built into the page plus links to online games.",
+      prot_title: "🛡️ Automatic protection",
+      prot_text: "Tap <strong>🎥 Stream Mode</strong> and the page <strong>locks</strong> and asks for the entry password to open it again.",
+      lock_text: "Paste your key to unlock the AI. Get it from the bot <strong>@Vanguardia7_bot</strong> — the key starts running when it is generated.",
+      key_btn: "Activate", key_status: "No key, no AI 🔒", key_out: "🔒 Log out", key_time: "online · answers in your language",
+      chat_ph: "Type your message…", chat_send: "Send",
+      chat_welcome: "👑 What's up, Boss. I'm your <strong>AI Pro Max</strong> — ask me anything. Homework, texts, math… I'll give it to you <strong>tidy and well done</strong>.",
+      chat_status: "AI Pro Max — smart, precise and tidy.",
+      chip1: "🧮 Solve step by step", chip1_fill: "Solve step by step: ",
+      chip2: "💡 Explain it", chip2_fill: "Explain it in a simple, tidy way: ",
+      chip3: "✍️ Write a text", chip3_fill: "Write a text about: ",
+      chip4: "🌎 Translate", chip4_fill: "Translate to Spanish: ",
+      vault_title: "🔒 Protected Vault", vault_save_title: "Write what you want to save", vault_ph: "Write your private text here…",
+      vault_save: "Save to the vault", vault_wipe: "Delete everything", vault_status: "The vault is empty.",
+      vault_view_title: "View the content",
+      vault_view_text: "<strong>Hold</strong> the gold button to see it — let go and it hides. Or use <strong>View once</strong>: it shows for 30 seconds and deletes itself.",
+      vault_hold: "👁️ Hold to view", vault_once: "View once (30 s)",
+      games_title: "🎮 Games", games_sub: "Games built into the page — no internet needed.",
+      g_snake: "Snake", g_memory: "Memory", g_mines: "Minesweeper", g_ttt: "Tic-Tac-Toe", g_simon: "Simon Says",
+      g_breakout: "Block Breaker", g_hangman: "Hangman", g_rps: "Rock, Paper, Scissors",
+      games_online: "🌐 Online games", games_back: "Back to the games"
+    },
+    ht: {
+      gate_sub: "🔒 Sit pwoteje — ekri modpas la pou w antre", gate_ph: "Modpas", gate_btn: "Antre",
+      stream: "🎥 Mòd Stream", nav_panel: "Panèl", nav_vault: "Kofre pwoteje", nav_stream: "Mòd Stream", nav_games: "Jwèt",
+      drawer_foot: "Panèl James — Admin Boss.<br />Tout bagay rete nan paj sa a: panèl, AI ak kofre nan yon sèl kote.",
+      lang_label: "Lang / Language",
+      panel_title: "Panèl ou, Bro 👑",
+      tile_ai_desc: "Entelijan e òganize — devwa, tèks, kont… byen fèt.",
+      tile_vault_name: "Kofre", tile_vault_desc: "Sere yon tèks epi gade l sèlman lè w kenbe bouton an, oswa yon sèl fwa.",
+      tile_games_name: "Jwèt", tile_games_desc: "12 jwèt anndan paj la ak lyen pou jwèt online.",
+      prot_title: "🛡️ Pwoteksyon otomatik",
+      prot_text: "Lè w touche <strong>🎥 Mòd Stream</strong>, paj la <strong>bloke</strong> epi l mande modpas antre a pou w relouvri l.",
+      lock_text: "Kole kle w la pou w debloke AI a. Ou jwenn li nan bot <strong>@Vanguardia7_bot</strong> — kle a kòmanse kouri depi l kreye.",
+      key_btn: "Aktive", key_status: "San kle pa gen AI 🔒", key_out: "🔒 Soti", key_time: "an liy · li reponn nan lang ou",
+      chat_ph: "Ekri mesaj ou…", chat_send: "Voye",
+      chat_welcome: "👑 Sak pase, Boss. Mwen se <strong>AI Pro Max</strong> ou — mande m nenpòt bagay. Devwa, tèks, kont… m ap ba ou l <strong>òganize e byen fèt</strong>.",
+      chat_status: "AI Pro Max — entelijan, presi e òganize.",
+      chip1: "🧮 Rezoud etap pa etap", chip1_fill: "Rezoud etap pa etap: ",
+      chip2: "💡 Eksplike m", chip2_fill: "Eksplike m senp e òganize: ",
+      chip3: "✍️ Ekri yon tèks", chip3_fill: "Ekri yon tèks sou: ",
+      chip4: "🌎 Tradui", chip4_fill: "Tradui an angle: ",
+      vault_title: "🔒 Kofre pwoteje", vault_save_title: "Ekri sa w vle sere", vault_ph: "Ekri tèks prive w la isit…",
+      vault_save: "Sere nan kofre a", vault_wipe: "Efase tout", vault_status: "Kofre a vid.",
+      vault_view_title: "Gade kontni an",
+      vault_view_text: "<strong>Kenbe</strong> bouton dò a pou w wè l — lage l, l kache. Oswa itilize <strong>Gade yon fwa</strong>: li parèt 30 segonn epi l efase pou kont li.",
+      vault_hold: "👁️ Kenbe pou wè", vault_once: "Gade yon fwa (30 s)",
+      games_title: "🎮 Jwèt", games_sub: "Jwèt anndan paj la — yo pa bezwen entènèt.",
+      g_snake: "Koulèv", g_memory: "Memwa", g_mines: "Chèche min", g_ttt: "Twa nan yon liy", g_simon: "Simon di",
+      g_breakout: "Kraze blok", g_hangman: "Pandi", g_rps: "Wòch, papye, sizo",
+      games_online: "🌐 Jwèt online", games_back: "Retounen nan jwèt yo"
+    }
+  };
+  function applyLang(l) {
+    var d = I18N[l] || I18N.es;
+    document.querySelectorAll('[data-i18n]').forEach(function (elm) {
+      var k = elm.getAttribute('data-i18n');
+      if (d[k] != null) elm.innerHTML = d[k];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(function (elm) {
+      var k = elm.getAttribute('data-i18n-ph');
+      if (d[k] != null) elm.placeholder = d[k];
+    });
+    document.querySelectorAll('[data-i18n-fill]').forEach(function (elm) {
+      var k = elm.getAttribute('data-i18n-fill');
+      if (d[k] != null) elm.setAttribute('data-fill', d[k]);
+    });
+    document.querySelectorAll('.lang-btn').forEach(function (b) {
+      b.style.outline = b.getAttribute('data-lang') === l ? '2px solid #f5c542' : '';
+    });
+    try { localStorage.setItem('panel_lang', l); } catch (e) {}
+    document.documentElement.lang = l === 'ht' ? 'ht' : l;
+  }
+  document.querySelectorAll('.lang-btn').forEach(function (b) {
+    b.addEventListener('click', function () { applyLang(b.getAttribute('data-lang')); });
+  });
+  var saved = 'es';
+  try { saved = localStorage.getItem('panel_lang') || 'es'; } catch (e) {}
+  applyLang(saved);
+})();
+
+    </script>
 </body>
 </html>
