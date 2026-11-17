@@ -295,7 +295,7 @@
         <div class="menu-grid">
           <button class="tile" data-goto="navegador"><span class="ic">🤖</span> AI Pro Max <small data-i18n="tile_ai_desc">Inteligente y ordenada — tarea, textos, cuentas… bien hecho.</small></button>
           <button class="tile" data-goto="boveda"><span class="ic">🔒</span> <span data-i18n="tile_vault_name">Bóveda</span> <small data-i18n="tile_vault_desc">Guarda un texto y míralo solo manteniendo presionado o una sola vez.</small></button>
-          <button class="tile" data-goto="juegos"><span class="ic">🎮</span> <span data-i18n="tile_games_name">Juegos</span> <small data-i18n="tile_games_desc">12 juegos dentro de la página y enlaces a juegos online.</small></button>
+          <button class="tile" data-goto="juegos"><span class="ic">🎮</span> <span data-i18n="tile_games_name">Juegos</span> <small data-i18n="tile_games_desc">13 juegos dentro de la página y enlaces a juegos online.</small></button>
         </div>
         <div class="card">
           <h3 data-i18n="prot_title">🛡️ Protección automática</h3>
@@ -362,6 +362,7 @@
       <!-- ===== JUEGOS ===== -->
       <section class="view" id="view-juegos">
         <h2 class="view-title" data-i18n="games_title">🎮 Juegos</h2>
+        <div id="duelBanner" style="display:none"></div>
         <div id="gamesGrid">
           <p style="color:var(--muted);font-size:14px;margin:0 0 12px" data-i18n="games_sub">Juegos dentro de la página — no necesitan internet.</p>
           <div class="links-grid">
@@ -377,6 +378,7 @@
             <button class="link-card game-card" data-game="trivia"><span class="ic">❓</span> <span>Trivia</span></button>
             <button class="link-card game-card" data-game="rps"><span class="ic">✂️</span> <span data-i18n="g_rps">Piedra, papel o tijera</span></button>
             <button class="link-card game-card" data-game="blackjack"><span class="ic">🂡</span> <span>Blackjack 21</span></button>
+            <button class="link-card game-card" data-game="geo"><span class="ic">🌍</span> <span data-i18n="g_geo">¿Dónde estoy?</span></button>
           </div>
           <h3 style="margin:22px 0 10px" data-i18n="games_online">🌐 Juegos online</h3>
           <div class="links-grid">
@@ -421,6 +423,16 @@
         #gameHost .hang-keys button { width: 38px; height: 38px; font-size: 15px; font-weight: 800; background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 8px; cursor: pointer; }
         #gameHost .hang-keys button:disabled { opacity: .3; }
         #gameHost .bj-hand { font-size: 34px; letter-spacing: 3px; margin: 4px 0; }
+        #gameHost .g-input { width: 100%; box-sizing: border-box; background: #12121a; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 15px; margin: 8px 0; font-family: inherit; }
+        #gameHost .geo-frame { width: 100%; height: 340px; border: 0; border-radius: 12px; background: #0b0c12; display: block; }
+        #gameHost #geoMap { height: 320px; border-radius: 12px; margin: 10px 0; position: relative; z-index: 0; background: #0b0c12; }
+        #gameHost .geo-pin-wrap { background: none; border: none; }
+        #gameHost .geo-pin { font-size: 26px; line-height: 32px; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+        #duelBanner { background: #1b1c29; border: 1px solid #f5c542; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; }
+        #duelBanner .g-msg { font-size: 15px; }
+        #duelBanner .g-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        #duelBanner .g-btn { background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        #duelBanner .g-btn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
       </style>
 
     </main>
@@ -741,7 +753,7 @@
   function el(html) { var d = document.createElement('div'); d.innerHTML = html; return d; }
   function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
-  var NAMES = { snake: '🐍 Serpiente', g2048: '🔢 2048', memory: '🃏 Memoria', mines: '💣 Buscaminas', ttt: '❌ Tres en raya', simon: '🎨 Simon dice', breakout: '🧱 Rompe bloques', flappy: '🐤 Flappy', hangman: '🔤 Ahorcado', trivia: '❓ Trivia', rps: '✂️ Piedra, papel o tijera', blackjack: '🂡 Blackjack 21' };
+  var NAMES = { snake: '🐍 Serpiente', g2048: '🔢 2048', memory: '🃏 Memoria', mines: '💣 Buscaminas', ttt: '❌ Tres en raya', simon: '🎨 Simon dice', breakout: '🧱 Rompe bloques', flappy: '🐤 Flappy', hangman: '🔤 Ahorcado', trivia: '❓ Trivia', rps: '✂️ Piedra, papel o tijera', blackjack: '🂡 Blackjack 21', geo: '🌍 ¿Dónde estoy?' };
 
   function openGame(name) {
     stopAll();
@@ -1220,6 +1232,263 @@
     document.getElementById('bjDScore').textContent = '';
     document.getElementById('bjPScore').textContent = 'Toca Repartir pa\' empezar.';
   };
+
+  /* ---------- ¿Dónde estoy? (mapas · Mapillary) ---------- */
+  var GEO_TOKEN = 'MLY|28947804174919418|351e9f8985ea7472f5b029c0a0ff4ab2';
+  var GEO_PLACES = [
+    [40.758, -73.9855], [48.8584, 2.2945], [41.8902, 12.4922], [51.5007, -0.1246],
+    [35.6595, 139.7005], [-33.8568, 151.2153], [-22.9711, -43.1822], [36.1147, -115.1728],
+    [41.4036, 2.1744], [52.3676, 4.9041], [19.4326, -99.1332], [18.4734, -69.8845],
+    [-34.6037, -58.3816], [43.6426, -79.3871], [21.2793, -157.8292], [25.1972, 55.2744],
+    [50.0865, 14.4114], [41.0086, 28.9802], [29.9792, 31.1342], [36.4618, 25.3753]
+  ];
+  var geoStartMode = null;
+
+  function geoEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function geoHavKm(lat1, lon1, lat2, lon2) {
+    var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+  function geoPts(km) { return Math.round(5000 * Math.exp(-km / 1500)); }
+  function geoFmtDist(km) { if (km < 1) return Math.round(km * 1000) + ' m'; if (km < 100) return km.toFixed(1) + ' km'; return Math.round(km) + ' km'; }
+  function geoB64Enc(obj) { return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function geoB64Dec(str) { var b = str.replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '='; return JSON.parse(decodeURIComponent(escape(atob(b)))); }
+
+  var geoLeafletWaiters = null;
+  function geoLoadLeaflet(cb) {
+    if (window.L) { cb(); return; }
+    if (geoLeafletWaiters) { geoLeafletWaiters.push(cb); return; }
+    geoLeafletWaiters = [cb];
+    var link = document.createElement('link');
+    link.rel = 'stylesheet'; link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.onload = function () { var q = geoLeafletWaiters; geoLeafletWaiters = null; if (q) q.forEach(function (f) { f(); }); };
+    document.head.appendChild(s);
+  }
+  function geoPin(emoji) { return L.divIcon({ className: 'geo-pin-wrap', html: '<div class="geo-pin">' + emoji + '</div>', iconSize: [32, 32], iconAnchor: [16, 16] }); }
+
+  function geoFetchImage(place, widened, cb) {
+    var dLat = widened ? 0.009 : 0.003, dLng = widened ? 0.012 : 0.004;
+    var bbox = (place[1] - dLng) + ',' + (place[0] - dLat) + ',' + (place[1] + dLng) + ',' + (place[0] + dLat);
+    fetch('https://graph.mapillary.com/images?access_token=' + encodeURIComponent(GEO_TOKEN) + '&fields=id&bbox=' + bbox + '&limit=20')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var arr = (j && j.data) || [];
+        if (!arr.length) { if (!widened) geoFetchImage(place, true, cb); else cb(null); return; }
+        cb(arr[Math.floor(Math.random() * arr.length)].id);
+      })
+      .catch(function () { if (!widened) geoFetchImage(place, true, cb); else cb(null); });
+  }
+
+  function geoRandomLocs() {
+    var idx = []; for (var i = 0; i < GEO_PLACES.length; i++) idx.push(i);
+    return shuffle(idx).slice(0, 5);
+  }
+
+  GAMES.geo = function () {
+    var pending = geoStartMode; geoStartMode = null;
+    if (pending && pending.type === 'answer') { geoNameScreen('answer', pending.data); return; }
+    host.innerHTML = '';
+    host.appendChild(el(
+      '<div class="g-msg">Te soltamos en una calle del mundo 🌍 Camina por la foto, busca pistas (letreros, placas, el idioma…) y después marca en el mapa dónde crees que estás. Entre más cerca caiga tu pin, más puntos (máx 5.000 por ronda).</div>' +
+      '<div class="g-row"><button class="g-btn gold" id="geoSolo">🎯 Jugar solo</button><button class="g-btn" id="geoDuelBtn">⚔️ Duelo</button></div>' +
+      '<div class="g-msg" style="font-size:13px">Solo: 5 lugares, suma puntos. Duelo: juegas 5 lugares y mandas el link de reto — el que caiga más cerca en cada ronda le quita puntos al otro 😈</div>'
+    ));
+    document.getElementById('geoSolo').addEventListener('click', function () {
+      geoStart({ mode: 'solo', name: '', locs: geoRandomLocs(), reto: null });
+    });
+    document.getElementById('geoDuelBtn').addEventListener('click', function () { geoNameScreen('create', null); });
+  };
+
+  function geoNameScreen(kind, reto) {
+    host.innerHTML = '';
+    var title = kind === 'answer'
+      ? '⚔️ <b>' + geoEsc(reto.n) + '</b> te retó. Pon tu nombre y juega los mismos 5 lugares — el que caiga más cerca en cada ronda le quita puntos al otro.'
+      : '⚔️ Modo duelo. Pon tu nombre, juega 5 lugares y al final te doy el link de reto pa\' mandarlo.';
+    host.appendChild(el(
+      '<div class="g-msg">' + title + '</div>' +
+      '<input class="g-input" id="geoName" type="text" maxlength="20" placeholder="Tu nombre" value="' + (kind === 'create' ? 'James' : '') + '" />' +
+      '<div class="g-row"><button class="g-btn gold" id="geoNameGo">▶ Empezar</button></div>'
+    ));
+    document.getElementById('geoNameGo').addEventListener('click', function () {
+      var nm = document.getElementById('geoName').value.trim() || (kind === 'create' ? 'James' : 'Rival');
+      if (kind === 'answer') geoStart({ mode: 'answer', name: nm, locs: reto.locs.slice(), reto: reto });
+      else geoStart({ mode: 'create', name: nm, locs: geoRandomLocs(), reto: null });
+    });
+  }
+
+  function geoStart(S) {
+    S.round = 0; S.myPins = []; S.myPts = []; S.total = 0; S.myDuel = 0; S.rivalDuel = 0;
+    geoRound(S);
+  }
+
+  function geoRound(S) {
+    var myRound = S.round, myLoc = S.locs[S.round];
+    var place = GEO_PLACES[myLoc];
+    host.innerHTML = '';
+    var scoreLine = S.mode === 'solo' ? ('Total: ' + S.total + ' pts')
+      : S.mode === 'create' ? ('Tus puntos: ' + S.total + ' pts')
+      : ('Tú ' + S.myDuel + ' · ' + geoEsc(S.reto.n) + ' ' + S.rivalDuel);
+    host.appendChild(el(
+      '<div class="g-score">Ronda ' + (S.round + 1) + '/5 · <span>' + scoreLine + '</span></div>' +
+      '<div id="geoFrame"><div class="g-msg">📸 Cargando la calle…</div></div>' +
+      '<div id="geoMap"></div>' +
+      '<div class="g-msg" id="geoHint">Toca el mapa pa\' poner tu pin 📍</div>' +
+      '<div class="g-row"><button class="g-btn gold" id="geoGuess" disabled>✅ Adivinar</button></div>' +
+      '<div class="g-msg" id="geoResult"></div>' +
+      '<div class="g-row" id="geoNextRow"></div>'
+    ));
+    geoFetchImage(place, false, function (imgId) {
+      if (S.round !== myRound || S.locs[S.round] !== myLoc) return;
+      var fw = document.getElementById('geoFrame');
+      if (!fw) return;
+      if (imgId) {
+        fw.innerHTML = '<iframe class="geo-frame" src="https://www.mapillary.com/embed?map_style=Mapillary%20light&image_key=' + imgId + '&style=photo" allowfullscreen></iframe>' +
+          '<div class="g-msg" style="font-size:12.5px">Arrastra pa\' mirar alrededor y usa las flechas del visor pa\' avanzar por la calle 🚶</div>';
+      } else if (S.mode !== 'answer') {
+        var used = {}; S.locs.forEach(function (x) { used[x] = 1; });
+        var alt = -1;
+        for (var i = 0; i < GEO_PLACES.length; i++) if (!used[i]) { alt = i; break; }
+        if (alt >= 0) { S.locs[S.round] = alt; geoRound(S); return; }
+        fw.innerHTML = '<div class="g-msg">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
+      } else {
+        fw.innerHTML = '<div class="g-msg">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
+      }
+    });
+    geoLoadLeaflet(function () {
+      if (S.round !== myRound || S.locs[S.round] !== myLoc) return;
+      var mapEl = document.getElementById('geoMap');
+      if (!mapEl || !window.L || mapEl._leaflet_id) return;
+      var map = L.map('geoMap').setView([22, 0], 2);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
+      later(function () { try { map.invalidateSize(); } catch (e) {} }, 250);
+      var guess = null, guessMarker = null, locked = false;
+      map.on('click', function (e) {
+        if (locked) return;
+        guess = [e.latlng.lat, e.latlng.lng];
+        if (guessMarker) guessMarker.setLatLng(e.latlng);
+        else guessMarker = L.marker(e.latlng, { icon: geoPin('📍') }).addTo(map);
+        var gb = document.getElementById('geoGuess');
+        if (gb) gb.disabled = false;
+      });
+      document.getElementById('geoGuess').addEventListener('click', function () {
+        if (locked || !guess) return;
+        locked = true;
+        this.disabled = true;
+        var dist = geoHavKm(guess[0], guess[1], place[0], place[1]);
+        var pts = geoPts(dist);
+        S.myPins.push([Math.round(guess[0] * 10000) / 10000, Math.round(guess[1] * 10000) / 10000]);
+        S.myPts.push(pts); S.total += pts;
+        L.marker([place[0], place[1]], { icon: geoPin('🎯') }).addTo(map);
+        var ptsArr = [[guess[0], guess[1]], [place[0], place[1]]];
+        var msg = '🎯 El lugar real estaba a <b>' + geoFmtDist(dist) + '</b> de tu pin · <b>+' + pts + ' pts</b>';
+        if (S.mode === 'answer') {
+          var rp = S.reto.pins[S.round];
+          var rDist = geoHavKm(rp[0], rp[1], place[0], place[1]);
+          var rPts = S.reto.pts[S.round];
+          L.marker([rp[0], rp[1]], { icon: geoPin('🟣') }).addTo(map);
+          ptsArr.push([rp[0], rp[1]]);
+          var swing = Math.abs(pts - rPts), roundTxt;
+          if (dist < rDist) { S.myDuel += swing; S.rivalDuel -= swing; roundTxt = '🏆 ¡Ganaste la ronda! Le quitaste ' + swing + ' pts a ' + geoEsc(S.reto.n) + '.'; }
+          else if (rDist < dist) { S.rivalDuel += swing; S.myDuel -= swing; roundTxt = '💀 ' + geoEsc(S.reto.n) + ' cayó más cerca (' + geoFmtDist(rDist) + ') y te quitó ' + swing + ' pts.'; }
+          else { roundTxt = '🤝 Empate de ronda — nadie quita puntos.'; }
+          msg += '<br>🟣 ' + geoEsc(S.reto.n) + ': a ' + geoFmtDist(rDist) + ' (' + rPts + ' pts)<br>' + roundTxt + '<br><b>Marcador: Tú ' + S.myDuel + ' · ' + geoEsc(S.reto.n) + ' ' + S.rivalDuel + '</b>';
+        }
+        L.polyline([[guess[0], guess[1]], [place[0], place[1]]], { color: '#f5c542', weight: 2, dashArray: '6 6' }).addTo(map);
+        map.fitBounds(L.latLngBounds(ptsArr).pad(0.25));
+        document.getElementById('geoResult').innerHTML = msg;
+        document.getElementById('geoHint').textContent = '';
+        var last = S.round >= 4;
+        document.getElementById('geoNextRow').innerHTML = '<button class="g-btn gold" id="geoNext">' + (last ? '🏁 Ver resultado' : 'Siguiente ronda ➡') + '</button>';
+        document.getElementById('geoNext').addEventListener('click', function () {
+          S.round++;
+          if (S.round >= 5) geoEnd(S); else geoRound(S);
+        });
+        window.scrollTo(0, 0);
+      });
+    });
+  }
+
+  function geoLinkBox(link) {
+    return '<textarea class="g-input" rows="3" readonly>' + geoEsc(link) + '</textarea>' +
+      '<div class="g-row"><button class="g-btn gold" id="geoCopy">📋 Copiar link</button></div>' +
+      '<div class="g-msg" id="geoCopyMsg"></div>';
+  }
+  function geoCopyFallback(done) {
+    var ta = host.querySelector('textarea.g-input');
+    if (ta) { ta.focus(); ta.select(); try { document.execCommand('copy'); } catch (e) {} }
+    done();
+  }
+  function geoWireCopy(link) {
+    document.getElementById('geoCopy').addEventListener('click', function () {
+      var done = function () { var m = document.getElementById('geoCopyMsg'); if (m) m.textContent = '✅ ¡Link copiado! Pégalo donde quieras.'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, function () { geoCopyFallback(done); });
+      else geoCopyFallback(done);
+    });
+  }
+
+  function geoEnd(S) {
+    host.innerHTML = '';
+    if (S.mode === 'solo') {
+      host.appendChild(el(
+        '<div class="g-score">🏁 Fin del juego</div>' +
+        '<div class="g-msg">Puntaje total: <b>' + S.total + '</b> de 25.000</div>' +
+        '<div class="g-msg">' + (S.total >= 20000 ? '🌍 ¡Nivel dios de la geografía!' : S.total >= 12000 ? '🔥 ¡Muy bueno, Bro!' : S.total >= 5000 ? '👍 Nada mal — sigue practicando.' : '😅 Ese estuvo duro… ¡otra vez!') + '</div>' +
+        '<div class="g-row"><button class="g-btn gold" id="geoAgain">↻ Jugar otra vez</button></div>'
+      ));
+      document.getElementById('geoAgain').addEventListener('click', function () { GAMES.geo(); });
+      return;
+    }
+    if (S.mode === 'create') {
+      var link = 'https://jamesvag.github.io/#reto=' + geoB64Enc({ n: S.name, locs: S.locs, pins: S.myPins, pts: S.myPts });
+      host.appendChild(el(
+        '<div class="g-score">🏁 ¡Duelo listo!</div>' +
+        '<div class="g-msg">Sacaste <b>' + S.total + '</b> pts en tus 5 lugares. Manda este link de reto a tu adversario — cuando lo abra, juega los mismos 5 lugares y el que caiga más cerca en cada ronda le quita puntos al otro 😈</div>' +
+        geoLinkBox(link)
+      ));
+      geoWireCopy(link);
+      return;
+    }
+    var winner, verdict;
+    if (S.myDuel > S.rivalDuel) { winner = S.name; verdict = '🏆 ¡GANASTE EL DUELO, ' + geoEsc(S.name) + '!'; }
+    else if (S.rivalDuel > S.myDuel) { winner = S.reto.n; verdict = '💀 ' + geoEsc(S.reto.n) + ' ganó el duelo… esta vez.'; }
+    else { winner = ''; verdict = '🤝 ¡Empate total!'; }
+    var rTotal = S.reto.pts.reduce(function (a, b) { return a + b; }, 0);
+    var rlink = 'https://jamesvag.github.io/#reto=' + geoB64Enc({ n: S.reto.n, locs: S.locs, pins: S.reto.pins, pts: S.reto.pts, res: { n2: S.name, pins2: S.myPins, pts2: S.myPts, s1: S.rivalDuel, s2: S.myDuel, w: winner } });
+    host.appendChild(el(
+      '<div class="g-score">🏁 Fin del duelo</div>' +
+      '<div class="g-msg" style="font-size:18px"><b>' + verdict + '</b></div>' +
+      '<div class="g-msg">Marcador final: <b>Tú ' + S.myDuel + '</b> · <b>' + geoEsc(S.reto.n) + ' ' + S.rivalDuel + '</b><br>Puntos de precisión: tú ' + S.total + ' · ' + geoEsc(S.reto.n) + ' ' + rTotal + '</div>' +
+      '<div class="g-msg">Mándale el link de resultado a ' + geoEsc(S.reto.n) + ' pa\' que vea cómo quedó:</div>' +
+      geoLinkBox(rlink)
+    ));
+    geoWireCopy(rlink);
+  }
+
+  /* ---------- Banner de reto (#reto=...) ---------- */
+  (function () {
+    var m = /#reto=([A-Za-z0-9\-_]+)/.exec(location.hash || '');
+    if (!m) return;
+    var data = null;
+    try { data = geoB64Dec(m[1]); } catch (e) { data = null; }
+    var banner = document.getElementById('duelBanner');
+    if (!data || !banner) return;
+    if (data.res) {
+      var r = data.res;
+      banner.innerHTML = '<div class="g-msg" style="margin:0">🏁 <b>Resultado del duelo:</b> ' + geoEsc(data.n) + ' ' + r.s1 + ' · ' + geoEsc(r.n2) + ' ' + r.s2 + (r.w ? ' — 🏆 ganó <b>' + geoEsc(r.w) + '</b>' : ' — 🤝 empate') + '</div>';
+      banner.style.display = '';
+    } else if (data.locs && data.pins && data.pts) {
+      banner.innerHTML = '<div class="g-msg" style="margin:0">⚔️ <b>' + geoEsc(data.n) + '</b> te reta en 🌍 ¿Dónde estoy? — toca pa\' jugar los mismos 5 lugares.</div><div class="g-row" style="margin:8px 0 0"><button class="g-btn gold" id="duelAccept">▶ Aceptar el reto</button></div>';
+      banner.style.display = '';
+      document.getElementById('duelAccept').addEventListener('click', function () {
+        geoStartMode = { type: 'answer', data: data };
+        openGame('geo');
+      });
+    }
+  })();
 })();
 
     </script>
@@ -1235,7 +1504,7 @@
       panel_title: "Tu panel, Bro 👑",
       tile_ai_desc: "Inteligente y ordenada — tarea, textos, cuentas… bien hecho.",
       tile_vault_name: "Bóveda", tile_vault_desc: "Guarda un texto y míralo solo manteniendo presionado o una sola vez.",
-      tile_games_name: "Juegos", tile_games_desc: "12 juegos dentro de la página y enlaces a juegos online.",
+      tile_games_name: "Juegos", tile_games_desc: "13 juegos dentro de la página y enlaces a juegos online.",
       prot_title: "🛡️ Protección automática",
       prot_text: "Al tocar <strong>🎥 Modo Stream</strong>, la página se <strong>bloquea</strong> y pide la contraseña de entrada pa' volver a abrirla.",
       lock_text: "Pega tu key pa' desbloquear la AI. La consigues en el bot <strong>@Vanguardia7_bot</strong> — la key empieza a correr cuando se genera.",
@@ -1254,7 +1523,7 @@
       vault_hold: "👁️ Mantener pa' ver", vault_once: "Ver una vez (30 s)",
       games_title: "🎮 Juegos", games_sub: "Juegos dentro de la página — no necesitan internet.",
       g_snake: "Serpiente", g_memory: "Memoria", g_mines: "Buscaminas", g_ttt: "Tres en raya", g_simon: "Simon dice",
-      g_breakout: "Rompe bloques", g_hangman: "Ahorcado", g_rps: "Piedra, papel o tijera",
+      g_breakout: "Rompe bloques", g_hangman: "Ahorcado", g_rps: "Piedra, papel o tijera", g_geo: "¿Dónde estoy?",
       games_online: "🌐 Juegos online", games_back: "Volver a los juegos"
     },
     en: {
@@ -1265,7 +1534,7 @@
       panel_title: "Your panel, Bro 👑",
       tile_ai_desc: "Smart and tidy — homework, texts, math… done right.",
       tile_vault_name: "Vault", tile_vault_desc: "Save a text and see it only by holding the button, or just once.",
-      tile_games_name: "Games", tile_games_desc: "12 games built into the page plus links to online games.",
+      tile_games_name: "Games", tile_games_desc: "13 games built into the page plus links to online games.",
       prot_title: "🛡️ Automatic protection",
       prot_text: "Tap <strong>🎥 Stream Mode</strong> and the page <strong>locks</strong> and asks for the entry password to open it again.",
       lock_text: "Paste your key to unlock the AI. Get it from the bot <strong>@Vanguardia7_bot</strong> — the key starts running when it is generated.",
@@ -1284,7 +1553,7 @@
       vault_hold: "👁️ Hold to view", vault_once: "View once (30 s)",
       games_title: "🎮 Games", games_sub: "Games built into the page — no internet needed.",
       g_snake: "Snake", g_memory: "Memory", g_mines: "Minesweeper", g_ttt: "Tic-Tac-Toe", g_simon: "Simon Says",
-      g_breakout: "Block Breaker", g_hangman: "Hangman", g_rps: "Rock, Paper, Scissors",
+      g_breakout: "Block Breaker", g_hangman: "Hangman", g_rps: "Rock, Paper, Scissors", g_geo: "Where am I?",
       games_online: "🌐 Online games", games_back: "Back to the games"
     },
     ht: {
@@ -1295,7 +1564,7 @@
       panel_title: "Panèl ou, Bro 👑",
       tile_ai_desc: "Entelijan e òganize — devwa, tèks, kont… byen fèt.",
       tile_vault_name: "Kofre", tile_vault_desc: "Sere yon tèks epi gade l sèlman lè w kenbe bouton an, oswa yon sèl fwa.",
-      tile_games_name: "Jwèt", tile_games_desc: "12 jwèt anndan paj la ak lyen pou jwèt online.",
+      tile_games_name: "Jwèt", tile_games_desc: "13 jwèt anndan paj la ak lyen pou jwèt online.",
       prot_title: "🛡️ Pwoteksyon otomatik",
       prot_text: "Lè w touche <strong>🎥 Mòd Stream</strong>, paj la <strong>bloke</strong> epi l mande modpas antre a pou w relouvri l.",
       lock_text: "Kole kle w la pou w debloke AI a. Ou jwenn li nan bot <strong>@Vanguardia7_bot</strong> — kle a kòmanse kouri depi l kreye.",
@@ -1314,7 +1583,7 @@
       vault_hold: "👁️ Kenbe pou wè", vault_once: "Gade yon fwa (30 s)",
       games_title: "🎮 Jwèt", games_sub: "Jwèt anndan paj la — yo pa bezwen entènèt.",
       g_snake: "Koulèv", g_memory: "Memwa", g_mines: "Chèche min", g_ttt: "Twa nan yon liy", g_simon: "Simon di",
-      g_breakout: "Kraze blok", g_hangman: "Pandi", g_rps: "Wòch, papye, sizo",
+      g_breakout: "Kraze blok", g_hangman: "Pandi", g_rps: "Wòch, papye, sizo", g_geo: "Ki kote m ye?",
       games_online: "🌐 Jwèt online", games_back: "Retounen nan jwèt yo"
     }
   };
