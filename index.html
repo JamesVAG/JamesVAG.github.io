@@ -275,6 +275,7 @@
         <button class="nav-item" data-view="navegador"><span class="ic">🤖</span> AI Pro Max</button>
         <button class="nav-item" data-view="boveda"><span class="ic">🔒</span> <span data-i18n="nav_vault">Bóveda protegida</span></button>
         <button class="nav-item" data-view="juegos"><span class="ic">🎮</span> <span data-i18n="nav_games">Juegos</span></button>
+        <button class="nav-item" data-view="mapa"><span class="ic">🗺️</span> <span data-i18n="nav_mapa">Mapa</span></button>
         <button class="nav-item" id="navStream"><span class="ic">🎥</span> <span data-i18n="nav_stream">Modo Stream</span></button>
       </nav>
       <div class="foot" style="margin-top:12px">
@@ -295,7 +296,8 @@
         <div class="menu-grid">
           <button class="tile" data-goto="navegador"><span class="ic">🤖</span> AI Pro Max <small data-i18n="tile_ai_desc">Inteligente y ordenada — tarea, textos, cuentas… bien hecho.</small></button>
           <button class="tile" data-goto="boveda"><span class="ic">🔒</span> <span data-i18n="tile_vault_name">Bóveda</span> <small data-i18n="tile_vault_desc">Guarda un texto y míralo solo manteniendo presionado o una sola vez.</small></button>
-          <button class="tile" data-goto="juegos"><span class="ic">🎮</span> <span data-i18n="tile_games_name">Juegos</span> <small data-i18n="tile_games_desc">13 juegos dentro de la página y enlaces a juegos online.</small></button>
+          <button class="tile" data-goto="juegos"><span class="ic">🎮</span> <span data-i18n="tile_games_name">Juegos</span> <small data-i18n="tile_games_desc">12 juegos dentro de la página y enlaces a juegos online.</small></button>
+          <button class="tile" data-goto="mapa"><span class="ic">🗺️</span> <span data-i18n="tile_mapa_name">Mapa</span> <small data-i18n="tile_mapa_desc">MAPAZO: adivina dónde estás en el mundo</small></button>
         </div>
         <div class="card">
           <h3 data-i18n="prot_title">🛡️ Protección automática</h3>
@@ -362,7 +364,6 @@
       <!-- ===== JUEGOS ===== -->
       <section class="view" id="view-juegos">
         <h2 class="view-title" data-i18n="games_title">🎮 Juegos</h2>
-        <div id="duelBanner" style="display:none"></div>
         <div id="gamesGrid">
           <p style="color:var(--muted);font-size:14px;margin:0 0 12px" data-i18n="games_sub">Juegos dentro de la página — no necesitan internet.</p>
           <div class="links-grid">
@@ -378,7 +379,6 @@
             <button class="link-card game-card" data-game="trivia"><span class="ic">❓</span> <span>Trivia</span></button>
             <button class="link-card game-card" data-game="rps"><span class="ic">✂️</span> <span data-i18n="g_rps">Piedra, papel o tijera</span></button>
             <button class="link-card game-card" data-game="blackjack"><span class="ic">🂡</span> <span>Blackjack 21</span></button>
-            <button class="link-card game-card" data-game="geo"><span class="ic">🌍</span> <span data-i18n="g_geo">¿Dónde estoy?</span></button>
           </div>
           <h3 style="margin:22px 0 10px" data-i18n="games_online">🌐 Juegos online</h3>
           <div class="links-grid">
@@ -396,74 +396,115 @@
           <div id="gameHost"></div>
         </div>
       </section>
+
+      <!-- ===== MAPA ===== -->
+      <section class="view" id="view-mapa">
+        <h2 class="view-title" data-i18n="mapa_title">🗺️ Mapa</h2>
+        <div id="mapaHome">
+          <div id="duelBanner" style="display:none"></div>
+          <button class="mapazo-card" id="mapazoCard" type="button">
+            <span class="ic">🌍</span>
+            <span style="font-size:24px;font-weight:900" data-i18n="g_geo">MAPAZO</span>
+            <small data-i18n="mapazo_card_desc">Te soltamos en una calle del mundo — camina con los botones, busca pistas y marca en el mapa dónde crees que estás.</small>
+          </button>
+          <p style="color:var(--muted);font-size:14px;line-height:1.55;margin:14px 0 0" data-i18n="mapazo_modes">🎯 <strong>Solo:</strong> 5 lugares, suma puntos (máx 5.000 por ronda).<br />⚔️ <strong>Duelo por link:</strong> juega 5 lugares y manda el link de reto — el que caiga más cerca en cada ronda le quita puntos al otro.</p>
+        </div>
+        <div id="geoStage" style="display:none">
+          <button class="btn" id="geoBack" style="margin-bottom:12px">← <span data-i18n="mapa_back">Volver al mapa</span></button>
+          <h3 id="geoTitle" style="margin:0 0 10px"></h3>
+          <div id="geoHost"></div>
+        </div>
+      </section>
       <style>
-        .game-card { text-align: left; font: inherit; cursor: pointer; width: 100%; }
-        #gameHost .g-score { font-weight: 800; font-size: 16px; margin: 8px 0; color: #f5c542; }
-        #gameHost .g-msg { font-size: 15px; margin: 8px 0; min-height: 20px; }
-        #gameHost .g-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
-        #gameHost .g-btn { background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
-        #gameHost .g-btn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
-        #gameHost .g-pad { display: grid; grid-template-columns: repeat(3, 56px); gap: 6px; justify-content: center; margin: 10px 0; }
-        #gameHost .g-pad button { height: 48px; font-size: 20px; background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; cursor: pointer; }
-        #gameHost canvas { background: #0b0c12; border: 1px solid #2c2d3d; border-radius: 12px; display: block; margin: 0 auto; max-width: 100%; touch-action: none; }
-        #gameHost .mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 340px; margin: 0 auto; }
-        #gameHost .mem-card { height: 64px; font-size: 30px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 10px; cursor: pointer; color: #fff; }
-        #gameHost .mine-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; max-width: 340px; margin: 0 auto; }
-        #gameHost .mine-cell { height: 38px; font-size: 17px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 7px; cursor: pointer; color: #fff; font-weight: 800; padding: 0; }
-        #gameHost .mine-cell.open { background: #0e0f16; }
-        #gameHost .ttt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 300px; margin: 0 auto; }
-        #gameHost .ttt-cell { height: 84px; font-size: 38px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 12px; cursor: pointer; color: #fff; }
-        #gameHost .g2048-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; max-width: 320px; margin: 0 auto; background: #14151f; padding: 7px; border-radius: 12px; }
-        #gameHost .g2048-cell { height: 66px; display: grid; place-items: center; font-size: 21px; font-weight: 900; border-radius: 8px; background: #1e1f2b; color: #fff; }
-        #gameHost .simon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 280px; margin: 0 auto; }
-        #gameHost .simon-pad { height: 110px; border-radius: 16px; border: none; cursor: pointer; opacity: .45; }
-        #gameHost .simon-pad.lit { opacity: 1; }
-        #gameHost .hang-word { font-size: 30px; letter-spacing: 6px; font-weight: 900; text-align: center; margin: 12px 0; }
-        #gameHost .hang-keys { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; max-width: 360px; margin: 0 auto; }
-        #gameHost .hang-keys button { width: 38px; height: 38px; font-size: 15px; font-weight: 800; background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 8px; cursor: pointer; }
-        #gameHost .hang-keys button:disabled { opacity: .3; }
-        #gameHost .bj-hand { font-size: 34px; letter-spacing: 3px; margin: 4px 0; }
-        #gameHost .g-input { width: 100%; box-sizing: border-box; background: #12121a; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 15px; margin: 8px 0; font-family: inherit; }
-        /* Geo: stage a pantalla completa */
-        #gameStage.geo-full { position: fixed; inset: 0; z-index: 45; background: #0b0c12; overflow: hidden; }
-        #gameStage.geo-full #gameBack { position: absolute; top: 10px; left: 10px; z-index: 1500; margin: 0; background: rgba(13,13,22,.78); color: #fff; border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(4px); }
-        #gameStage.geo-full #gameName { display: none; }
-        #gameStage.geo-full #gameHost { position: absolute; inset: 0; overflow-y: auto; padding: 58px 14px 16px; box-sizing: border-box; }
-        #gameHost .geo-stage { position: absolute; inset: 0; overflow: hidden; background: #0b0c12; }
-        #gameHost .geo-view { position: absolute; inset: 0; }
-        #gameHost .geo-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #0b0c12; display: block; }
-        #gameHost .geo-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8,8,14,.55); color: #fff; font-size: 17px; font-weight: 700; pointer-events: none; z-index: 5; text-align: center; padding: 0 20px; }
-        #gameHost .geo-score { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1400; background: rgba(13,13,22,.78); color: #f5c542; font-weight: 800; font-size: 14px; padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); white-space: nowrap; backdrop-filter: blur(4px); max-width: calc(100vw - 150px); overflow: hidden; text-overflow: ellipsis; }
-        #gameHost .geo-hint { position: absolute; left: 10px; bottom: 64px; z-index: 1400; background: rgba(13,13,22,.72); color: #fff; font-size: 12.5px; padding: 6px 10px; border-radius: 999px; pointer-events: none; max-width: 62vw; }
-        #gameHost .geo-viewhint { position: absolute; left: 10px; bottom: 10px; z-index: 4; background: rgba(13,13,22,.6); color: #ddd; font-size: 12px; padding: 5px 9px; border-radius: 999px; pointer-events: none; max-width: 55vw; }
-        #gameHost .geo-swap { position: absolute; left: 10px; bottom: 108px; z-index: 1400; background: rgba(13,13,22,.82); color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 9px 13px; font-size: 14px; font-weight: 700; cursor: pointer; }
-        #gameHost .geo-swap:disabled { opacity: .45; }
-        /* Minimapa tipo Free Fire */
-        #gameHost .geo-mapbox { position: absolute; right: 10px; bottom: 10px; z-index: 1300; width: 200px; display: flex; flex-direction: column; gap: 8px; }
-        #gameHost #geoMapWrap { position: relative; width: 100%; height: 140px; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.55); border: 2px solid rgba(245,197,66,.75); background: #0b0c12; transition: width .35s ease, height .35s ease; cursor: pointer; }
-        #gameHost #geoMapWrap.big { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 880px); height: 70dvh; z-index: 1450; cursor: default; }
-        #gameHost #geoMap { width: 100%; height: 100%; position: relative; z-index: 0; background: #0b0c12; }
-        #gameHost .geo-maptag { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1100; background: rgba(13,13,22,.72); color: #fff; font-size: 11.5px; font-weight: 700; text-align: center; padding: 4px 2px; pointer-events: none; }
-        #gameHost #geoMapWrap.big .geo-maptag { display: none; }
-        #gameHost .geo-shrink { position: absolute; top: 6px; right: 6px; z-index: 1200; display: none; background: rgba(13,13,22,.85); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 7px 11px; font-size: 13px; font-weight: 800; cursor: pointer; }
-        #gameHost #geoMapWrap.big .geo-shrink { display: block; }
-        #gameHost #geoGuess { width: 100%; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
-        #gameHost #geoGuess:disabled { opacity: .5; }
-        #gameHost .geo-panel { position: absolute; top: 56px; left: 10px; right: 10px; z-index: 1420; background: rgba(11,11,19,.9); border: 1px solid rgba(245,197,66,.5); border-radius: 14px; padding: 12px 14px; max-height: 42dvh; overflow-y: auto; backdrop-filter: blur(4px); }
-        #gameHost .geo-panel .g-msg { margin: 0; }
-        #gameHost .geo-pin-wrap { background: none; border: none; }
-        #gameHost .geo-pin { font-size: 26px; line-height: 32px; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
-        @media (max-width: 640px) {
-          #gameHost .geo-mapbox { width: 150px; }
-          #gameHost #geoMapWrap { height: 110px; }
-          #gameHost #geoMapWrap.big { height: 68dvh; }
-          #gameHost .geo-score { font-size: 12.5px; padding: 6px 10px; }
+.game-card { text-align: left; font: inherit; cursor: pointer; width: 100%; }
+#gameHost .g-score, #geoHost .g-score { font-weight: 800; font-size: 16px; margin: 8px 0; color: #f5c542; }
+#gameHost .g-msg, #geoHost .g-msg { font-size: 15px; margin: 8px 0; min-height: 20px; }
+#gameHost .g-row, #geoHost .g-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+#gameHost .g-btn, #geoHost .g-btn { background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+#gameHost .g-btn.gold, #geoHost .g-btn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
+#gameHost .g-pad, #geoHost .g-pad { display: grid; grid-template-columns: repeat(3, 56px); gap: 6px; justify-content: center; margin: 10px 0; }
+#gameHost .g-pad button, #geoHost .g-pad button { height: 48px; font-size: 20px; background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; cursor: pointer; }
+#gameHost canvas, #geoHost canvas { background: #0b0c12; border: 1px solid #2c2d3d; border-radius: 12px; display: block; margin: 0 auto; max-width: 100%; touch-action: none; }
+#gameHost .mem-grid, #geoHost .mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 340px; margin: 0 auto; }
+#gameHost .mem-card, #geoHost .mem-card { height: 64px; font-size: 30px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 10px; cursor: pointer; color: #fff; }
+#gameHost .mine-grid, #geoHost .mine-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; max-width: 340px; margin: 0 auto; }
+#gameHost .mine-cell, #geoHost .mine-cell { height: 38px; font-size: 17px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 7px; cursor: pointer; color: #fff; font-weight: 800; padding: 0; }
+#gameHost .mine-cell.open, #geoHost .mine-cell.open { background: #0e0f16; }
+#gameHost .ttt-grid, #geoHost .ttt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 300px; margin: 0 auto; }
+#gameHost .ttt-cell, #geoHost .ttt-cell { height: 84px; font-size: 38px; background: #1b1c29; border: 1px solid #2c2d3d; border-radius: 12px; cursor: pointer; color: #fff; }
+#gameHost .g2048-grid, #geoHost .g2048-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; max-width: 320px; margin: 0 auto; background: #14151f; padding: 7px; border-radius: 12px; }
+#gameHost .g2048-cell, #geoHost .g2048-cell { height: 66px; display: grid; place-items: center; font-size: 21px; font-weight: 900; border-radius: 8px; background: #1e1f2b; color: #fff; }
+#gameHost .simon-grid, #geoHost .simon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 280px; margin: 0 auto; }
+#gameHost .simon-pad, #geoHost .simon-pad { height: 110px; border-radius: 16px; border: none; cursor: pointer; opacity: .45; }
+#gameHost .simon-pad.lit, #geoHost .simon-pad.lit { opacity: 1; }
+#gameHost .hang-word, #geoHost .hang-word { font-size: 30px; letter-spacing: 6px; font-weight: 900; text-align: center; margin: 12px 0; }
+#gameHost .hang-keys, #geoHost .hang-keys { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; max-width: 360px; margin: 0 auto; }
+#gameHost .hang-keys button, #geoHost .hang-keys button { width: 38px; height: 38px; font-size: 15px; font-weight: 800; background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 8px; cursor: pointer; }
+#gameHost .hang-keys button:disabled, #geoHost .hang-keys button:disabled { opacity: .3; }
+#gameHost .bj-hand, #geoHost .bj-hand { font-size: 34px; letter-spacing: 3px; margin: 4px 0; }
+#gameHost .g-input, #geoHost .g-input { width: 100%; box-sizing: border-box; background: #12121a; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 15px; margin: 8px 0; font-family: inherit; }
+/* Geo: stage a pantalla completa */
+        #gameStage.geo-full, /* Geo: stage a pantalla completa */
+        #geoStage.geo-full { position: fixed; inset: 0; z-index: 45; background: #0b0c12; overflow: hidden; }
+#gameStage.geo-full #gameBack, #geoStage.geo-full #geoBack { position: absolute; top: 10px; left: 10px; z-index: 1500; margin: 0; background: rgba(13,13,22,.78); color: #fff; border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(4px); }
+#gameStage.geo-full #gameName, #geoStage.geo-full #geoTitle { display: none; }
+#gameStage.geo-full #gameHost, #geoStage.geo-full #geoHost { position: absolute; inset: 0; overflow-y: auto; padding: 58px 14px 16px; box-sizing: border-box; }
+#gameHost .geo-stage, #geoHost .geo-stage { position: absolute; inset: 0; overflow: hidden; background: #0b0c12; }
+#gameHost .geo-view, #geoHost .geo-view { position: absolute; inset: 0; }
+#gameHost .geo-frame, #geoHost .geo-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #0b0c12; display: block; }
+#gameHost .geo-loading, #geoHost .geo-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8,8,14,.55); color: #fff; font-size: 17px; font-weight: 700; pointer-events: none; z-index: 5; text-align: center; padding: 0 20px; }
+#gameHost .geo-score, #geoHost .geo-score { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1400; background: rgba(13,13,22,.78); color: #f5c542; font-weight: 800; font-size: 14px; padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); white-space: nowrap; backdrop-filter: blur(4px); max-width: calc(100vw - 150px); overflow: hidden; text-overflow: ellipsis; }
+#gameHost .geo-hint, #geoHost .geo-hint { position: absolute; left: 10px; bottom: 64px; z-index: 1400; background: rgba(13,13,22,.72); color: #fff; font-size: 12.5px; padding: 6px 10px; border-radius: 999px; pointer-events: none; max-width: 62vw; }
+#gameHost .geo-viewhint, #geoHost .geo-viewhint { position: absolute; left: 10px; bottom: 10px; z-index: 4; background: rgba(13,13,22,.6); color: #ddd; font-size: 12px; padding: 5px 9px; border-radius: 999px; pointer-events: none; max-width: 55vw; }
+#gameHost .geo-swap, #geoHost .geo-swap { position: absolute; left: 10px; bottom: 108px; z-index: 1400; background: rgba(13,13,22,.82); color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 9px 13px; font-size: 14px; font-weight: 700; cursor: pointer; }
+#gameHost .geo-swap:disabled, #geoHost .geo-swap:disabled { opacity: .45; }
+/* Minimapa tipo Free Fire */
+        #gameHost .geo-mapbox, /* Minimapa tipo Free Fire */
+        #geoHost .geo-mapbox { position: absolute; right: 10px; bottom: 10px; z-index: 1300; width: 200px; display: flex; flex-direction: column; gap: 8px; }
+#gameHost #geoMapWrap, #geoHost #geoMapWrap { position: relative; width: 100%; height: 140px; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.55); border: 2px solid rgba(245,197,66,.75); background: #0b0c12; transition: width .35s ease, height .35s ease; cursor: pointer; }
+#gameHost #geoMapWrap.big, #geoHost #geoMapWrap.big { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 880px); height: 70dvh; z-index: 1450; cursor: default; }
+#gameHost #geoMap, #geoHost #geoMap { width: 100%; height: 100%; position: relative; z-index: 0; background: #0b0c12; }
+#gameHost .geo-maptag, #geoHost .geo-maptag { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1100; background: rgba(13,13,22,.72); color: #fff; font-size: 11.5px; font-weight: 700; text-align: center; padding: 4px 2px; pointer-events: none; }
+#gameHost #geoMapWrap.big .geo-maptag, #geoHost #geoMapWrap.big .geo-maptag { display: none; }
+#gameHost .geo-shrink, #geoHost .geo-shrink { position: absolute; top: 6px; right: 6px; z-index: 1200; display: none; background: rgba(13,13,22,.85); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 7px 11px; font-size: 13px; font-weight: 800; cursor: pointer; }
+#gameHost #geoMapWrap.big .geo-shrink, #geoHost #geoMapWrap.big .geo-shrink { display: block; }
+#gameHost #geoGuess, #geoHost #geoGuess { width: 100%; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+#gameHost #geoGuess:disabled, #geoHost #geoGuess:disabled { opacity: .5; }
+#gameHost .geo-panel, #geoHost .geo-panel { position: absolute; top: 56px; left: 10px; right: 10px; z-index: 1420; background: rgba(11,11,19,.9); border: 1px solid rgba(245,197,66,.5); border-radius: 14px; padding: 12px 14px; max-height: 42dvh; overflow-y: auto; backdrop-filter: blur(4px); }
+#gameHost .geo-panel .g-msg, #geoHost .geo-panel .g-msg { margin: 0; }
+#gameHost .geo-pin-wrap, #geoHost .geo-pin-wrap { background: none; border: none; }
+#gameHost .geo-pin, #geoHost .geo-pin { font-size: 26px; line-height: 32px; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+
+        @media (max-width: 640px) {#gameHost .geo-mapbox, #geoHost .geo-mapbox { width: 150px; }
+#gameHost #geoMapWrap, #geoHost #geoMapWrap { height: 110px; }
+#gameHost #geoMapWrap.big, #geoHost #geoMapWrap.big { height: 68dvh; }
+#gameHost .geo-score, #geoHost .geo-score { font-size: 12.5px; padding: 6px 10px; }
+
         }
-        #duelBanner { background: #1b1c29; border: 1px solid #f5c542; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; }
-        #duelBanner .g-msg { font-size: 15px; }
-        #duelBanner .g-row { display: flex; gap: 8px; flex-wrap: wrap; }
-        #duelBanner .g-btn { background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
-        #duelBanner .g-btn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
+/* Tarjeta grande de MAPAZO (vista Mapa) */
+        .mapazo-card { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; width: 100%; text-align: left; padding: 1.1rem .95rem; min-height: 5.4rem; background: var(--card); border: 1px solid var(--gold); border-radius: var(--radius); color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+.mapazo-card .ic { font-size: 2.4rem; }
+.mapazo-card small { color: var(--muted); font-weight: 500; font-size: .85rem; line-height: 1.4; }
+.mapazo-card:active { border-color: var(--gold-2); }
+/* Botones grandes pa' caminar (Avanzar/Atrás) */
+        #gameHost .geo-walk, /* Botones grandes pa' caminar (Avanzar/Atrás) */
+        #geoHost .geo-walk { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; z-index: 1400; display: flex; align-items: center; gap: 10px; }
+#gameHost .geo-walkbtn, #geoHost .geo-walkbtn { background: rgba(13,13,22,.88); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 13px 20px; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.5); white-space: nowrap; backdrop-filter: blur(4px); font-family: inherit; }
+#gameHost .geo-walkbtn.gold, #geoHost .geo-walkbtn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
+#gameHost .geo-walkbtn:disabled, #geoHost .geo-walkbtn:disabled { opacity: .4; }
+#gameHost .geo-step, #geoHost .geo-step { background: rgba(13,13,22,.78); color: #fff; font-size: 12.5px; font-weight: 700; padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+
+        @media (max-width: 640px) {#gameHost .geo-walk, #geoHost .geo-walk { bottom: 190px; gap: 7px; }
+#gameHost .geo-walkbtn, #geoHost .geo-walkbtn { padding: 11px 13px; font-size: 14.5px; }
+
+        }
+#duelBanner { background: #1b1c29; border: 1px solid #f5c542; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; }
+#duelBanner .g-msg { font-size: 15px; }
+#duelBanner .g-row { display: flex; gap: 8px; flex-wrap: wrap; }
+#duelBanner .g-btn { background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+#duelBanner .g-btn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
+
+      
       </style>
 
     </main>
@@ -784,7 +825,7 @@
   function el(html) { var d = document.createElement('div'); d.innerHTML = html; return d; }
   function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
-  var NAMES = { snake: '🐍 Serpiente', g2048: '🔢 2048', memory: '🃏 Memoria', mines: '💣 Buscaminas', ttt: '❌ Tres en raya', simon: '🎨 Simon dice', breakout: '🧱 Rompe bloques', flappy: '🐤 Flappy', hangman: '🔤 Ahorcado', trivia: '❓ Trivia', rps: '✂️ Piedra, papel o tijera', blackjack: '🂡 Blackjack 21', geo: '🌍 ¿Dónde estoy?' };
+  var NAMES = { snake: '🐍 Serpiente', g2048: '🔢 2048', memory: '🃏 Memoria', mines: '💣 Buscaminas', ttt: '❌ Tres en raya', simon: '🎨 Simon dice', breakout: '🧱 Rompe bloques', flappy: '🐤 Flappy', hangman: '🔤 Ahorcado', trivia: '❓ Trivia', rps: '✂️ Piedra, papel o tijera', blackjack: '🂡 Blackjack 21', geo: '🌍 MAPAZO' };
 
   function openGame(name) {
     stopAll();
@@ -807,6 +848,32 @@
     b.addEventListener('click', function () { openGame(b.getAttribute('data-game')); });
   });
   document.getElementById('gameBack').addEventListener('click', closeGame);
+
+  /* ----- MAPAZO: stage propio (#geoStage) en la vista Mapa ----- */
+  var geoHost = document.getElementById('geoHost');
+  var geoStage = document.getElementById('geoStage');
+  var mapaHome = document.getElementById('mapaHome');
+  function openGeo() {
+    stopAll();
+    geoHost.innerHTML = '';
+    geoStage.classList.remove('geo-full');
+    if (mapaHome) mapaHome.style.display = 'none';
+    geoStage.style.display = '';
+    var gt = document.getElementById('geoTitle');
+    if (gt) gt.textContent = NAMES.geo;
+    GAMES.geo();
+    window.scrollTo(0, 0);
+  }
+  function closeGeo() {
+    stopAll();
+    geoHost.innerHTML = '';
+    geoStage.classList.remove('geo-full');
+    geoStage.style.display = 'none';
+    if (mapaHome) mapaHome.style.display = '';
+  }
+  var mapazoCard = document.getElementById('mapazoCard');
+  if (mapazoCard) mapazoCard.addEventListener('click', openGeo);
+  document.getElementById('geoBack').addEventListener('click', closeGeo);
 
   var GAMES = {};
 
@@ -1266,7 +1333,7 @@
     document.getElementById('bjPScore').textContent = 'Toca Repartir pa\' empezar.';
   };
 
-  /* ---------- ¿Dónde estoy? (mapas · Mapillary) ---------- */
+  /* ---------- MAPAZO (mapas · Mapillary) ---------- */
   var GEO_TOKEN = 'MLY|28947804174919418|351e9f8985ea7472f5b029c0a0ff4ab2';
   var GEO_PLACES = [
     [40.758, -73.9855], [48.8584, 2.2945], [41.8902, 12.4922], [51.5007, -0.1246],
@@ -1303,31 +1370,56 @@
   }
   function geoPin(emoji) { return L.divIcon({ className: 'geo-pin-wrap', html: '<div class="geo-pin">' + emoji + '</div>', iconSize: [32, 32], iconAnchor: [16, 16] }); }
 
-  function geoFetchCands(place, widened, cb) {
+  /* Busca las imágenes del bbox (limit=100) y las agrupa por sequence,
+     conservando el orden en que la API las devuelve (el orden del
+     camino). Devuelve las secuencias como listas ORDENADAS de ids,
+     de la más larga a la más corta: pa' caminar de verdad hacen
+     falta caminos LARGOS, no fotos sueltas. */
+  function geoFetchSeqs(place, widened, cb) {
     var dLat = widened ? 0.009 : 0.003, dLng = widened ? 0.012 : 0.004;
     var bbox = (place[1] - dLng) + ',' + (place[0] - dLat) + ',' + (place[1] + dLng) + ',' + (place[0] + dLat);
-    fetch('https://graph.mapillary.com/images?access_token=' + encodeURIComponent(GEO_TOKEN) + '&fields=id,sequence,is_pano&bbox=' + bbox + '&limit=50')
+    fetch('https://graph.mapillary.com/images?access_token=' + encodeURIComponent(GEO_TOKEN) + '&fields=id,sequence&bbox=' + bbox + '&limit=100')
       .then(function (r) { return r.json(); })
       .then(function (j) {
         var arr = (j && j.data) || [];
-        var withSeq = [], without = [];
-        arr.forEach(function (x) { if (!x || x.id == null) return; if (x.sequence) withSeq.push(x.id); else without.push(x.id); });
-        cb({ seq: shuffle(withSeq), any: shuffle(withSeq.concat(without)) });
+        var bySeq = {}, order = [];
+        arr.forEach(function (x) {
+          if (!x || x.id == null || !x.sequence) return;
+          if (!bySeq[x.sequence]) { bySeq[x.sequence] = []; order.push(x.sequence); }
+          bySeq[x.sequence].push(x.id);
+        });
+        var seqs = order.map(function (k) { return bySeq[k]; });
+        seqs.sort(function (a, b) { return b.length - a.length; });
+        cb(seqs);
       })
-      .catch(function () { cb({ seq: [], any: [] }); });
+      .catch(function () { cb([]); });
   }
-  /* Devuelve hasta 10 ids candidatos del lugar, TODOS de sequence
-     (navegables: se puede caminar con las flechas del visor). Sin
-     sequence no sirve — se descarta. Si ni ampliando el bbox x3 hay
-     imágenes con sequence, cb(null) y la ronda salta a otro lugar. */
+  /* Elige las secuencias del lugar: se busca una LARGA (mínimo ~10
+     fotos). Si ninguna del bbox chico llega a 10, se amplía el bbox
+     x3 una vez; si ni así, se usa la más larga que haya, uniendo
+     ambos resultados sin repetir secuencias. Sin secuencias,
+     cb(null) y la ronda salta a otro lugar. */
   function geoFetchImage(place, cb) {
-    geoFetchCands(place, false, function (small) {
-      if (small.seq.length) { cb(small.seq.slice(0, 10)); return; }
-      geoFetchCands(place, true, function (wide) {
-        if (wide.seq.length) { cb(wide.seq.slice(0, 10)); return; }
+    geoFetchSeqs(place, false, function (small) {
+      if (small.length && small[0].length >= 10) { cb(small); return; }
+      geoFetchSeqs(place, true, function (wide) {
+        var seen = {}, out = [];
+        small.concat(wide).forEach(function (s) { if (s.length && !seen[s[0]]) { seen[s[0]] = 1; out.push(s); } });
+        out.sort(function (a, b) { return b.length - a.length; });
+        if (out.length) { cb(out); return; }
         cb(null);
       });
     });
+  }
+  /* Refresca el contador "Paso X/Y" y el estado de Avanzar/Atrás. */
+  function geoWalkUI(S) {
+    var n = S.imgs ? S.imgs.length : 0;
+    var step = document.getElementById('geoStep');
+    if (step) step.textContent = n ? ('Paso ' + (S.imgIdx + 1) + '/' + n) : '';
+    var prev = document.getElementById('geoPrev');
+    if (prev) prev.disabled = !n || S.imgIdx <= 0;
+    var next = document.getElementById('geoNext');
+    if (next) next.disabled = !n || S.imgIdx >= n - 1;
   }
   function geoShowImg(S, overlayMs) {
     var fw = document.getElementById('geoFrame');
@@ -1343,7 +1435,7 @@
       later(function () { var o = document.getElementById('geoLoading'); if (o) o.style.display = 'none'; }, overlayMs || 4000);
     }
     var sw = document.getElementById('geoSwap');
-    if (sw) sw.disabled = S.imgs.length < 2;
+    if (sw) sw.disabled = !((S.seqs && S.seqs.length > 1) || (S.imgs && S.imgs.length > 1));
   }
 
   function geoRandomLocs() {
@@ -1352,11 +1444,11 @@
   }
 
   GAMES.geo = function () {
-    stage.classList.add('geo-full');
+    geoStage.classList.add('geo-full');
     var pending = geoStartMode; geoStartMode = null;
     if (pending && pending.type === 'answer') { geoNameScreen('answer', pending.data); return; }
-    host.innerHTML = '';
-    host.appendChild(el(
+    geoHost.innerHTML = '';
+    geoHost.appendChild(el(
       '<div class="g-msg">Te soltamos en una calle del mundo 🌍 Camina por la foto, busca pistas (letreros, placas, el idioma…) y después marca en el mapa dónde crees que estás. Entre más cerca caiga tu pin, más puntos (máx 5.000 por ronda).</div>' +
       '<div class="g-row"><button class="g-btn gold" id="geoSolo">🎯 Jugar solo</button><button class="g-btn" id="geoDuelBtn">⚔️ Duelo</button></div>' +
       '<div class="g-msg" style="font-size:13px">Solo: 5 lugares, suma puntos. Duelo: juegas 5 lugares y mandas el link de reto — el que caiga más cerca en cada ronda le quita puntos al otro 😈</div>'
@@ -1368,11 +1460,11 @@
   };
 
   function geoNameScreen(kind, reto) {
-    host.innerHTML = '';
+    geoHost.innerHTML = '';
     var title = kind === 'answer'
       ? '⚔️ <b>' + geoEsc(reto.n) + '</b> te retó. Pon tu nombre y juega los mismos 5 lugares — el que caiga más cerca en cada ronda le quita puntos al otro.'
       : '⚔️ Modo duelo. Pon tu nombre, juega 5 lugares y al final te doy el link de reto pa\' mandarlo.';
-    host.appendChild(el(
+    geoHost.appendChild(el(
       '<div class="g-msg">' + title + '</div>' +
       '<input class="g-input" id="geoName" type="text" maxlength="20" placeholder="Tu nombre" value="' + (kind === 'create' ? 'James' : '') + '" />' +
       '<div class="g-row"><button class="g-btn gold" id="geoNameGo">▶ Empezar</button></div>'
@@ -1392,16 +1484,17 @@
   function geoRound(S) {
     var myRound = S.round, myLoc = S.locs[S.round];
     var place = GEO_PLACES[myLoc];
-    S.imgs = null; S.imgIdx = 0;
-    host.innerHTML = '';
+    S.imgs = null; S.imgIdx = 0; S.seqs = null; S.seqIdx = 0;
+    geoHost.innerHTML = '';
     var scoreLine = S.mode === 'solo' ? ('Total: ' + S.total + ' pts')
       : S.mode === 'create' ? ('Tus puntos: ' + S.total + ' pts')
       : ('Tú ' + S.myDuel + ' · ' + geoEsc(S.reto.n) + ' ' + S.rivalDuel);
-    host.appendChild(el(
+    geoHost.appendChild(el(
       '<div class="geo-stage">' +
-      '<div class="geo-view" id="geoFrame"><div class="geo-loading" id="geoLoading">📸 Cargando la calle…</div><div class="geo-viewhint" id="geoViewHint" style="display:none">🚶 Camina con las flechas del visor · Arrastra pa\' mirar alrededor</div></div>' +
+      '<div class="geo-view" id="geoFrame"><div class="geo-loading" id="geoLoading">📸 Cargando la calle…</div><div class="geo-viewhint" id="geoViewHint" style="display:none">🚶 Camina con Avanzar/Atrás o las flechas del visor · Arrastra pa\' mirar alrededor</div></div>' +
       '<div class="geo-score">Ronda ' + (S.round + 1) + '/5 · <span>' + scoreLine + '</span></div>' +
       '<button class="geo-swap" id="geoSwap" type="button" disabled>🔄 Otra foto</button>' +
+      '<div class="geo-walk"><button class="geo-walkbtn" id="geoPrev" type="button" disabled>⬅️ Atrás</button><span class="geo-step" id="geoStep"></span><button class="geo-walkbtn gold" id="geoNext" type="button" disabled>🚶 Avanzar ➡️</button></div>' +
       '<div class="geo-hint" id="geoHint">Toca el minimapa 🗺️ pa\' agrandarlo y poner tu pin 📍</div>' +
       '<div class="geo-mapbox"><div id="geoMapWrap"><div id="geoMap"></div><div class="geo-maptag">🗺️ Toca pa\' agrandar</div><button class="geo-shrink" id="geoShrink" type="button">🔽 Encoger</button></div>' +
       '<button class="g-btn gold" id="geoGuess" disabled>✅ Adivinar</button></div>' +
@@ -1409,19 +1502,33 @@
       '</div>'
     ));
     document.getElementById('geoSwap').addEventListener('click', function () {
-      if (!S.imgs || S.imgs.length < 2) return;
-      S.imgIdx = (S.imgIdx + 1) % S.imgs.length;
-      geoShowImg(S, 2500);
+      if (S.seqs && S.seqs.length > 1) {
+        S.seqIdx = (S.seqIdx + 1) % S.seqs.length;
+        S.imgs = S.seqs[S.seqIdx]; S.imgIdx = 0;
+        geoShowImg(S, 2500); geoWalkUI(S);
+      } else if (S.imgs && S.imgs.length > 1) {
+        S.imgIdx = (S.imgIdx + 1) % S.imgs.length;
+        geoShowImg(S, 2500); geoWalkUI(S);
+      }
     });
-    geoFetchImage(place, function (cands) {
+    document.getElementById('geoPrev').addEventListener('click', function () {
+      if (!S.imgs || S.imgIdx <= 0) return;
+      S.imgIdx--; geoShowImg(S, 800); geoWalkUI(S);
+    });
+    document.getElementById('geoNext').addEventListener('click', function () {
+      if (!S.imgs || S.imgIdx >= S.imgs.length - 1) return;
+      S.imgIdx++; geoShowImg(S, 800); geoWalkUI(S);
+    });
+    geoFetchImage(place, function (seqs) {
       if (S.round !== myRound || S.locs[S.round] !== myLoc) return;
       var fw = document.getElementById('geoFrame');
       if (!fw) return;
-      if (cands && cands.length) {
-        S.imgs = cands; S.imgIdx = 0;
+      if (seqs && seqs.length) {
+        S.seqs = seqs; S.seqIdx = 0; S.imgs = seqs[0]; S.imgIdx = 0;
         var vh = document.getElementById('geoViewHint');
         if (vh) vh.style.display = '';
         geoShowImg(S, 4000);
+        geoWalkUI(S);
       } else if (S.mode !== 'answer') {
         var used = {}; S.locs.forEach(function (x) { used[x] = 1; });
         var alt = -1;
@@ -1496,6 +1603,8 @@
         if (hint) hint.style.display = 'none';
         var sw = document.getElementById('geoSwap');
         if (sw) sw.disabled = true;
+        var pv = document.getElementById('geoPrev'); if (pv) pv.disabled = true;
+        var nx = document.getElementById('geoNext'); if (nx) nx.disabled = true;
         guessBtn.textContent = (S.round >= 4) ? '🏁 Ver resultado' : 'Siguiente ronda ➡';
         guessBtn.disabled = false;
       });
@@ -1508,7 +1617,7 @@
       '<div class="g-msg" id="geoCopyMsg"></div>';
   }
   function geoCopyFallback(done) {
-    var ta = host.querySelector('textarea.g-input');
+    var ta = geoHost.querySelector('textarea.g-input');
     if (ta) { ta.focus(); ta.select(); try { document.execCommand('copy'); } catch (e) {} }
     done();
   }
@@ -1521,9 +1630,9 @@
   }
 
   function geoEnd(S) {
-    host.innerHTML = '';
+    geoHost.innerHTML = '';
     if (S.mode === 'solo') {
-      host.appendChild(el(
+      geoHost.appendChild(el(
         '<div class="g-score">🏁 Fin del juego</div>' +
         '<div class="g-msg">Puntaje total: <b>' + S.total + '</b> de 25.000</div>' +
         '<div class="g-msg">' + (S.total >= 20000 ? '🌍 ¡Nivel dios de la geografía!' : S.total >= 12000 ? '🔥 ¡Muy bueno, Bro!' : S.total >= 5000 ? '👍 Nada mal — sigue practicando.' : '😅 Ese estuvo duro… ¡otra vez!') + '</div>' +
@@ -1534,7 +1643,7 @@
     }
     if (S.mode === 'create') {
       var link = 'https://jamesvag.github.io/#reto=' + geoB64Enc({ n: S.name, locs: S.locs, pins: S.myPins, pts: S.myPts });
-      host.appendChild(el(
+      geoHost.appendChild(el(
         '<div class="g-score">🏁 ¡Duelo listo!</div>' +
         '<div class="g-msg">Sacaste <b>' + S.total + '</b> pts en tus 5 lugares. Manda este link de reto a tu adversario — cuando lo abra, juega los mismos 5 lugares y el que caiga más cerca en cada ronda le quita puntos al otro 😈</div>' +
         geoLinkBox(link)
@@ -1548,7 +1657,7 @@
     else { winner = ''; verdict = '🤝 ¡Empate total!'; }
     var rTotal = S.reto.pts.reduce(function (a, b) { return a + b; }, 0);
     var rlink = 'https://jamesvag.github.io/#reto=' + geoB64Enc({ n: S.reto.n, locs: S.locs, pins: S.reto.pins, pts: S.reto.pts, res: { n2: S.name, pins2: S.myPins, pts2: S.myPts, s1: S.rivalDuel, s2: S.myDuel, w: winner } });
-    host.appendChild(el(
+    geoHost.appendChild(el(
       '<div class="g-score">🏁 Fin del duelo</div>' +
       '<div class="g-msg" style="font-size:18px"><b>' + verdict + '</b></div>' +
       '<div class="g-msg">Marcador final: <b>Tú ' + S.myDuel + '</b> · <b>' + geoEsc(S.reto.n) + ' ' + S.rivalDuel + '</b><br>Puntos de precisión: tú ' + S.total + ' · ' + geoEsc(S.reto.n) + ' ' + rTotal + '</div>' +
@@ -1571,11 +1680,18 @@
       banner.innerHTML = '<div class="g-msg" style="margin:0">🏁 <b>Resultado del duelo:</b> ' + geoEsc(data.n) + ' ' + r.s1 + ' · ' + geoEsc(r.n2) + ' ' + r.s2 + (r.w ? ' — 🏆 ganó <b>' + geoEsc(r.w) + '</b>' : ' — 🤝 empate') + '</div>';
       banner.style.display = '';
     } else if (data.locs && data.pins && data.pts) {
-      banner.innerHTML = '<div class="g-msg" style="margin:0">⚔️ <b>' + geoEsc(data.n) + '</b> te reta en 🌍 ¿Dónde estoy? — toca pa\' jugar los mismos 5 lugares.</div><div class="g-row" style="margin:8px 0 0"><button class="g-btn gold" id="duelAccept">▶ Aceptar el reto</button></div>';
+      banner.innerHTML = '<div class="g-msg" style="margin:0">⚔️ <b>' + geoEsc(data.n) + '</b> te reta en 🌍 MAPAZO — toca pa\' jugar los mismos 5 lugares.</div><div class="g-row" style="margin:8px 0 0"><button class="g-btn gold" id="duelAccept">▶ Aceptar el reto</button></div>';
       banner.style.display = '';
       document.getElementById('duelAccept').addEventListener('click', function () {
         geoStartMode = { type: 'answer', data: data };
-        openGame('geo');
+        /* El banner vive en la vista Mapa: hay que mostrarla pa' ver el stage */
+        var mv = document.getElementById('view-mapa');
+        if (mv && !mv.classList.contains('active')) {
+          document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+          mv.classList.add('active');
+          document.querySelectorAll('.nav-item[data-view]').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === 'mapa'); });
+        }
+        openGeo();
       });
     }
   })();
@@ -1588,13 +1704,14 @@
   var I18N = {
     es: {
       gate_sub: "🔒 Sitio protegido — escribe la contraseña pa' entrar", gate_ph: "Contraseña", gate_btn: "Entrar",
-      stream: "🎥 Modo Stream", nav_panel: "Panel", nav_vault: "Bóveda protegida", nav_stream: "Modo Stream", nav_games: "Juegos",
+      stream: "🎥 Modo Stream", nav_panel: "Panel", nav_vault: "Bóveda protegida", nav_stream: "Modo Stream", nav_games: "Juegos", nav_mapa: "Mapa",
       drawer_foot: "Panel de James — Admin Boss.<br />Todo vive en esta página: panel, AI y bóveda en un solo lugar.",
       lang_label: "Idioma / Language",
       panel_title: "Tu panel, Bro 👑",
       tile_ai_desc: "Inteligente y ordenada — tarea, textos, cuentas… bien hecho.",
       tile_vault_name: "Bóveda", tile_vault_desc: "Guarda un texto y míralo solo manteniendo presionado o una sola vez.",
-      tile_games_name: "Juegos", tile_games_desc: "13 juegos dentro de la página y enlaces a juegos online.",
+      tile_games_name: "Juegos", tile_games_desc: "12 juegos dentro de la página y enlaces a juegos online.",
+      tile_mapa_name: "Mapa", tile_mapa_desc: "MAPAZO: adivina dónde estás en el mundo",
       prot_title: "🛡️ Protección automática",
       prot_text: "Al tocar <strong>🎥 Modo Stream</strong>, la página se <strong>bloquea</strong> y pide la contraseña de entrada pa' volver a abrirla.",
       lock_text: "Pega tu key pa' desbloquear la AI. La consigues en el bot <strong>@Vanguardia7_bot</strong> — la key empieza a correr cuando se genera.",
@@ -1613,18 +1730,22 @@
       vault_hold: "👁️ Mantener pa' ver", vault_once: "Ver una vez (30 s)",
       games_title: "🎮 Juegos", games_sub: "Juegos dentro de la página — no necesitan internet.",
       g_snake: "Serpiente", g_memory: "Memoria", g_mines: "Buscaminas", g_ttt: "Tres en raya", g_simon: "Simon dice",
-      g_breakout: "Rompe bloques", g_hangman: "Ahorcado", g_rps: "Piedra, papel o tijera", g_geo: "¿Dónde estoy?",
-      games_online: "🌐 Juegos online", games_back: "Volver a los juegos"
+      g_breakout: "Rompe bloques", g_hangman: "Ahorcado", g_rps: "Piedra, papel o tijera", g_geo: "MAPAZO",
+      games_online: "🌐 Juegos online", games_back: "Volver a los juegos",
+      mapa_title: "🗺️ Mapa", mapa_back: "Volver al mapa",
+      mapazo_card_desc: "Te soltamos en una calle del mundo — camina con los botones, busca pistas y marca en el mapa dónde crees que estás.",
+      mapazo_modes: "🎯 <strong>Solo:</strong> 5 lugares, suma puntos (máx 5.000 por ronda).<br />⚔️ <strong>Duelo por link:</strong> juega 5 lugares y manda el link de reto — el que caiga más cerca en cada ronda le quita puntos al otro."
     },
     en: {
       gate_sub: "🔒 Protected site — enter the password to get in", gate_ph: "Password", gate_btn: "Enter",
-      stream: "🎥 Stream Mode", nav_panel: "Panel", nav_vault: "Protected Vault", nav_stream: "Stream Mode", nav_games: "Games",
+      stream: "🎥 Stream Mode", nav_panel: "Panel", nav_vault: "Protected Vault", nav_stream: "Stream Mode", nav_games: "Games", nav_mapa: "Map",
       drawer_foot: "James's Panel — Admin Boss.<br />Everything lives on this page: panel, AI and vault in one place.",
       lang_label: "Language / Idioma",
       panel_title: "Your panel, Bro 👑",
       tile_ai_desc: "Smart and tidy — homework, texts, math… done right.",
       tile_vault_name: "Vault", tile_vault_desc: "Save a text and see it only by holding the button, or just once.",
-      tile_games_name: "Games", tile_games_desc: "13 games built into the page plus links to online games.",
+      tile_games_name: "Games", tile_games_desc: "12 games built into the page plus links to online games.",
+      tile_mapa_name: "Map", tile_mapa_desc: "MAPAZO: guess where you are in the world",
       prot_title: "🛡️ Automatic protection",
       prot_text: "Tap <strong>🎥 Stream Mode</strong> and the page <strong>locks</strong> and asks for the entry password to open it again.",
       lock_text: "Paste your key to unlock the AI. Get it from the bot <strong>@Vanguardia7_bot</strong> — the key starts running when it is generated.",
@@ -1643,18 +1764,22 @@
       vault_hold: "👁️ Hold to view", vault_once: "View once (30 s)",
       games_title: "🎮 Games", games_sub: "Games built into the page — no internet needed.",
       g_snake: "Snake", g_memory: "Memory", g_mines: "Minesweeper", g_ttt: "Tic-Tac-Toe", g_simon: "Simon Says",
-      g_breakout: "Block Breaker", g_hangman: "Hangman", g_rps: "Rock, Paper, Scissors", g_geo: "Where am I?",
-      games_online: "🌐 Online games", games_back: "Back to the games"
+      g_breakout: "Block Breaker", g_hangman: "Hangman", g_rps: "Rock, Paper, Scissors", g_geo: "MAPAZO",
+      games_online: "🌐 Online games", games_back: "Back to the games",
+      mapa_title: "🗺️ Map", mapa_back: "Back to the map",
+      mapazo_card_desc: "We drop you on a street somewhere in the world — walk with the buttons, look for clues and pin on the map where you think you are.",
+      mapazo_modes: "🎯 <strong>Solo:</strong> 5 places, stack up points (max 5,000 per round).<br />⚔️ <strong>Link duel:</strong> play 5 places and send the challenge link — whoever lands closer each round takes points from the other."
     },
     ht: {
       gate_sub: "🔒 Sit pwoteje — ekri modpas la pou w antre", gate_ph: "Modpas", gate_btn: "Antre",
-      stream: "🎥 Mòd Stream", nav_panel: "Panèl", nav_vault: "Kofre pwoteje", nav_stream: "Mòd Stream", nav_games: "Jwèt",
+      stream: "🎥 Mòd Stream", nav_panel: "Panèl", nav_vault: "Kofre pwoteje", nav_stream: "Mòd Stream", nav_games: "Jwèt", nav_mapa: "Mapa",
       drawer_foot: "Panèl James — Admin Boss.<br />Tout bagay rete nan paj sa a: panèl, AI ak kofre nan yon sèl kote.",
       lang_label: "Lang / Language",
       panel_title: "Panèl ou, Bro 👑",
       tile_ai_desc: "Entelijan e òganize — devwa, tèks, kont… byen fèt.",
       tile_vault_name: "Kofre", tile_vault_desc: "Sere yon tèks epi gade l sèlman lè w kenbe bouton an, oswa yon sèl fwa.",
-      tile_games_name: "Jwèt", tile_games_desc: "13 jwèt anndan paj la ak lyen pou jwèt online.",
+      tile_games_name: "Jwèt", tile_games_desc: "12 jwèt anndan paj la ak lyen pou jwèt online.",
+      tile_mapa_name: "Mapa", tile_mapa_desc: "MAPAZO: devine ki kote w ye nan monn lan",
       prot_title: "🛡️ Pwoteksyon otomatik",
       prot_text: "Lè w touche <strong>🎥 Mòd Stream</strong>, paj la <strong>bloke</strong> epi l mande modpas antre a pou w relouvri l.",
       lock_text: "Kole kle w la pou w debloke AI a. Ou jwenn li nan bot <strong>@Vanguardia7_bot</strong> — kle a kòmanse kouri depi l kreye.",
@@ -1673,8 +1798,11 @@
       vault_hold: "👁️ Kenbe pou wè", vault_once: "Gade yon fwa (30 s)",
       games_title: "🎮 Jwèt", games_sub: "Jwèt anndan paj la — yo pa bezwen entènèt.",
       g_snake: "Koulèv", g_memory: "Memwa", g_mines: "Chèche min", g_ttt: "Twa nan yon liy", g_simon: "Simon di",
-      g_breakout: "Kraze blok", g_hangman: "Pandi", g_rps: "Wòch, papye, sizo", g_geo: "Ki kote m ye?",
-      games_online: "🌐 Jwèt online", games_back: "Retounen nan jwèt yo"
+      g_breakout: "Kraze blok", g_hangman: "Pandi", g_rps: "Wòch, papye, sizo", g_geo: "MAPAZO",
+      games_online: "🌐 Jwèt online", games_back: "Retounen nan jwèt yo",
+      mapa_title: "🗺️ Mapa", mapa_back: "Retounen nan kat la",
+      mapazo_card_desc: "Nou lage w nan yon lari nan monn lan — mache ak bouton yo, chèche endis epi make sou kat la ki kote w panse w ye.",
+      mapazo_modes: "🎯 <strong>Solo:</strong> 5 kote, kolekte pwen (maks 5.000 pa wonn).<br />⚔️ <strong>Dyèl pa lyen:</strong> jwe 5 kote epi voye lyen defi a — moun ki tonbe pi pre nan chak wonn pran pwen nan men lòt la."
     }
   };
   function applyLang(l) {
