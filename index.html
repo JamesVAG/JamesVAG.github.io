@@ -404,6 +404,54 @@
           var b = e.target.closest('[data-fill]');
           if (b) { chatInput.value = b.getAttribute('data-fill'); chatInput.focus(); }
         });
+        function pickEffort(text) {
+          if (/[0-9]|resuelv|calcul|ecuaci|ra[ií]z|funci[oó]n|derivada|integral|tarea|examen|quiz|cu[aá]nto es|problema|paso a paso/i.test(text) || text.length > 140) return 'high';
+          if (/explic|escribe|texto|traduce|redacta|resume|ensayo|carta/i.test(text)) return 'medium';
+          return 'low';
+        }
+        function askAI(text, thinking) {
+          var effort = pickEffort(text);
+          return fetch('https://text.pollinations.ai/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: chatHistory, model: 'openai', reasoning_effort: effort, stream: true })
+          }).then(function (r) {
+            if (!r.body || !r.body.getReader) { return r.text(); }
+            var reader = r.body.getReader();
+            var dec = new TextDecoder();
+            var buf = '', full = '', raw = '';
+            function pump() {
+              return reader.read().then(function (res) {
+                if (res.done) {
+                  if (!full && raw) {
+                    try { var j = JSON.parse(raw); full = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''; } catch (e) {}
+                    if (!full && raw.indexOf('data:') !== 0 && raw.charAt(0) !== '{') full = raw;
+                  }
+                  return full;
+                }
+                var chunk = dec.decode(res.value, { stream: true });
+                raw += chunk; buf += chunk;
+                var lines = buf.split('\n');
+                buf = lines.pop();
+                lines.forEach(function (ln) {
+                  ln = ln.trim();
+                  if (ln.indexOf('data:') === 0) {
+                    var payload = ln.slice(5).trim();
+                    if (payload && payload !== '[DONE]') {
+                      try {
+                        var j = JSON.parse(payload);
+                        var d = (j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content) || '';
+                        if (d) { full += d; thinking.className = 'msg ai'; thinking.innerHTML = fmtAI(full); chatBox.scrollTop = chatBox.scrollHeight; }
+                      } catch (e) {}
+                    }
+                  }
+                });
+                return pump();
+              });
+            }
+            return pump();
+          });
+        }
         document.getElementById('chatForm').addEventListener('submit', function (e) {
           e.preventDefault();
           var text = chatInput.value.trim();
@@ -413,11 +461,7 @@
           chatHistory.push({ role: 'user', content: text });
           var thinking = addMsg('Escribiendo', 'ai typing');
           chatStatus.textContent = 'Pensando…';
-          fetch('https://text.pollinations.ai/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: chatHistory, model: 'openai', reasoning_effort: 'high' })
-          }).then(function (r) { return r.text(); }).then(function (reply) {
+          askAI(text, thinking).then(function (reply) {
             reply = (reply || '').trim();
             if (!reply) throw new Error('empty');
             thinking.className = 'msg ai';
