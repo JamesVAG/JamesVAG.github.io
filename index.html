@@ -217,7 +217,6 @@
         <div class="name">JAMES</div>
         <div class="role">Admin Boss 👑</div>
       </div>
-      <button class="blackout-btn" id="blackoutBtn">⬛ Pantalla negra</button>
       <button class="blackout-btn" id="streamBtn">🎥 Modo Stream: OFF</button>
     </header>
 
@@ -232,7 +231,6 @@
         <button class="nav-item" data-view="navegador"><span class="ic">🌐</span> Navegador</button>
         <button class="nav-item" data-view="boveda"><span class="ic">🔒</span> Bóveda protegida</button>
         <button class="nav-item" data-view="accesos"><span class="ic">⚡</span> Accesos rápidos</button>
-        <button class="nav-item" id="navBlackout"><span class="ic">⬛</span> Pantalla negra</button>
         <button class="nav-item" id="navStream"><span class="ic">🎥</span> Modo Stream</button>
       </nav>
       <div class="foot">Panel de James — Admin Boss.<br />Todo vive en esta página: navegador, bóveda y accesos en un solo lugar.</div>
@@ -245,12 +243,11 @@
         <div class="menu-grid">
           <button class="tile" data-goto="navegador"><span class="ic">🌐</span> Navegador <small>Pega un link y ábrelo aquí mismo, sin salir del panel.</small></button>
           <button class="tile" data-goto="boveda"><span class="ic">🔒</span> Bóveda <small>Guarda un texto y míralo solo manteniendo presionado o una sola vez.</small></button>
-          <button class="tile" id="tileBlackout"><span class="ic">⬛</span> Pantalla negra <small>Tapa todo en negro al instante, antes de compartir pantalla.</small></button>
           <button class="tile" data-goto="accesos"><span class="ic">⚡</span> Accesos rápidos <small>Google, YouTube, TikTok y tus sitios de siempre, a un toque.</small></button>
         </div>
         <div class="card">
           <h3>🛡️ Protección automática</h3>
-          <p>Si <strong>cambias de app o de pestaña</strong> con la bóveda abierta, el panel se tapa en negro solo. Y el botón <strong>⬛ Pantalla negra</strong> de arriba tapa todo al instante cuando lo tocas.</p>
+          <p>Con el <strong>🎥 Modo Stream</strong> encendido, el panel se tapa en negro y se vuelve a tapar solo cada vez que regresas a él.</p>
         </div>
       </section>
 
@@ -355,18 +352,11 @@
         /* ----- Blackout ----- */
         function blackOn() { blackout.classList.add('on'); hideSecret(); }
         function blackOff() { blackout.classList.remove('on'); }
-        document.getElementById('blackoutBtn').addEventListener('click', blackOn);
-        document.getElementById('navBlackout').addEventListener('click', function () { closeDrawer(); blackOn(); });
-        document.getElementById('tileBlackout').addEventListener('click', blackOn);
         var lastTap = 0;
         blackout.addEventListener('click', function () {
           var now = Date.now();
           if (now - lastTap < 450) { blackOff(); lastTap = 0; } else { lastTap = now; }
         });
-        /* Auto-blackout: leaving the page covers everything */
-        document.addEventListener('visibilitychange', function () { if (document.hidden) blackOn(); });
-        window.addEventListener('blur', function () { blackOn(); });
-
         /* ----- Modo Stream ----- */
         var streamMode = false;
         var streamBtn = document.getElementById('streamBtn');
