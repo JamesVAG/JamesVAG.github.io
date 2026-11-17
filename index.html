@@ -232,6 +232,7 @@
         <button class="nav-item" data-view="boveda"><span class="ic">🔒</span> Bóveda protegida</button>
         <button class="nav-item" data-view="accesos"><span class="ic">⚡</span> Accesos rápidos</button>
         <button class="nav-item" id="navStream"><span class="ic">🎥</span> Modo Stream</button>
+        <button class="nav-item" id="navShield"><span class="ic">🛡️</span> Anti-Captura: OFF</button>
       </nav>
       <div class="foot">Panel de James — Admin Boss.<br />Todo vive en esta página: navegador, bóveda y accesos en un solo lugar.</div>
     </aside>
@@ -248,6 +249,8 @@
         <div class="card">
           <h3>🛡️ Protección automática</h3>
           <p>Con el <strong>🎥 Modo Stream</strong> encendido, el panel se tapa en negro y se vuelve a tapar solo cada vez que regresas a él.</p>
+          <p>Con el <strong>🛡️ Anti-Captura</strong> encendido, el sitio se tapa en negro SOLO en cuanto sales de la página, abres el selector de apps o intentan capturar la pantalla — la captura y la vista de apps salen en negro. Doble toque sobre lo negro pa' volver a verlo.</p>
+          <button class="blackout-btn" id="shieldBtn">🛡️ Anti-Captura: OFF</button>
         </div>
       </section>
 
@@ -374,6 +377,37 @@
         streamBtn.addEventListener('click', function () { setStream(!streamMode); if (!streamMode) blackOff(); });
         document.getElementById('navStream').addEventListener('click', function () { closeDrawer(); setStream(true); });
         document.addEventListener('visibilitychange', function () { if (streamMode && !document.hidden) blackOn(); });
+        /* ----- Anti-Captura ----- */
+        var shieldOn = false;
+        try { shieldOn = localStorage.getItem('anticaptura') === '1'; } catch (e) {}
+        var shieldBtn = document.getElementById('shieldBtn');
+        var navShield = document.getElementById('navShield');
+        function paintShield() {
+          var t = shieldOn ? 'ON' : 'OFF';
+          if (shieldBtn) shieldBtn.textContent = '\u{1F6E1}\u{FE0F} Anti-Captura: ' + t;
+          if (navShield) navShield.innerHTML = '<span class="ic">\u{1F6E1}\u{FE0F}</span> Anti-Captura: ' + t;
+        }
+        function setShield(on) {
+          shieldOn = on;
+          try { localStorage.setItem('anticaptura', on ? '1' : '0'); } catch (e) {}
+          paintShield();
+          if (on) blackOn(); else blackOff();
+        }
+        if (shieldBtn) shieldBtn.addEventListener('click', function () { setShield(!shieldOn); });
+        if (navShield) navShield.addEventListener('click', function () { closeDrawer(); setShield(!shieldOn); });
+        document.addEventListener('visibilitychange', function () { if (shieldOn && document.hidden) blackOn(); });
+        window.addEventListener('blur', function () { if (shieldOn) blackOn(); });
+        window.addEventListener('pagehide', function () { if (shieldOn) blackOn(); });
+        document.addEventListener('keydown', function (e) {
+          if (!shieldOn) return;
+          var k = (e.key || '').toLowerCase();
+          if (k === 'printscreen' || ((e.metaKey || e.ctrlKey) && e.shiftKey && (k === '3' || k === '4' || k === '5' || k === 's'))) {
+            blackOn();
+            try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText('').catch(function () {}); } catch (err) {}
+          }
+        });
+        paintShield();
+
 
         /* ----- AI Chat Pro Max (gratis, sin clave) ----- */
         var chatBox = document.getElementById('chatBox');
