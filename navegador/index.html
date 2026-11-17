@@ -362,6 +362,8 @@
   <div class="viewport">
     <iframe id="frame" title="Página cargada" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads" referrerpolicy="no-referrer-when-downgrade"></iframe>
 
+    <div id="searchResults" style="display:none"></div>
+
     <div class="home" id="homePage">
       <div class="home-inner">
         <div class="hero">
@@ -436,7 +438,7 @@
   var clearHistBtn = document.getElementById('clearHistBtn');
 
   var QUICK = [
-    { name:'Buscador', sub:'Busca adentro', url:'https://html.duckduckgo.com/html/', color:'#DE5833', letter:'🔍' },
+    { name:'Buscador', sub:'Busca adentro', url:'#buscar', color:'#DE5833', letter:'🔍' },
     { name:'YouTube', sub:'Videos', url:'https://www.youtube.com', color:'#FF0000', letter:'▶' },
     { name:'Wikipedia', sub:'Se ve aquí ✓', url:'https://es.wikipedia.org', color:'#111111', letter:'W' },
     { name:'Instagram', sub:'Abrir fuera', url:'https://www.instagram.com', color:'#C13584', letter:'◎' },
@@ -533,6 +535,7 @@
 
   function showHome(){
     frame.classList.remove('show'); frame.removeAttribute('src');
+    var sr0 = document.getElementById('searchResults'); if (sr0) sr0.style.display = 'none';
     homePage.style.display = 'block';
     statusBar.classList.remove('show');
     loadingBar.className = 'loadingbar';
@@ -557,6 +560,7 @@
       return;
     }
     homePage.style.display = 'none';
+    var sr2 = document.getElementById('searchResults'); if (sr2) sr2.style.display = 'none';
     frame.classList.add('show');
     loadingBar.className = 'loadingbar on';
     statusBar.classList.remove('show');
@@ -579,6 +583,14 @@
     }, 4500);
   }
 
+  function isWords(raw){
+    raw = (raw||'').trim();
+    if (!raw) return false;
+    if (/^https?:\/\//i.test(raw)) return false;
+    var looksUrl = /^[^\s]+\.[^\s]{2,}$/.test(raw) && raw.indexOf(' ') === -1;
+    return !looksUrl;
+  }
+
   function navigate(raw){
     var url = normalize(raw);
     if (!url) return;
@@ -590,7 +602,69 @@
     addressInput.value = url;
     addressInput.blur();
     renderTabs(); updateNavButtons();
+    if (isWords(raw)){ runSearch((raw||'').trim()); return; }
+    var sr1 = document.getElementById('searchResults'); if (sr1) sr1.style.display = 'none';
     showFrame(url, true);
+  }
+
+  // ---------- Buscador PROPIO: resultados dentro de la página ----------
+  function realUrl(ddgHref){
+    try {
+      var u = new URL(ddgHref, 'https://duckduckgo.com');
+      var uddg = u.searchParams.get('uddg');
+      if (uddg) return decodeURIComponent(uddg);
+      return u.href;
+    } catch(e){ return ddgHref; }
+  }
+  function runSearch(q){
+    var box = document.getElementById('searchResults');
+    homePage.style.display = 'none';
+    frame.classList.remove('show'); frame.removeAttribute('src');
+    box.style.display = 'block';
+    box.innerHTML = '';
+    var head = document.createElement('div'); head.className = 'sr-head';
+    head.textContent = 'Resultados pa’ “' + q + '”';
+    var load = document.createElement('div'); load.className = 'sr-load';
+    load.textContent = 'Buscando…';
+    box.appendChild(head); box.appendChild(load);
+    sessionHistory.unshift({ url:'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(q), time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) });
+    renderHistory();
+    var target = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(q);
+    var proxies = [
+      'https://api.allorigins.win/raw?url=',
+      'https://api.codetabs.com/v1/proxy?quest='
+    ];
+    function tryProxy(i){
+      if (i >= proxies.length){
+        load.textContent = 'El buscador no respondió. Revisa tu internet y toca Recargar, o usa Abrir fuera.';
+        return;
+      }
+      fetch(proxies[i] + encodeURIComponent(target)).then(function(r){ return r.text(); }).then(function(html){
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var items = doc.querySelectorAll('.result');
+        if (!items.length){ tryProxy(i+1); return; }
+        load.remove();
+        var count = 0;
+        items.forEach(function(it){
+          if (count >= 12) return;
+          var a = it.querySelector('.result__a');
+          if (!a) return;
+          var sn = it.querySelector('.result__snippet');
+          var url = realUrl(a.getAttribute('href') || '');
+          if (!/^https?:\/\//.test(url)) return;
+          count++;
+          var row = document.createElement('button'); row.type = 'button'; row.className = 'sr-item';
+          var tt = document.createElement('span'); tt.className = 'sr-title'; tt.textContent = a.textContent.trim();
+          var uu = document.createElement('span'); uu.className = 'sr-url'; uu.textContent = hostOf(url);
+          row.appendChild(tt); row.appendChild(uu);
+          if (sn){ var ss = document.createElement('span'); ss.className = 'sr-snip'; ss.textContent = sn.textContent.trim(); row.appendChild(ss); }
+          row.addEventListener('click', function(){ navigate(url); });
+          box.appendChild(row);
+        });
+        if (!count) tryProxy(i+1);
+      }).catch(function(){ tryProxy(i+1); });
+    }
+    tryProxy(0);
   }
 
   function updateNavButtons(){
@@ -669,7 +743,10 @@
     var nm = document.createElement('span'); nm.className='q-name'; nm.textContent=q.name;
     var sb = document.createElement('span'); sb.className='q-sub'; sb.textContent=q.sub;
     b.appendChild(ico); b.appendChild(nm); b.appendChild(sb);
-    b.addEventListener('click', function(){ navigate(q.url); });
+    b.addEventListener('click', function(){
+      if (q.url === '#buscar'){ bigInput.focus(); bigInput.scrollIntoView({ block:'center' }); return; }
+      navigate(q.url);
+    });
     quickGrid.appendChild(b);
   });
 
@@ -732,6 +809,13 @@
 #jpanel .jpo:last-child{border-bottom:none}
 #jpanel .jpo:active{background:#1b1b22}
 #jpanel .jpo small{display:block;color:#999;font-weight:500;font-size:12px}
+#searchResults{position:absolute;inset:0;overflow-y:auto;background:#0b0b0e;padding:18px 16px 90px}
+.sr-head{color:#d4af37;font-weight:900;font-size:17px;margin-bottom:12px}
+.sr-load{color:#aaa;font-size:14.5px;padding:10px 2px}
+.sr-item{display:block;width:100%;text-align:left;background:#141419;border:1px solid #26262e;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;color:#fff}
+.sr-title{display:block;color:#8ab4f8;font-size:15.5px;font-weight:700;margin-bottom:2px}
+.sr-url{display:block;color:#7fb069;font-size:12.5px;margin-bottom:3px}
+.sr-snip{display:block;color:#bbb;font-size:13.5px;line-height:1.35}
 </style>
 <button id="jfab" type="button" aria-label="Abrir panel">👑</button>
 <div id="jpanel">
