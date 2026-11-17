@@ -796,7 +796,7 @@
 #jveil b{font-size:20px}#jveil span{color:#aaa;font-size:14px}
 #jblack{position:fixed;right:12px;bottom:70px;z-index:9000;background:#000;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:11px 16px;font-weight:800;font-size:13.5px;cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.55)}
 </style>
-<div id="jveil"><div style="font-size:44px">🔒</div><b>Contenido protegido</b><span>La pantalla se tapó en negro.</span><span>Toca para volver</span></div>
+<div id="jveil"><div style="font-size:44px">🔒</div><b>Contenido protegido</b><span id="jveilstream" style="display:none;color:#d4af37;font-weight:800">🎥 MODO STREAM ACTIVADO</span><span>La pantalla se tapó en negro.</span><span>Toca para volver</span></div>
 <button id="jblack" type="button">⬛ Pantalla negra</button>
 <style>
 #jfab{position:fixed;left:12px;bottom:70px;z-index:9001;width:56px;height:56px;border-radius:50%;background:linear-gradient(145deg,#1a1a1a,#000);border:2px solid #d4af37;color:#d4af37;font-size:24px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}
@@ -820,6 +820,7 @@
 <button id="jfab" type="button" aria-label="Abrir panel">👑</button>
 <div id="jpanel">
   <div class="jph"><b>JAMES PANEL</b><button id="jpclose" type="button" aria-label="Cerrar">✕</button></div>
+  <button class="jpo" id="jpstream" type="button">🎥<span>Modo Stream<small id="jpstreamstate">Apagado — actívalo cuando vayas a streamear</small></span></button>
   <button class="jpo" id="jpblack" type="button">⬛<span>Pantalla negra<small>Tapa todo en negro — pa' compartir pantalla</small></span></button>
   <button class="jpo" id="jpout" type="button">↗️<span>Abrir fuera<small>La página actual en Safari / Chrome</small></span></button>
   <button class="jpo" id="jphome" type="button">🏠<span>Inicio<small>Volver a la portada del navegador</small></span></button>
@@ -830,6 +831,26 @@
   var fab=document.getElementById('jfab'), panel=document.getElementById('jpanel');
   fab.addEventListener('click',function(){ panel.classList.toggle('open'); });
   document.getElementById('jpclose').addEventListener('click',function(){ panel.classList.remove('open'); });
+  var streamMode = false;
+  var veilEl = document.getElementById('jveil');
+  var veilStreamTag = document.getElementById('jveilstream');
+  var streamState = document.getElementById('jpstreamstate');
+  document.getElementById('jpstream').addEventListener('click',function(){
+    streamMode = !streamMode;
+    panel.classList.remove('open');
+    if (streamMode){
+      streamState.textContent = 'ENCENDIDO — tu pantalla está protegida';
+      veilStreamTag.style.display = 'block';
+      document.getElementById('jblack').click();
+    } else {
+      streamState.textContent = 'Apagado — actívalo cuando vayas a streamear';
+      veilStreamTag.style.display = 'none';
+      veilEl.style.display = 'none';
+    }
+  });
+  document.addEventListener('visibilitychange',function(){
+    if (streamMode && !document.hidden){ veilEl.style.display = 'flex'; }
+  });
   document.getElementById('jpblack').addEventListener('click',function(){ panel.classList.remove('open'); document.getElementById('jblack').click(); });
   document.getElementById('jpout').addEventListener('click',function(){ panel.classList.remove('open'); var b=document.getElementById('openOutBtn'); if(b) b.click(); });
   document.getElementById('jphome').addEventListener('click',function(){ panel.classList.remove('open'); var b=document.getElementById('homeBtn'); if(b) b.click(); });
