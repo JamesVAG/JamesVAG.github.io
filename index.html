@@ -515,6 +515,12 @@
 .mp-floater { position: absolute; top: 54px; transform: translateX(-50%); z-index: 1460; font-size: 30px; font-weight: 900; pointer-events: none; animation: mpFloatUp 1.6s ease-out forwards; }
 .mp-floater.up { color: #f5c542; text-shadow: 0 3px 14px rgba(0,0,0,.85), 0 0 18px rgba(245,197,66,.45); }
 .mp-floater.down { color: #ff6b6b; text-shadow: 0 3px 14px rgba(0,0,0,.85), 0 0 18px rgba(255,60,60,.35); }
+.mp-bigswing { text-align: center; font-size: 46px; font-weight: 900; line-height: 1.1; letter-spacing: 1px; margin: 2px 0 6px; animation: mpBigPop .45s ease-out; }
+.mp-bigswing.win { color: #f5c542; text-shadow: 0 3px 16px rgba(0,0,0,.85), 0 0 26px rgba(245,197,66,.55); }
+.mp-bigswing.lose { color: #ff6b6b; text-shadow: 0 3px 16px rgba(0,0,0,.85), 0 0 26px rgba(255,60,60,.45); }
+.mp-bigswing.tie { color: #cfd4dc; text-shadow: 0 3px 16px rgba(0,0,0,.85); }
+.mp-bigswing small { display: block; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #aab; margin-top: 2px; }
+@keyframes mpBigPop { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes mpFloatUp { 0% { opacity: 0; transform: translate(-50%, 12px) scale(.7); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.12); } 100% { opacity: 0; transform: translate(-50%, -58px) scale(1); } }
 .mp-score-pop { animation: mpScorePop .55s ease; }
 @keyframes mpScorePop { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.13); } 100% { transform: translateX(-50%) scale(1); } }
@@ -890,7 +896,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 3;
+  var PANEL_VER = 4;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -1552,7 +1558,10 @@
   }
   function geoSpotFromSeq(seq, center) {
     var f = seq.first || center;
-    return { lat: f[0], lng: f[1], img: seq.ids[0], resolved: true };
+    /* seq = el arreglo ORDENADO de image keys de la secuencia elegida (tope
+       120): el invitado online camina EXACTAMENTE estas keys, sin buscar
+       nada por su cuenta — la misma foto pa' los dos, garantizado. */
+    return { lat: f[0], lng: f[1], img: seq.ids[0], seqId: seq.key || null, seq: seq.ids.slice(0, 120), resolved: true };
   }
   /* Resuelve UN centro (ancla+jitter) a un spot con foto exacta: exige una
      secuencia larga (>=10) en el bbox chico o en el amplio; si no, null. */
@@ -1635,14 +1644,39 @@
       });
     });
   }
+  /* Pide a la API las imágenes de UNA secuencia por su id (determinista:
+     nada de buscar por bbox). La lista se rota pa' que arranque en la foto
+     del spot (la misma con la que jugó el creador del reto). Si la API no
+     devuelve la lista, se cae a la derivación por img como antes. */
+  function geoFetchSeqById(seqId, spot, cb) {
+    function fb() {
+      if (spot && spot.img) geoFetchSeqForImage(spot.img, spot.lat, spot.lng, cb);
+      else cb([]);
+    }
+    fetch('https://graph.mapillary.com/' + encodeURIComponent(seqId) + '?access_token=' + encodeURIComponent(GEO_TOKEN) + '&fields=image_ids')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var ids = (j && j.image_ids) || [];
+        if (!ids.length) { fb(); return; }
+        if (spot && spot.img) {
+          var k = ids.indexOf(spot.img);
+          if (k > 0) ids = ids.slice(k).concat(ids.slice(0, k));
+        }
+        cb([ids]);
+      })
+      .catch(fb);
+  }
   function geoPendingSpots() { return [{}, {}, {}, {}, {}]; }
   function geoRetoSpots(reto) {
-    if (reto.spots && reto.spots.length) return reto.spots.map(function (s) { return { lat: s.lat, lng: s.lng, img: s.img || null, resolved: true }; });
+    if (reto.spots && reto.spots.length) return reto.spots.map(function (s) { return { lat: s.lat, lng: s.lng, img: s.img || null, seqId: s.seqId || null, seq: (s.seq && s.seq.length) ? s.seq.slice() : null, resolved: true }; });
     return (reto.locs || []).map(function (i) { var p = GEO_PLACES[i] || [0, 0]; return { lat: p[0], lng: p[1], img: null, resolved: true }; });
   }
   function geoSpotsPayload(S) {
     return S.spots.map(function (s) {
-      return { lat: Math.round(s.lat * 100000) / 100000, lng: Math.round(s.lng * 100000) / 100000, img: s.img || null };
+      /* seq recortado a las primeras 40 keys: el retado camina EXACTAMENTE
+         esas fotos sin pedir nada a la API (determinista, foto por foto).
+         seqId va también, como vía alterna si algún día hace falta. */
+      return { lat: Math.round(s.lat * 100000) / 100000, lng: Math.round(s.lng * 100000) / 100000, img: s.img || null, seqId: s.seqId || null, seq: (s.seq && s.seq.length) ? s.seq.slice(0, 40) : null };
     });
   }
   /* Animación de conteo (la usan el revelado local y el online) */
@@ -1862,9 +1896,13 @@
         fw.innerHTML = '<div class="geo-loading">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
       }
     };
-    /* Con img (online / link): la secuencia EXACTA de esa foto — la misma
-       pa' los dos jugadores. Sin img (respaldo): búsqueda clásica por bbox. */
-    if (spot.img) geoFetchSeqForImage(spot.img, spot.lat, spot.lng, onSeqs);
+    /* Con seq (online): las keys EXACTAS que resolvió el host — el invitado
+       camina esas mismas fotos una por una, sin buscar nada en Mapillary.
+       Con seqId (link): las imágenes de ESA secuencia vía API (determinista).
+       Con img (respaldo viejo): derivación por bbox. Sin nada: búsqueda clásica. */
+    if (spot.seq && spot.seq.length) onSeqs([spot.seq.slice()]);
+    else if (spot.seqId) geoFetchSeqById(spot.seqId, spot, onSeqs);
+    else if (spot.img) geoFetchSeqForImage(spot.img, spot.lat, spot.lng, onSeqs);
     else geoFetchImage(place, onSeqs);
     geoLoadLeaflet(function () {
       if (S.round !== myRound || S.spots[S.round] !== myLoc) return;
@@ -1872,7 +1910,7 @@
       if (!mapEl || !window.L || mapEl._leaflet_id) return;
       var wrap = document.getElementById('geoMapWrap');
       var map = L.map('geoMap', { zoomControl: false }).setView([22, 0], 2);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd', attribution: '© OpenStreetMap · © CARTO' }).addTo(map);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
       later(function () { try { map.invalidateSize(); } catch (e) {} }, 250);
       var guess = null, guessMarker = null, locked = false;
       function setBig(big) {
@@ -2384,15 +2422,26 @@
       }
     });
   }
+  /* La RTDB puede devolver un arreglo como objeto con claves numéricas:
+     normaliza el seq del spot a un arreglo ordenado de keys (o null). */
+  function mpSeqArr(s) {
+    if (!s) return null;
+    if (Object.prototype.toString.call(s) === '[object Array]') return s.length ? s.slice() : null;
+    var keys = Object.keys(s).sort(function (a, b) { return (+a) - (+b); });
+    if (!keys.length) return null;
+    return keys.map(function (k) { return s[k]; });
+  }
   function mpStartMatchGame(m) {
     var rivalU = (m.host === mpMe) ? m.guest : m.host;
     var rivalName = (m.names && m.names[rivalU]) || rivalU;
-    /* Spots v3: {lat, lng, img} ya resueltos por el host hasta la foto exacta.
+    /* Spots v3: {lat, lng, img, seqId, seq} ya resueltos por el host hasta la
+       foto exacta — seq es el arreglo ORDENADO de keys de la secuencia: el
+       invitado camina EXACTAMENTE esas fotos, sin buscar nada por su cuenta.
        Compatibilidad: una partida vieja con `places` (índices de GEO_PLACES)
        se convierte a spots sin imagen (cada cliente busca como antes). */
     var spots;
     if (m.spots && m.spots.length === 5) {
-      spots = m.spots.map(function (s) { return { lat: s.lat, lng: s.lng, img: s.img || null, resolved: true }; });
+      spots = m.spots.map(function (s) { return { lat: s.lat, lng: s.lng, img: s.img || null, seqId: s.seqId || null, seq: mpSeqArr(s.seq), resolved: true }; });
     } else {
       spots = (m.places || []).map(function (i) { var p = GEO_PLACES[i] || [0, 0]; return { lat: p[0], lng: p[1], img: null, resolved: true }; });
     }
@@ -2543,6 +2592,20 @@
       var e = 1 - Math.pow(1 - k, 3);
       elm.textContent = Math.round(from + (to - from) * e);
       if (k < 1) setTimeout(step, 30);
+    };
+    step();
+  }
+  /* Conteo con signo pa'l número grande del swing: "+2,660" / "−2,660" */
+  function mpCountUpSigned(elm, to, dur) {
+    if (!elm) return;
+    var fmt = function (v) { return (v > 0 ? '+' : (v < 0 ? '−' : '')) + Math.abs(v).toLocaleString('en-US'); };
+    var t0 = Date.now();
+    var step = function () {
+      var k = Math.min(1, (Date.now() - t0) / dur);
+      var e = 1 - Math.pow(1 - k, 3);
+      elm.textContent = fmt(Math.round(to * e));
+      if (k < 1) setTimeout(step, 30);
+      else elm.textContent = fmt(to);
     };
     step();
   }
@@ -2762,10 +2825,17 @@
     else txt = '🤝 Empate de ronda — nadie quita puntos.';
     lines.push(txt);
     lines.push('<b>Marcador: Tú ' + cuFrom(prevMe, S.mpScoreMe) + ' · ' + geoEsc(rName) + ' ' + cuFrom(prevRival, S.mpScoreRival) + '</b>');
+    /* NÚMERO GRANDE del swing de la ronda: persistente en el panel (además de
+       los flotantes, que son breves) — cuenta hacia arriba al aparecer y se
+       queda fijo: dorado si ganaste puntos, rojo si te los quitaron. */
+    var bigCls = d[0] > 0 ? 'win' : (d[0] < 0 ? 'lose' : 'tie');
+    var bigLabel = d[0] > 0 ? 'LE QUITASTE AL RIVAL' : (d[0] < 0 ? 'TE QUITÓ EL RIVAL' : 'SIN CAMBIO DE PUNTOS');
+    var bigHtml = '<div class="mp-bigswing ' + bigCls + '"><span id="mpBigSwingNum">0</span><small>' + bigLabel + '</small></div>';
     var panel = document.getElementById('geoPanel');
     if (panel) panel.style.display = '';
     var res = document.getElementById('geoResult');
-    if (res) res.innerHTML = lines.join('<br>');
+    if (res) res.innerHTML = bigHtml + lines.join('<br>');
+    mpCountUpSigned(document.getElementById('mpBigSwingNum'), d[0], 1000);
     var hint = document.getElementById('geoHint'); if (hint) hint.style.display = 'none';
     var sw = document.getElementById('geoSwap'); if (sw) sw.disabled = true;
     var pv = document.getElementById('geoPrev'); if (pv) pv.disabled = true;
