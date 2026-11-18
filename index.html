@@ -522,6 +522,16 @@
 .mp-bigswing small { display: block; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #aab; margin-top: 2px; }
 @keyframes mpBigPop { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 .mp-nextin { text-align: center; font-size: 17px; font-weight: 800; color: #f5c542; margin-top: 8px; letter-spacing: .5px; text-shadow: 0 2px 10px rgba(0,0,0,.8); animation: mpNextPulse 1s ease-in-out infinite; }
+.geo-hpbar { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); z-index: 1400; width: min(92vw, 430px); background: rgba(13,13,22,.78); border: 1px solid rgba(255,255,255,.18); border-radius: 14px; padding: 7px 12px 8px; backdrop-filter: blur(4px); box-sizing: border-box; }
+.geo-hp-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; position: relative; }
+.geo-hp-name { font-size: 12px; font-weight: 800; color: #dfe3ea; width: 92px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.geo-hp-track { flex: 1; height: 12px; background: rgba(255,255,255,.12); border-radius: 7px; overflow: hidden; border: 1px solid rgba(245,197,66,.35); }
+.geo-hp-fill { height: 100%; border-radius: 7px; transition: width 1s ease; }
+.geo-hp-fill.me { background: linear-gradient(90deg, #b8860b, #f5c542); }
+.geo-hp-fill.rival { background: linear-gradient(90deg, #6a4bc4, #b388ff); }
+.geo-hp-fill.low { background: linear-gradient(90deg, #a11111, #ff5252); }
+.geo-hp-num { font-size: 13px; font-weight: 900; color: #fff; min-width: 46px; text-align: right; }
+.mp-hp-dmg { position: absolute; right: 54px; top: -9px; font-size: 19px; font-weight: 900; color: #ff6b6b; text-shadow: 0 2px 10px rgba(0,0,0,.9); pointer-events: none; animation: mpFloatUp 1.6s ease-out forwards; z-index: 5; }
 @keyframes mpNextPulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
 @keyframes mpFloatUp { 0% { opacity: 0; transform: translate(-50%, 12px) scale(.7); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.12); } 100% { opacity: 0; transform: translate(-50%, -58px) scale(1); } }
 .mp-score-pop { animation: mpScorePop .55s ease; }
@@ -898,7 +908,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 6;
+  var PANEL_VER = 7;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -1788,6 +1798,9 @@
   function geoRound(S) {
     var spot = S.spots[S.round];
     if (!spot || !spot.resolved) {
+      /* ONLINE: el spot lo publica el host en el nodo de la partida — aquí
+         NO se genera nada local (los dos juegan el mismo, siempre). */
+      if (S.mode === 'online') { mpEnterRound(S); return; }
       /* SOLO / duelo por link: el spot de esta ronda se genera al momento
          (pool gigante) — pantalla de búsqueda breve y a jugar. */
       geoHost.innerHTML = '';
@@ -1808,12 +1821,25 @@
     geoHost.innerHTML = '';
     var scoreLine = S.mode === 'solo' ? ('Total: ' + S.total + ' pts')
       : S.mode === 'create' ? ('Tus puntos: ' + S.total + ' pts')
-      : S.mode === 'online' ? ('Tú ' + (S.mpScoreMe || 0) + ' · ' + geoEsc(S.mpRivalName || 'Rival') + ' ' + (S.mpScoreRival || 0))
+      : S.mode === 'online' ? ''
       : ('Tú ' + S.myDuel + ' · ' + geoEsc(S.reto.n) + ' ' + S.rivalDuel);
+    /* ONLINE (sistema de vida): el header es "Ronda N" a secas + las barras
+       de vida ❤️ de los dos (6,000 c/u) con su número, arriba de la partida */
+    var scoreHtml;
+    if (S.mode === 'online') {
+      var hpMe0 = Math.max(0, S.mpHpMe == null ? 6000 : S.mpHpMe), hpRv0 = Math.max(0, S.mpHpRival == null ? 6000 : S.mpHpRival);
+      scoreHtml = '<div class="geo-score">Ronda ' + (S.round + 1) + '</div>' +
+        '<div class="geo-hpbar" id="geoHpBar">' +
+        '<div class="geo-hp-row"><span class="geo-hp-name">❤️ Tú</span><div class="geo-hp-track"><div class="geo-hp-fill me' + (hpMe0 <= 1500 ? ' low' : '') + '" id="geoHpMe" style="width:' + (hpMe0 / 60) + '%"></div></div><span class="geo-hp-num" id="geoHpMeNum">' + hpMe0.toLocaleString('en-US') + '</span></div>' +
+        '<div class="geo-hp-row"><span class="geo-hp-name">💜 ' + geoEsc(S.mpRivalName || 'Rival') + '</span><div class="geo-hp-track"><div class="geo-hp-fill rival' + (hpRv0 <= 1500 ? ' low' : '') + '" id="geoHpRival" style="width:' + (hpRv0 / 60) + '%"></div></div><span class="geo-hp-num" id="geoHpRivalNum">' + hpRv0.toLocaleString('en-US') + '</span></div>' +
+        '</div>';
+    } else {
+      scoreHtml = '<div class="geo-score">Ronda ' + (S.round + 1) + '/5 · <span>' + scoreLine + '</span></div>';
+    }
     geoHost.appendChild(el(
       '<div class="geo-stage">' +
       '<div class="geo-view" id="geoFrame"><div class="geo-loading" id="geoLoading">📸 Cargando la calle…</div><div class="geo-viewhint" id="geoViewHint" style="display:none">🚶 Camina con Avanzar/Atrás o las flechas del visor · Arrastra pa\' mirar alrededor</div><div class="geo-zoom"><button class="geo-zoombtn" id="geoZoomIn" type="button">＋</button><button class="geo-zoombtn" id="geoZoomOut" type="button">－</button><button class="geo-zoombtn" id="geoZoomReset" type="button" style="display:none">⤾</button></div><div class="geo-draglayer" id="geoDragLayer" style="display:none"></div></div>' +
-      '<div class="geo-score">Ronda ' + (S.round + 1) + '/5 · <span>' + scoreLine + '</span></div>' +
+      scoreHtml +
       '<button class="geo-swap" id="geoSwap" type="button" disabled>🔄 Otra foto</button>' +
       '<div class="geo-walk"><button class="geo-walkbtn" id="geoPrev" type="button" disabled>⬅️ Atrás</button><span class="geo-step" id="geoStep"></span><button class="geo-walkbtn gold" id="geoNext" type="button" disabled>🚶 Avanzar ➡️</button></div>' +
       '<div class="geo-hint" id="geoHint">Toca el minimapa 🗺️ pa\' agrandarlo y poner tu pin 📍</div>' +
@@ -1937,7 +1963,7 @@
       if (!guessBtn) return;
       if (S.mode === 'online') mpRoundBegin(S, place, map, guessBtn, function () { locked = true; });
       guessBtn.addEventListener('click', function () {
-        if (locked) { if (S.mode === 'online' && S.mpAbandon) { mpExitMatch(); return; } S.round++; if (S.round >= 5) geoEnd(S); else geoRound(S); return; }
+        if (locked) { if (S.mode === 'online') { if (S.mpAbandon) { mpExitMatch(); return; } mpAdvanceOnline(S); return; } S.round++; if (S.round >= 5) geoEnd(S); else geoRound(S); return; }
         if (!guess) return;
         locked = true;
         var dist = geoHavKm(guess[0], guess[1], place[0], place[1]);
@@ -1965,6 +1991,8 @@
         var bounds = L.latLngBounds(ptsArr).pad(0.25);
         try { map.fitBounds(bounds); } catch (e) {}
         later(function () { try { map.invalidateSize(); map.fitBounds(bounds); } catch (e) {} }, 420);
+        /* …y después vuela suave hasta el lugar real 🎯 (animación de revelación) */
+        later(function () { try { map.flyTo([place[0], place[1]], 11, { duration: 1.8 }); } catch (e) {} }, 1500);
         var panel = document.getElementById('geoPanel');
         if (panel) panel.style.display = '';
         document.getElementById('geoResult').innerHTML = msg;
@@ -2092,6 +2120,7 @@
   var mpPointsRef = null; /* listener de mis puntos */
   var mpSearch = null;    /* estado de búsqueda de partida */
   var mpMatch = null;     /* estado del match en curso */
+  var mpAnchorUsed = {};  /* anclas ya usadas por el host: no repetir lugares en la partida */
   var mpAudioCtx = null;  /* WebAudio pa' los sonidos de la cuenta regresiva */
 
   /* ----- Sonidos (WebAudio, sin archivos) ----- */
@@ -2279,6 +2308,7 @@
     if (!mpDb) { mpQueueStatus('⚠️ Sin conexión con el servidor — revisa tu internet.'); return; }
     if (mpSearch || mpMatch) return;
     mpEnsureAudio();
+    mpAnchorUsed = {};
     var myRef = mpDb.ref('queue/' + mpMe);
     mpSearch = {
       myRef: myRef, queueRef: mpDb.ref('queue'),
@@ -2340,16 +2370,18 @@
       var names = {};
       names[mpMe] = mpMyName || mpMe;
       names[other.u] = other.name;
-      /* El HOST resuelve los 5 spots hasta la FOTO exacta antes de crear la
-         partida: el invitado juega EXACTAMENTE las mismas fotos, sin buscar
-         por su cuenta. Recién con los spots listos se crea el nodo. */
-      mpQueueStatus('🌍 Preparando los 5 lugares…');
-      geoGenSpots(5, function (spots) {
+      /* El HOST resuelve SOLO el spot de la ronda 1 hasta la FOTO exacta
+         antes de crear la partida (sistema de vida: ya no hay 5 rondas
+         fijas — los spots de las rondas siguientes se generan uno por uno
+         durante cada revelación y se publican en el nodo). */
+      mpQueueStatus('🌍 Preparando el primer lugar…');
+      geoGenSpotCore(mpAnchorUsed, function (spot) {
         if (!mpSearch) return;
+        var hp0 = {}; hp0[mpMe] = 6000; hp0[other.u] = 6000;
         var matchObj = {
           v: 3,
           host: mpMe, guest: other.u, names: names,
-          spots: spots,
+          spots: [spot], hp: hp0,
           created: firebase.database.ServerValue.TIMESTAMP,
           state: 'play', results: {}, settled: false
         };
@@ -2412,17 +2444,42 @@
         if (m.abandonedBy !== mpMe) mpHandleRivalAbandoned(m);
         return;
       }
-      if (!mpMatch.started && ((m.spots && m.spots.length === 5) || (m.places && m.places.length === 5)) && m.host && m.guest) {
+      if (!mpMatch.started && (mpSpotsArray(m.spots).length >= 1 || (m.places && m.places.length === 5)) && m.host && m.guest) {
         mpMatch.started = true;
         mpQueueStatus('');
         mpStartMatchGame(m);
         return;
+      }
+      /* Partida en curso: fusiono los spots que el host va publicando ronda
+         a ronda; si estoy esperando el de mi ronda, arranco en cuanto llega */
+      if (mpMatch.started && mpMatch.S) {
+        var Sx = mpMatch.S;
+        var arrS = mpSpotsArray(m.spots);
+        for (var si = 0; si < arrS.length; si++) {
+          var spx = arrS[si];
+          if (spx && spx.lat != null) Sx.spots[si] = { lat: spx.lat, lng: spx.lng, img: spx.img || null, seqId: spx.seqId || null, seq: mpSeqArr(spx.seq), resolved: true };
+        }
+        if (Sx.mpPendingRound != null && Sx.round === Sx.mpPendingRound && Sx.spots[Sx.round] && Sx.spots[Sx.round].resolved) {
+          Sx.mpPendingRound = null;
+          if (Sx.mpSpotWaitTimer) { clearTimeout(Sx.mpSpotWaitTimer); Sx.mpSpotWaitTimer = null; }
+          geoRound(Sx);
+        }
       }
       if (m.settled) {
         var line = document.getElementById('mpSettleLine');
         if (line) line.textContent = '✅ Puntos aplicados a las cuentas.';
       }
     });
+  }
+  /* La RTDB puede devolver spots como objeto con claves numéricas: lo paso
+     a un arreglo por índice de ronda (los huecos quedan undefined). */
+  function mpSpotsArray(s) {
+    if (!s) return [];
+    if (Object.prototype.toString.call(s) === '[object Array]') return s.slice();
+    var keys = Object.keys(s).sort(function (a, b) { return (+a) - (+b); });
+    var out = [];
+    keys.forEach(function (k) { out[+k] = s[k]; });
+    return out;
   }
   /* La RTDB puede devolver un arreglo como objeto con claves numéricas:
      normaliza el seq del spot a un arreglo ordenado de keys (o null). */
@@ -2436,23 +2493,30 @@
   function mpStartMatchGame(m) {
     var rivalU = (m.host === mpMe) ? m.guest : m.host;
     var rivalName = (m.names && m.names[rivalU]) || rivalU;
-    /* Spots v3: {lat, lng, img, seqId, seq} ya resueltos por el host hasta la
+    /* Spots v3: {lat, lng, img, seqId, seq} resueltos por el host hasta la
        foto exacta — seq es el arreglo ORDENADO de keys de la secuencia: el
        invitado camina EXACTAMENTE esas fotos, sin buscar nada por su cuenta.
+       Ahora los spots llegan RONDA A RONDA (el arreglo crece desde el nodo).
        Compatibilidad: una partida vieja con `places` (índices de GEO_PLACES)
        se convierte a spots sin imagen (cada cliente busca como antes). */
+    var rawSpots = mpSpotsArray(m.spots);
     var spots;
-    if (m.spots && m.spots.length === 5) {
-      spots = m.spots.map(function (s) { return { lat: s.lat, lng: s.lng, img: s.img || null, seqId: s.seqId || null, seq: mpSeqArr(s.seq), resolved: true }; });
+    if (rawSpots.length) {
+      spots = rawSpots.map(function (s) { return s ? { lat: s.lat, lng: s.lng, img: s.img || null, seqId: s.seqId || null, seq: mpSeqArr(s.seq), resolved: true } : s; });
     } else {
       spots = (m.places || []).map(function (i) { var p = GEO_PLACES[i] || [0, 0]; return { lat: p[0], lng: p[1], img: null, resolved: true }; });
     }
+    var hpNode = m.hp || {};
     var S = {
       mode: 'online', name: mpMyName || mpMe, spots: spots, reto: null,
       mpRivalU: rivalU, mpRivalName: rivalName,
       mpScoreMe: 0, mpScoreRival: 0, mpDone: false, mpWaiting: false, mpAbandon: false,
       mpRoundRef: null, mpWaitTimer: null, mpCtx: null, mpTimer: null, mpNextTimer: null,
-      mpRevealed: false, mpGraceTimer: null, mpFinished: false
+      mpRevealed: false, mpGraceTimer: null, mpFinished: false,
+      mpHpMe: (typeof hpNode[mpMe] === 'number') ? hpNode[mpMe] : 6000,
+      mpHpRival: (typeof hpNode[rivalU] === 'number') ? hpNode[rivalU] : 6000,
+      mpDealtMe: 0, mpDealtRival: 0, mpMatchOver: false, mpMatchHost: (m.host === mpMe),
+      mpPendingRound: null, mpSpotWaitTimer: null, mpGenUsed: mpAnchorUsed
     };
     if (mpMatch) mpMatch.S = S;
     stopAll();
@@ -2547,6 +2611,7 @@
     if (!mpMatch || !mpDb) return;
     mpStopCountdown(S);
     mpClearNextCountdown(S);
+    if (S.mpSpotWaitTimer) { clearTimeout(S.mpSpotWaitTimer); S.mpSpotWaitTimer = null; }
     if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
     if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
     S.mpRevealed = false; S.mpWaiting = false; S.mpDone = false; S.mpAbandon = false;
@@ -2586,6 +2651,17 @@
     return [0, 0];
   }
 
+  /* ----- Daño de vida de una ronda: [lo que A le quita a B, lo que B le
+     quita a A]. El que gana la ronda hace daño = diferencia de pts (4,376 vs
+     179 → 4,197; 347 vs 249 → solo 98). El timeout ya viene castigado en el
+     swing de mpSwingFor: el que no eligió recibe pts del rival + 2,500. ----- */
+  function mpDamageFor(a, b) {
+    var sw = mpSwingFor(a, b);
+    if (sw[0] > 0) return [sw[0], 0];
+    if (sw[0] < 0) return [0, -sw[0]];
+    return [0, 0];
+  }
+
   /* ----- Animaciones del revelado (estilo MAPAZO: dorado/rojo) ----- */
   function mpCountUpEl(elm, from, to, dur) {
     if (!elm) return;
@@ -2612,7 +2688,7 @@
     };
     step();
   }
-  function mpAnimateReveal(S, d, prevMe, prevRival) {
+  function mpAnimateReveal(S, dmg, prevHpMe, prevHpRival) {
     try {
       /* Conteo animado de los números del panel de resultado (.mp-countup) */
       var host = document.getElementById('geoHost');
@@ -2624,35 +2700,39 @@
           mpCountUpEl(nodes[i], from, to, 900);
         }
       }
-      /* Marcador superior: los totales cuentan de lo viejo a lo nuevo + pulso */
-      var span = document.querySelector('#geoHost .geo-score span, #gameHost .geo-score span');
-      if (span) {
-        var rName = S.mpRivalName || 'Rival';
-        var bar = span.parentElement;
-        if (bar) { bar.classList.remove('mp-score-pop'); void bar.offsetWidth; bar.classList.add('mp-score-pop'); }
-        var t0 = Date.now(), dur = 900, me = S.mpScoreMe, rv = S.mpScoreRival;
-        var stepBar = function () {
-          var k = Math.min(1, (Date.now() - t0) / dur);
+      /* Barras de vida: el ancho baja con la transición CSS (1 s), el número
+         cuenta hasta el nuevo valor y al que recibió el daño le cae el
+         flotante −N rojo SOBRE su barra. */
+      var pct = function (hp) { return Math.max(0, hp) / 60; };
+      var countNum = function (elm, from, to) {
+        if (!elm) return;
+        var t0 = Date.now();
+        var step = function () {
+          var k = Math.min(1, (Date.now() - t0) / 900);
           var e = 1 - Math.pow(1 - k, 3);
-          span.textContent = 'Tú ' + Math.round(prevMe + (me - prevMe) * e) + ' · ' + rName + ' ' + Math.round(prevRival + (rv - prevRival) * e);
-          if (k < 1) setTimeout(stepBar, 30);
+          elm.textContent = Math.round(from + (to - from) * e).toLocaleString('en-US');
+          if (k < 1) setTimeout(step, 30);
         };
-        stepBar();
-      }
-      /* Flotantes +N (dorado) / −N (rojo) subiendo sobre el marcador */
-      var stage = document.querySelector('#geoHost .geo-stage, #gameHost .geo-stage');
-      if (stage && (d[0] !== 0 || d[1] !== 0)) {
-        var mk = function (delta, left) {
-          if (!delta) return;
+        step();
+      };
+      var fMe = document.getElementById('geoHpMe'), fRv = document.getElementById('geoHpRival');
+      if (fMe) { fMe.style.width = pct(prevHpMe) + '%'; void fMe.offsetWidth; fMe.style.width = pct(S.mpHpMe) + '%'; fMe.classList.toggle('low', S.mpHpMe <= 1500); }
+      if (fRv) { fRv.style.width = pct(prevHpRival) + '%'; void fRv.offsetWidth; fRv.style.width = pct(S.mpHpRival) + '%'; fRv.classList.toggle('low', S.mpHpRival <= 1500); }
+      countNum(document.getElementById('geoHpMeNum'), prevHpMe, S.mpHpMe);
+      countNum(document.getElementById('geoHpRivalNum'), prevHpRival, S.mpHpRival);
+      var bar = document.getElementById('geoHpBar');
+      if (bar) {
+        var rows = bar.querySelectorAll('.geo-hp-row');
+        var mkDmg = function (amount, rowIdx) {
+          if (!amount || !rows[rowIdx]) return;
           var f = document.createElement('div');
-          f.className = 'mp-floater ' + (delta > 0 ? 'up' : 'down');
-          f.style.left = left;
-          f.textContent = (delta > 0 ? '+' : '−') + Math.abs(delta);
-          stage.appendChild(f);
+          f.className = 'mp-hp-dmg';
+          f.textContent = '−' + amount.toLocaleString('en-US');
+          rows[rowIdx].appendChild(f);
           setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 1700);
         };
-        mk(d[0], '32%');
-        mk(d[1], '68%');
+        mkDmg(dmg[1], 0); /* el daño que recibí yo cae sobre MI barra */
+        mkDmg(dmg[0], 1); /* el daño que recibió el rival cae sobre SU barra */
       }
     } catch (e) {}
   }
@@ -2870,11 +2950,19 @@
       L.polyline([[riv.lat, riv.lng], [place[0], place[1]]], { color: '#b388ff', weight: 2, dashArray: '6 6' }).addTo(map);
       ptsArr.push([riv.lat, riv.lng]);
     }
-    /* Swing con penalización: timeout = 0 pts y +2,500 extra pa'l que eligió */
-    var prevMe = S.mpScoreMe, prevRival = S.mpScoreRival;
-    var d = mpSwingFor(mine, riv);
+    /* DAÑO de la ronda (sistema de vida ❤️): el que cayó más lejos pierde
+       vida = diferencia de pts; el timeout paga pts del rival + 2,500. Sin
+       rondas fijas: la partida sigue hasta que una vida llegue a 0. */
+    var prevHpMe = S.mpHpMe, prevHpRival = S.mpHpRival;
+    var dmg = mpDamageFor(mine, riv);
+    var d = mpSwingFor(mine, riv); /* neto de la ronda = daño hecho − daño recibido */
+    S.mpHpMe = Math.max(0, S.mpHpMe - dmg[1]);
+    S.mpHpRival = Math.max(0, S.mpHpRival - dmg[0]);
+    S.mpDealtMe += dmg[0];
+    S.mpDealtRival += dmg[1];
     S.mpScoreMe += d[0];
     S.mpScoreRival += d[1];
+    if (S.mpHpMe <= 0 || S.mpHpRival <= 0) S.mpMatchOver = true;
     var cu = function (n) { return '<b class="mp-countup" data-to="' + n + '">0</b>'; };
     var cuFrom = function (from, to) { return '<span class="mp-countup" data-from="' + from + '" data-to="' + to + '">' + from + '</span>'; };
     var lines = [];
@@ -2883,16 +2971,17 @@
     if (riv.timeout) lines.push('⏰ ¡' + geoEsc(rName) + ' no eligió! −2,500');
     else lines.push('🟣 ' + geoEsc(rName) + ': a ' + geoFmtDist(riv.distKm) + ' (' + cu(riv.pts) + ' pts)');
     var txt;
-    if (d[0] > 0) txt = '🏆 ¡Ganaste la ronda! Le quitaste ' + cu(d[0]) + ' pts a ' + geoEsc(rName) + (riv.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
-    else if (d[0] < 0) txt = '💀 ' + geoEsc(rName) + ' te quitó ' + cu(-d[0]) + ' pts' + (mine.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
-    else txt = '🤝 Empate de ronda — nadie quita puntos.';
+    if (dmg[0] > 0) txt = '🏆 ¡Ganaste la ronda! Le hiciste ' + cu(dmg[0]) + ' de daño a su vida ❤️' + (riv.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
+    else if (dmg[1] > 0) txt = '💀 ' + geoEsc(rName) + ' te hizo ' + cu(dmg[1]) + ' de daño a tu vida ❤️' + (mine.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
+    else txt = '🤝 Empate de ronda — nadie pierde vida.';
     lines.push(txt);
-    lines.push('<b>Marcador: Tú ' + cuFrom(prevMe, S.mpScoreMe) + ' · ' + geoEsc(rName) + ' ' + cuFrom(prevRival, S.mpScoreRival) + '</b>');
-    /* NÚMERO GRANDE del swing de la ronda: persistente en el panel (además de
-       los flotantes, que son breves) — cuenta hacia arriba al aparecer y se
-       queda fijo: dorado si ganaste puntos, rojo si te los quitaron. */
+    lines.push('<b>❤️ Vida: Tú ' + cuFrom(prevHpMe, S.mpHpMe) + ' · ' + geoEsc(rName) + ' ' + cuFrom(prevHpRival, S.mpHpRival) + '</b>');
+    if (S.mpMatchOver) lines.push(S.mpHpMe <= 0 ? '💀 <b>Te quedaste sin vida — se acabó la partida.</b>' : '🏆 <b>' + geoEsc(rName) + ' se quedó sin vida — ¡ganaste la partida!</b>');
+    /* NÚMERO GRANDE del daño de la ronda: persistente en el panel — cuenta
+       hacia arriba al aparecer y se queda fijo: dorado si hiciste daño,
+       rojo si te lo hicieron a ti. */
     var bigCls = d[0] > 0 ? 'win' : (d[0] < 0 ? 'lose' : 'tie');
-    var bigLabel = d[0] > 0 ? 'LE QUITASTE AL RIVAL' : (d[0] < 0 ? 'TE QUITÓ EL RIVAL' : 'SIN CAMBIO DE PUNTOS');
+    var bigLabel = d[0] > 0 ? 'DAÑO AL RIVAL ❤️' : (d[0] < 0 ? 'DAÑO A TU VIDA ❤️' : 'SIN DAÑO');
     var bigHtml = '<div class="mp-bigswing ' + bigCls + '"><span id="mpBigSwingNum">0</span><small>' + bigLabel + '</small></div>';
     var panel = document.getElementById('geoPanel');
     if (panel) panel.style.display = '';
@@ -2904,27 +2993,32 @@
     var pv = document.getElementById('geoPrev'); if (pv) pv.disabled = true;
     var nx = document.getElementById('geoNext'); if (nx) nx.disabled = true;
     try {
-      /* Revelación AUTOMÁTICA: el mapa se abre SOLO en grande pa' los dos
-         clientes, sin tocar el minimapa — se fuerza el estado expandido y se
-         refresca el tamaño al momento y tras la transición CSS. */
+      /* Revelación AUTOMÁTICA con ANIMACIÓN DE VUELO: el mapa se abre SOLO
+         en grande, primero VUELA a encuadrar los pines y el punto real, y
+         después vuela con zoom suave hasta el lugar real 🎯. */
       var wrap = document.getElementById('geoMapWrap');
       if (wrap && !wrap.classList.contains('big')) wrap.classList.add('big');
       try { map.invalidateSize(); } catch (e) {}
       if (ptsArr.length > 1) {
         var bounds = L.latLngBounds(ptsArr).pad(0.25);
-        map.fitBounds(bounds);
-        setTimeout(function () { try { map.invalidateSize(); map.fitBounds(bounds); } catch (e) {} }, 420);
+        if (map.flyToBounds) map.flyToBounds(bounds, { duration: 1.1 });
+        else map.fitBounds(bounds);
+        setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 420);
+        setTimeout(function () { try { map.flyTo([place[0], place[1]], 11, { duration: 1.8 }); } catch (e) {} }, 1500);
       } else {
         map.setView([place[0], place[1]], 5);
-        setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 420);
+        setTimeout(function () { try { map.invalidateSize(); map.flyTo([place[0], place[1]], 11, { duration: 1.8 }); } catch (e) {} }, 420);
       }
     } catch (e) {}
-    mpAnimateReveal(S, d, prevMe, prevRival);
+    mpAnimateReveal(S, dmg, prevHpMe, prevHpRival);
     if (guessBtn) {
-      guessBtn.textContent = (S.round >= 4) ? '🏁 Ver resultado' : 'Siguiente ronda ➡';
+      guessBtn.textContent = S.mpMatchOver ? '🏁 Ver resultado' : 'Siguiente ronda ➡';
       guessBtn.disabled = false;
     }
     S.mpDone = true;
+    /* El HOST genera el spot de la siguiente ronda DURANTE esta revelación
+       y la cuenta de inter-ronda: al avanzar, el lugar ya está en el nodo. */
+    if (mpMatch && S.mpMatchHost && !S.mpMatchOver) mpGenNextSpot(S, S.round + 1);
     /* AVANCE AUTOMÁTICO: la ronda siguiente entra sola al acabar la cuenta
        inter-ronda (el botón queda solo como atajo pa' saltar la espera). */
     mpStartNextCountdown(S);
@@ -2948,8 +3042,72 @@
   }
   function mpAutoAdvance(S, round) {
     if (!mpMatch || !S || S.mpFinished || S.round !== round || !S.mpRevealed) return;
+    mpAdvanceOnline(S);
+  }
+  /* Avance de ronda online (lo usan la cuenta automática Y el botón atajo):
+     si alguien se quedó sin vida → pantalla final; si no, ronda siguiente.
+     Sin rondas fijas: el contador es "Ronda N" y la partida no para hasta
+     que una vida llegue a 0. */
+  function mpAdvanceOnline(S) {
+    if (!mpMatch || !S || S.mpFinished) return;
+    mpClearNextCountdown(S);
+    if (S.mpMatchOver) { geoEnd(S); return; }
     S.round++;
-    if (S.round >= 5) geoEnd(S); else geoRound(S);
+    mpEnterRound(S);
+  }
+  /* Entra a la ronda actual: si el spot ya está (lo publicó el host), a
+     jugar; si no, pantalla de espera — el listener de la partida arranca la
+     ronda solo en cuanto el spot aparece en el nodo. */
+  function mpEnterRound(S) {
+    if (!mpMatch || !S) return;
+    var spot = S.spots && S.spots[S.round];
+    if (spot && spot.resolved) { S.mpPendingRound = null; geoRound(S); return; }
+    S.mpPendingRound = S.round;
+    geoHost.innerHTML = '';
+    geoHost.appendChild(el(
+      '<div class="geo-stage"><div class="geo-view"><div class="geo-loading">🌍 Preparando el siguiente lugar…</div></div></div>'
+    ));
+    /* Respaldo: si el host se quedó en el camino, el que espera genera el
+       spot y lo publica (create-if-absent: manda el primero que llegue). */
+    if (S.mpSpotWaitTimer) clearTimeout(S.mpSpotWaitTimer);
+    var waitRound = S.round;
+    S.mpSpotWaitTimer = setTimeout(function () {
+      if (!mpMatch || !S || S.mpPendingRound !== waitRound || S.round !== waitRound) return;
+      mpGenNextSpot(S, waitRound);
+    }, 25000);
+  }
+  /* Genera el spot de una ronda (con su seq de fotos, como siempre) */
+  function mpGenNextSpot(S, round) {
+    if (!mpMatch || !S || S.spots[round]) return;
+    if (!S.mpGenUsed) S.mpGenUsed = {};
+    geoGenSpotCore(S.mpGenUsed, function (spot) {
+      if (!mpMatch) return;
+      mpPublishSpot(round, spot);
+    });
+  }
+  /* Publica el spot en el nodo con create-if-absent: si los dos clientes
+     generaran a la vez, manda el primero y el otro adopta ese mismo spot. */
+  function mpPublishSpot(round, spot) {
+    if (!mpMatch) return;
+    try {
+      mpMatch.ref.child('spots/' + round).transaction(function (cur) {
+        if (cur === null || cur === undefined) return spot;
+        return undefined;
+      }).then(function (res) {
+        try {
+          var v = (res && res.snapshot) ? res.snapshot.val() : null;
+          var S = mpMatch && mpMatch.S;
+          if (v && S) {
+            S.spots[round] = { lat: v.lat, lng: v.lng, img: v.img || null, seqId: v.seqId || null, seq: mpSeqArr(v.seq), resolved: true };
+            if (S.mpPendingRound === round && S.round === round) {
+              S.mpPendingRound = null;
+              if (S.mpSpotWaitTimer) { clearTimeout(S.mpSpotWaitTimer); S.mpSpotWaitTimer = null; }
+              geoRound(S);
+            }
+          }
+        } catch (e) {}
+      }).catch(function () {});
+    } catch (e) {}
   }
   function mpStartNextCountdown(S) {
     if (!mpMatch || !S || S.mpFinished) return;
@@ -2962,7 +3120,7 @@
       el.className = 'mp-nextin';
       panel.appendChild(el);
     }
-    var label = (round >= 4) ? '🏁 Resultado final en ' : '⏭️ Siguiente ronda en ';
+    var label = S.mpMatchOver ? '🏁 Resultado final en ' : '⏭️ Siguiente ronda en ';
     var begun = false;
     var setLabel = function (n) {
       var e = document.getElementById('mpNextIn');
@@ -3011,12 +3169,17 @@
     if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
     if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
     if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
-    var me = S.mpScoreMe, rv = S.mpScoreRival, rName = S.mpRivalName || 'Rival';
-    var verdict = me > rv ? '🏆 ¡GANASTE EL DUELO!' : (rv > me ? '💀 ' + geoEsc(rName) + ' ganó el duelo… esta vez.' : '🤝 ¡Empate total!');
+    if (S.mpSpotWaitTimer) { clearTimeout(S.mpSpotWaitTimer); S.mpSpotWaitTimer = null; }
+    var rName = S.mpRivalName || 'Rival';
+    var iWon = S.mpHpRival <= 0 && S.mpHpMe > 0;
+    var gain = Math.min(6000, S.mpDealtMe || 0);    /* el daño total que le hice al rival (tope: su vida) */
+    var loss = Math.min(6000, S.mpDealtRival || 0); /* el daño total que el rival me hizo a mí */
     geoHost.appendChild(el(
-      '<div class="g-score">🏁 Fin del duelo en vivo</div>' +
-      '<div class="g-msg" style="font-size:18px"><b>' + verdict + '</b></div>' +
-      '<div class="g-msg">Marcador final: <b>Tú ' + me + '</b> · <b>' + geoEsc(rName) + ' ' + rv + '</b></div>' +
+      '<div class="g-score">🏁 Fin de la partida</div>' +
+      '<div class="g-msg" style="font-size:18px"><b>' + (iWon ? '🏆 ¡GANASTE LA PARTIDA!' : '💀 Te quedaste sin vida') + '</b></div>' +
+      '<div class="g-msg">' + (iWon
+        ? ('Sobreviviste con <b>' + Math.max(0, S.mpHpMe) + '</b> de vida ❤️ · Te llevas <b>+' + gain + ' pts</b> a tu cuenta')
+        : (geoEsc(rName) + ' sobrevivió con <b>' + Math.max(0, S.mpHpRival) + '</b> de vida ❤️ · Pierdes <b>−' + loss + ' pts</b> de tu cuenta')) + '</div>' +
       '<div class="g-msg" id="mpSettleLine">⏳ Aplicando puntos a las cuentas…</div>' +
       '<div class="g-row"><button class="g-btn gold" id="mpEndHome">🏠 Volver al mapa</button></div>'
     ));
@@ -3027,24 +3190,33 @@
         var m = snap.val() || {};
         var line = document.getElementById('mpSettleLine');
         if (m.settled) { if (line) line.textContent = '✅ Puntos aplicados a las cuentas.'; return; }
-        if (m.state === 'abandoned') { if (line) line.textContent = '🏃 La partida fue abandonada — no se aplican puntos.'; return; }
+        if (m.state === 'abandoned') { if (line) line.textContent = '🏃 La partida fue abandonada — manda la liquidación del abandono.'; return; }
         if (m.host !== mpMe) { if (line) line.textContent = '⏳ Esperando la liquidación del anfitrión…'; return; }
-        /* El host liquida UNA vez, recalculando el neto desde los resultados reales (mpSwingFor incluye la penalización de +2,500 por timeout) */
-        var res = m.results || {}, net = {};
-        net[m.host] = 0; net[m.guest] = 0;
+        /* El host liquida UNA vez, recalculando el DAÑO total desde los
+           resultados reales de todas las rondas: el que se quedó sin vida
+           pierde, y el ganador cobra el daño que hizo (tope 6,000). */
+        var res = m.results || {}, dealt = {};
+        dealt[m.host] = 0; dealt[m.guest] = 0;
         Object.keys(res).forEach(function (rk) {
           var a = res[rk][m.host], b = res[rk][m.guest];
-          if (a && b) { var dd = mpSwingFor(a, b); net[m.host] += dd[0]; net[m.guest] += dd[1]; }
+          if (a && b) { var dd = mpDamageFor(a, b); dealt[m.host] += dd[0]; dealt[m.guest] += dd[1]; }
         });
+        var loser = null;
+        if (dealt[m.guest] >= 6000) loser = m.host;       /* al host le quitaron toda la vida */
+        else if (dealt[m.host] >= 6000) loser = m.guest;  /* al invitado le quitaron toda la vida */
+        if (!loser) { if (line) line.textContent = '⚠️ Nadie se quedó sin vida — no se mueven puntos.'; return; }
+        var winner = (loser === m.host) ? m.guest : m.host;
+        var amount = Math.min(6000, dealt[winner]);
         var apply = function (u, delta) {
           mpDb.ref('players/' + u + '/points').transaction(function (cur) {
             var n = (cur || 0) + delta;
             return n < 0 ? 0 : n;
           });
         };
-        apply(m.host, net[m.host]);
-        apply(m.guest, net[m.guest]);
-        ref.update({ settled: true, finalNet: net });
+        apply(winner, amount);
+        apply(loser, -amount);
+        var net = {}; net[winner] = amount; net[loser] = -amount;
+        ref.update({ settled: true, state: 'finished', winner: winner, finalNet: net });
         if (line) line.textContent = '✅ Puntos aplicados a las cuentas.';
       }).catch(function () {});
     } else {
@@ -3060,6 +3232,7 @@
       mpClearNextCountdown(S);
       if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
       if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
+      if (S.mpSpotWaitTimer) { clearTimeout(S.mpSpotWaitTimer); S.mpSpotWaitTimer = null; }
       if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
       S.mpWaiting = false;
     }
