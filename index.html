@@ -898,7 +898,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 5;
+  var PANEL_VER = 6;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -2657,7 +2657,8 @@
     } catch (e) {}
   }
 
-  /* ----- Abandono deliberado: cuesta 2,500 pts de la cuenta ----- */
+  /* ----- Abandono deliberado = PERDER la partida: el rival cobra 2,500 + la
+     ventaja que lleve en el marcador (la multa ya no se evapora) ----- */
   function mpEnsureAbandonBtn() {
     var b = document.getElementById('mpAbandonBtn');
     if (!b) {
@@ -2682,7 +2683,7 @@
       ov = document.createElement('div');
       ov.id = 'mpConfirmOverlay';
       ov.innerHTML = '<div class="mp-confirm-card">' +
-        '<div class="mp-confirm-txt">¿Abandonar la partida? 😬<br />Te quitan <b>2,500 puntos</b> de tu cuenta.</div>' +
+        '<div class="mp-confirm-txt">¿Abandonar la partida? 😬<br />La pierdes: el rival se queda con <b>2,500 pts + la ventaja que lleve</b>.</div>' +
         '<div class="mp-row" style="justify-content:center;margin-bottom:0">' +
         '<button class="mp-btn" id="mpAbYes" type="button" style="background:#7a1f1f;border-color:#a33;color:#ffd7d7">Sí, abandonar</button>' +
         '<button class="mp-btn gold" id="mpAbNo" type="button">Seguir jugando</button>' +
@@ -2710,19 +2711,73 @@
     var ref = mpMatch.ref, me = mpMe;
     ref.once('value').then(function (snap) {
       var m = snap.val() || {};
-      /* Una sola vez: si ya estaba abandonada o liquidada, salgo sin descuento */
+      /* Una sola vez: si ya estaba abandonada o liquidada, salgo sin tocar puntos */
       if (m.state === 'abandoned' || m.settled) { mpExitMatch(); return; }
-      try {
-        mpDb.ref('players/' + me + '/points').transaction(function (cur) {
-          var n = (cur || 0) - 2500;
-          return n < 0 ? 0 : n;
-        });
-      } catch (e) {}
-      ref.update({ state: 'abandoned', abandonedBy: me }).then(
-        function () { mpExitMatch(); },
-        function () { mpExitMatch(); }
-      );
+      var rivalU = (m.host === me) ? m.guest : m.host;
+      if (!rivalU) {
+        ref.update({ state: 'abandoned', abandonedBy: me }).then(
+          function () { mpExitMatch(); }, function () { mpExitMatch(); });
+        return;
+      }
+      /* Abandonar = perder la partida EN ESTE MOMENTO: el marcador se
+         recalcula de los resultados reales (igual que la liquidación normal)
+         y el rival cobra eso + la multa de 2,500. Si el que abandona iba
+         ganando, su ventaja se pierde y paga los 2,500 igual. */
+      var res = m.results || {}, net = {};
+      net[m.host] = 0; net[m.guest] = 0;
+      Object.keys(res).forEach(function (rk) {
+        var a = res[rk][m.host], b = res[rk][m.guest];
+        if (a && b) { var dd = mpSwingFor(a, b); net[m.host] += dd[0]; net[m.guest] += dd[1]; }
+      });
+      var transfer = 2500 + Math.max(0, net[rivalU] || 0);
+      /* Reclamo atómico: solo el primer cliente aplica la liquidación */
+      ref.child('abandonClaim').transaction(function (cur) {
+        if (cur === null || cur === undefined) return { by: me, winner: rivalU, amount: transfer };
+        return undefined;
+      }).then(function (claim) {
+        if (!claim || !claim.committed) { mpExitMatch(); return; }
+        var apply = function (u, delta) {
+          try {
+            mpDb.ref('players/' + u + '/points').transaction(function (cur) {
+              var n = (cur || 0) + delta;
+              return n < 0 ? 0 : n; /* piso 0 de siempre */
+            });
+          } catch (e) {}
+        };
+        apply(me, -transfer);
+        apply(rivalU, transfer);
+        /* El cierre y el monto viajan en el MISMO update: cuando el rival ve
+           'abandoned', el aviso ya trae cuántos puntos recibió. */
+        ref.update({ state: 'abandoned', abandonedBy: me, settled: true, abandonSettle: { winner: rivalU, loser: me, amount: transfer } }).then(
+          function () { mpShowAbandonDone(transfer); },
+          function () { mpShowAbandonDone(transfer); }
+        );
+      }).catch(function () { mpExitMatch(); });
     }).catch(function () { mpExitMatch(); });
+  }
+  /* Pantalla de cierre del que abandona: perdió la partida y lo sabe */
+  function mpShowAbandonDone(amount) {
+    if (!mpMatch) { mpExitMatch(); return; }
+    var S = mpMatch.S;
+    mpStopCountdown(S);
+    mpClearNextCountdown(S);
+    mpShowAbandonBtn(false);
+    mpHideConfirm();
+    if (S) {
+      if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
+      if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
+      if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
+      S.mpWaiting = false;
+      S.mpFinished = true;
+    }
+    geoHost.innerHTML = '';
+    geoHost.appendChild(el(
+      '<div class="g-score">🏃 Abandonaste la partida</div>' +
+      '<div class="g-msg">Perdiste <b>' + amount + ' pts</b> — tu rival se los quedó (2,500 de multa + la ventaja que llevaba).</div>' +
+      '<div class="g-row"><button class="g-btn gold" id="mpAbDoneHome">🏠 Volver al mapa</button></div>'
+    ));
+    var b = document.getElementById('mpAbDoneHome');
+    if (b) b.addEventListener('click', function () { mpExitMatch(); });
   }
   function mpHandleRivalAbandoned(m) {
     if (!mpMatch) return;
@@ -2736,8 +2791,12 @@
       if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
       S.mpWaiting = false;
     }
+    /* El monto viene en el mismo nodo que disparó este aviso (abandonSettle):
+       el aviso es imposible de perder — sale de la ronda al instante, esté
+       el rival mirando la foto, el mapa o esperando, y le dice cuánto ganó. */
+    var amt = (m.abandonSettle && typeof m.abandonSettle.amount === 'number') ? m.abandonSettle.amount : null;
     if (!mpMatch.started || !S) {
-      mpQueueStatus('🏃 Tu rival abandonó la partida.');
+      mpQueueStatus(amt != null ? ('🏃 Tu rival abandonó la partida. Se acabó — ganaste +' + amt + ' pts 🏆') : '🏃 Tu rival abandonó la partida. Se acabó — ganaste la partida 🏆');
       mpDetachMatch();
       return;
     }
@@ -2746,7 +2805,7 @@
     geoHost.innerHTML = '';
     geoHost.appendChild(el(
       '<div class="g-score">🏃 Tu rival abandonó la partida</div>' +
-      '<div class="g-msg">La partida terminó así — no se aplica ningún punto a las cuentas.</div>' +
+      '<div class="g-msg">' + (amt != null ? ('Se acabó — <b>ganaste +' + amt + ' pts</b> 🏆 (ya están en tu cuenta)') : 'Se acabó — <b>ganaste la partida</b> 🏆') + '</div>' +
       '<div class="g-row"><button class="g-btn gold" id="mpAbHome">🏠 Volver al mapa</button></div>'
     ));
     var b = document.getElementById('mpAbHome');
