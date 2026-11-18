@@ -400,6 +400,26 @@
       <!-- ===== MAPA ===== -->
       <section class="view" id="view-mapa">
         <h2 class="view-title" data-i18n="mapa_title">🗺️ Mapa</h2>
+        <div class="mp-card" id="mpAccount">
+          <h3 data-i18n="mp_account_title">👤 Tu cuenta MAPAZO</h3>
+          <div id="mpAccOut">
+            <input id="mpName" type="text" maxlength="16" autocomplete="off" placeholder="Tu nombre (3-16, sin espacios)" data-i18n-ph="mp_name_ph" />
+            <input id="mpPass" type="password" autocomplete="off" placeholder="Contraseña" data-i18n-ph="mp_pass_ph" />
+            <div class="mp-row">
+              <button class="mp-btn gold" id="mpCreate" type="button" data-i18n="mp_create">Crear cuenta</button>
+              <button class="mp-btn" id="mpEnter" type="button" data-i18n="mp_login">Entrar</button>
+            </div>
+          </div>
+          <div id="mpAccIn" style="display:none">
+            <div class="mp-line" id="mpAccLine">👤 …</div>
+            <div class="mp-row"><button class="mp-btn" id="mpLogout" type="button" data-i18n="mp_logout">Salir</button></div>
+          </div>
+          <div class="status-line" id="mpAccStatus"></div>
+        </div>
+        <div class="mp-card" id="mpTop">
+          <h3 data-i18n="mp_top_title">🏆 Top MAPAZO</h3>
+          <div id="mpTopList"><div class="mp-msg">Cargando…</div></div>
+        </div>
         <div id="mapaHome">
           <div id="duelBanner" style="display:none"></div>
           <button class="mapazo-card" id="mapazoCard" type="button">
@@ -408,6 +428,13 @@
             <small data-i18n="mapazo_card_desc">Te soltamos en una calle del mundo — camina con los botones, busca pistas y marca en el mapa dónde crees que estás.</small>
           </button>
           <p style="color:var(--muted);font-size:14px;line-height:1.55;margin:14px 0 0" data-i18n="mapazo_modes">🎯 <strong>Solo:</strong> 5 lugares, suma puntos (máx 5.000 por ronda).<br />⚔️ <strong>Duelo por link:</strong> juega 5 lugares y manda el link de reto — el que caiga más cerca en cada ronda le quita puntos al otro.</p>
+          <div id="mpSearchBox">
+            <div class="mp-row">
+              <button class="mp-btn gold" id="mpSearchBtn" type="button" data-i18n="mp_search">🔍 Buscar partida</button>
+              <button class="mp-btn" id="mpCancelBtn" type="button" style="display:none" data-i18n="mp_cancel">Cancelar</button>
+            </div>
+            <div class="mp-msg" id="mpQueueStatus"></div>
+          </div>
         </div>
         <div id="geoStage" style="display:none">
           <button class="btn" id="geoBack" style="margin-bottom:12px">← <span data-i18n="mapa_back">Volver al mapa</span></button>
@@ -503,6 +530,17 @@
 #duelBanner .g-row { display: flex; gap: 8px; flex-wrap: wrap; }
 #duelBanner .g-btn { background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
 #duelBanner .g-btn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
+.mp-card { background: #14151f; border: 1px solid #2c2d3d; border-radius: 14px; padding: 14px; margin: 0 0 14px; }
+.mp-card h3 { margin: 0 0 10px; font-size: 18px; }
+.mp-card input { width: 100%; box-sizing: border-box; background: #12121a; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 15px; margin: 5px 0; font-family: inherit; }
+.mp-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.mp-btn { background: #1b1c29; border: 1px solid #2c2d3d; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.mp-btn.gold { background: #f5c542; color: #111; border-color: #f5c542; }
+.mp-line { font-size: 17px; font-weight: 800; margin: 6px 0; }
+.mp-msg { font-size: 15px; margin: 8px 0; min-height: 20px; }
+.mp-toprow { display: flex; justify-content: space-between; gap: 10px; padding: 6px 2px; border-bottom: 1px solid #23242f; font-size: 15px; }
+.mp-toprow:last-child { border-bottom: none; }
+
 
       
       </style>
@@ -811,6 +849,8 @@
 </style>
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
     <script>
 /* ===== JUEGOS (offline, dentro de la página) ===== */
 (function () {
@@ -1454,6 +1494,7 @@
       '<div class="g-msg" style="font-size:13px">Solo: 5 lugares, suma puntos. Duelo: juegas 5 lugares y mandas el link de reto — el que caiga más cerca en cada ronda le quita puntos al otro 😈</div>'
     ));
     document.getElementById('geoSolo').addEventListener('click', function () {
+      if (!mpRequireLogin()) return;
       geoStart({ mode: 'solo', name: '', locs: geoRandomLocs(), reto: null });
     });
     document.getElementById('geoDuelBtn').addEventListener('click', function () { geoNameScreen('create', null); });
@@ -1488,6 +1529,7 @@
     geoHost.innerHTML = '';
     var scoreLine = S.mode === 'solo' ? ('Total: ' + S.total + ' pts')
       : S.mode === 'create' ? ('Tus puntos: ' + S.total + ' pts')
+      : S.mode === 'online' ? ('Tú ' + (S.mpScoreMe || 0) + ' · ' + geoEsc(S.mpRivalName || 'Rival') + ' ' + (S.mpScoreRival || 0))
       : ('Tú ' + S.myDuel + ' · ' + geoEsc(S.reto.n) + ' ' + S.rivalDuel);
     geoHost.appendChild(el(
       '<div class="geo-stage">' +
@@ -1529,7 +1571,7 @@
         if (vh) vh.style.display = '';
         geoShowImg(S, 4000);
         geoWalkUI(S);
-      } else if (S.mode !== 'answer') {
+      } else if (S.mode !== 'answer' && S.mode !== 'online') {
         var used = {}; S.locs.forEach(function (x) { used[x] = 1; });
         var alt = -1;
         for (var i = 0; i < GEO_PLACES.length; i++) if (!used[i]) { alt = i; break; }
@@ -1569,13 +1611,14 @@
       var guessBtn = document.getElementById('geoGuess');
       if (!guessBtn) return;
       guessBtn.addEventListener('click', function () {
-        if (locked) { S.round++; if (S.round >= 5) geoEnd(S); else geoRound(S); return; }
+        if (locked) { if (S.mode === 'online' && S.mpAbandon) { mpExitMatch(); return; } S.round++; if (S.round >= 5) geoEnd(S); else geoRound(S); return; }
         if (!guess) return;
         locked = true;
         var dist = geoHavKm(guess[0], guess[1], place[0], place[1]);
         var pts = geoPts(dist);
         S.myPins.push([Math.round(guess[0] * 10000) / 10000, Math.round(guess[1] * 10000) / 10000]);
         S.myPts.push(pts); S.total += pts;
+        if (S.mode === 'online') { mpOnlineGuess(S, guess, dist, pts, place, map, guessBtn); return; }
         L.marker([place[0], place[1]], { icon: geoPin('🎯') }).addTo(map);
         var ptsArr = [[guess[0], guess[1]], [place[0], place[1]]];
         var msg = '🎯 El lugar real estaba a <b>' + geoFmtDist(dist) + '</b> de tu pin · <b>+' + pts + ' pts</b>';
@@ -1631,7 +1674,9 @@
 
   function geoEnd(S) {
     geoHost.innerHTML = '';
+    if (S.mode === 'online') { mpOnlineEnd(S); return; }
     if (S.mode === 'solo') {
+      mpAddSoloPoints(S.total);
       geoHost.appendChild(el(
         '<div class="g-score">🏁 Fin del juego</div>' +
         '<div class="g-msg">Puntaje total: <b>' + S.total + '</b> de 25.000</div>' +
@@ -1695,6 +1740,442 @@
       });
     }
   })();
+
+  /* ---------- MAPAZO ONLINE (Firebase RTDB: cuentas, Top, emparejamiento 1v1) ---------- */
+  var MP_FB_CONFIG = {
+    apiKey: "AIzaSyCCpxdmZG4UHODF-UYjouCZ9bjXXBNeVq0",
+    authDomain: "maps-2aafb.firebaseapp.com",
+    databaseURL: "https://maps-2aafb-default-rtdb.firebaseio.com",
+    projectId: "maps-2aafb",
+    storageBucket: "maps-2aafb.firebasestorage.app",
+    messagingSenderId: "148935266097",
+    appId: "1:148935266097:web:5044704695856c18b72a10",
+    measurementId: "G-88SGHJ2KKE"
+  };
+  var mpDb = null;
+  try {
+    if (window.firebase && firebase.initializeApp && firebase.database) {
+      firebase.initializeApp(MP_FB_CONFIG);
+      mpDb = firebase.database();
+    }
+  } catch (e) { mpDb = null; }
+
+  var mpMe = null;        /* uname en sesión (minúsculas) */
+  var mpMyName = '';      /* nombre visible */
+  var mpPointsRef = null; /* listener de mis puntos */
+  var mpSearch = null;    /* estado de búsqueda de partida */
+  var mpMatch = null;     /* estado del match en curso */
+
+  function mpSha256(str) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+      return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    });
+  }
+  function mpSavedUser() { try { return localStorage.getItem('mapazo_user') || null; } catch (e) { return null; } }
+  function mpSetStatus(msg) { var s = document.getElementById('mpAccStatus'); if (s) s.textContent = msg || ''; }
+  function mpQueueStatus(msg) { var s = document.getElementById('mpQueueStatus'); if (s) s.innerHTML = msg || ''; }
+
+  /* ----- Candado: sin sesión no se juega SOLO ni se busca partida ----- */
+  function mpRequireLogin() {
+    if (mpMe) return true;
+    closeGeo();
+    var card = document.getElementById('mpAccount');
+    if (card) {
+      try { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+      card.style.borderColor = '#f5c542';
+      setTimeout(function () { card.style.borderColor = ''; }, 1800);
+    }
+    mpSetStatus('Crea tu cuenta o entra pa\' jugar 👆');
+    return false;
+  }
+
+  /* ----- Cuenta ----- */
+  function mpRenderAccount() {
+    var out = document.getElementById('mpAccOut'), inn = document.getElementById('mpAccIn');
+    if (!out || !inn) return;
+    if (mpMe) { out.style.display = 'none'; inn.style.display = ''; }
+    else { inn.style.display = 'none'; out.style.display = ''; mpDetachPoints(); }
+  }
+  function mpDetachPoints() {
+    if (mpPointsRef) { try { mpPointsRef.off(); } catch (e) {} mpPointsRef = null; }
+  }
+  function mpAttachPoints() {
+    mpDetachPoints();
+    if (!mpDb || !mpMe) return;
+    mpPointsRef = mpDb.ref('players/' + mpMe);
+    mpPointsRef.on('value', function (snap) {
+      var v = snap.val() || {};
+      if (v.name) mpMyName = v.name;
+      var line = document.getElementById('mpAccLine');
+      if (line) line.textContent = '👤 ' + (mpMyName || mpMe) + ' · ⭐ ' + (v.points || 0) + ' pts';
+    });
+  }
+  function mpLogin(uname) {
+    mpMe = uname;
+    try { localStorage.setItem('mapazo_user', uname); } catch (e) {}
+    mpRenderAccount();
+    mpAttachPoints();
+  }
+  function mpLogout() {
+    mpCancelSearch(true);
+    mpMe = null; mpMyName = '';
+    try { localStorage.removeItem('mapazo_user'); } catch (e) {}
+    mpRenderAccount();
+    mpSetStatus('');
+  }
+  function mpReadForm() {
+    var raw = (document.getElementById('mpName').value || '').trim().toLowerCase();
+    var pass = document.getElementById('mpPass').value || '';
+    if (!/^[a-z0-9_]{3,16}$/.test(raw)) { mpSetStatus('⚠️ El nombre debe tener 3-16 letras, números o _ (sin espacios ni acentos).'); return null; }
+    if (pass.length < 4) { mpSetStatus('⚠️ La contraseña debe tener 4 caracteres o más.'); return null; }
+    return { uname: raw, pass: pass };
+  }
+  function mpCreate() {
+    if (!mpDb) { mpSetStatus('⚠️ Sin conexión con el servidor de cuentas — revisa tu internet.'); return; }
+    var f = mpReadForm(); if (!f) return;
+    mpSetStatus('Creando tu cuenta…');
+    var ref = mpDb.ref('players/' + f.uname);
+    ref.once('value').then(function (snap) {
+      if (snap.exists()) { mpSetStatus('⚠️ Ese nombre ya existe — entra con tu contraseña o elige otro nombre.'); return null; }
+      return mpSha256(f.pass).then(function (h) {
+        return ref.set({ name: f.uname, pass: h, points: 0, created: firebase.database.ServerValue.TIMESTAMP });
+      }).then(function () {
+        mpLogin(f.uname);
+        mpSetStatus('✅ ¡Cuenta creada! Ya puedes jugar 🎉');
+      });
+    }).catch(function () { mpSetStatus('⚠️ Falló la conexión — inténtalo de nuevo.'); });
+  }
+  function mpEnter() {
+    if (!mpDb) { mpSetStatus('⚠️ Sin conexión con el servidor de cuentas — revisa tu internet.'); return; }
+    var f = mpReadForm(); if (!f) return;
+    mpSetStatus('Entrando…');
+    mpDb.ref('players/' + f.uname).once('value').then(function (snap) {
+      var v = snap.val();
+      if (!v) { mpSetStatus('⚠️ Esa cuenta no existe — créala primero con [Crear cuenta].'); return null; }
+      return mpSha256(f.pass).then(function (h) {
+        if (h !== v.pass) { mpSetStatus('⚠️ Contraseña incorrecta.'); return; }
+        if (v.name) mpMyName = v.name;
+        mpLogin(f.uname);
+        mpSetStatus('✅ ¡Entraste! A jugar 🎉');
+      });
+    }).catch(function () { mpSetStatus('⚠️ Falló la conexión — inténtalo de nuevo.'); });
+  }
+
+  /* ----- Puntos de partida SOLO ----- */
+  function mpAddSoloPoints(total) {
+    if (!mpDb || !mpMe || !total) return;
+    try {
+      mpDb.ref('players/' + mpMe + '/points').transaction(function (cur) { return (cur || 0) + total; });
+    } catch (e) {}
+  }
+
+  /* ----- Top 10 en vivo ----- */
+  function mpInitTop() {
+    var box = document.getElementById('mpTopList');
+    if (!box) return;
+    if (!mpDb) { box.innerHTML = '<div class="g-msg">Sin conexión 😕</div>'; return; }
+    mpDb.ref('players').orderByChild('points').limitToLast(10).on('value', function (snap) {
+      var rows = [];
+      snap.forEach(function (ch) {
+        var v = ch.val() || {};
+        rows.push({ uname: ch.key, name: v.name || ch.key, points: v.points || 0 });
+      });
+      rows.reverse();
+      if (!rows.length) { box.innerHTML = '<div class="g-msg">Todavía no hay jugadores — ¡sé el primero! 🏆</div>'; return; }
+      var medals = ['🥇', '🥈', '🥉'];
+      box.innerHTML = rows.map(function (r, i) {
+        var tag = medals[i] || ((i + 1) + '.');
+        var mine = mpMe && r.uname === mpMe;
+        return '<div class="mp-toprow"' + (mine ? ' style="color:#f5c542"' : '') + '><span>' + tag + ' ' + geoEsc(r.name) + '</span><b>' + r.points + ' pts</b></div>';
+      }).join('');
+    });
+  }
+
+  /* ----- Emparejamiento ----- */
+  function mpSearchButtons() {
+    var b = document.getElementById('mpSearchBtn'), c = document.getElementById('mpCancelBtn');
+    if (b) b.style.display = mpSearch ? 'none' : '';
+    if (c) c.style.display = mpSearch ? '' : 'none';
+  }
+  function mpCancelSearch(silent) {
+    if (!mpSearch) return;
+    var s = mpSearch; mpSearch = null;
+    if (s.hb) clearInterval(s.hb);
+    if (s.to) clearTimeout(s.to);
+    if (s.tick) clearInterval(s.tick);
+    if (s.queueRef) { try { s.queueRef.off(); } catch (e) {} }
+    if (s.myRef) { try { s.myRef.off(); s.myRef.remove(); } catch (e) {} }
+    mpSearchButtons();
+    if (!silent) mpQueueStatus('');
+  }
+  function mpSearchTick() {
+    if (!mpSearch) return;
+    var s = Math.floor((Date.now() - mpSearch.startedAt) / 1000);
+    mpQueueStatus('🔍 Buscando jugador… ' + s + ' s');
+  }
+  function mpStartSearch() {
+    if (!mpRequireLogin()) return;
+    if (!mpDb) { mpQueueStatus('⚠️ Sin conexión con el servidor — revisa tu internet.'); return; }
+    if (mpSearch || mpMatch) return;
+    var myRef = mpDb.ref('queue/' + mpMe);
+    mpSearch = {
+      myRef: myRef, queueRef: mpDb.ref('queue'),
+      startedAt: Date.now(), hb: null, to: null, tick: null, joining: false
+    };
+    try { myRef.onDisconnect().remove(); } catch (e) {}
+    myRef.set({ name: mpMyName || mpMe, t: firebase.database.ServerValue.TIMESTAMP });
+    mpSearch.hb = setInterval(function () {
+      if (mpSearch) { try { mpSearch.myRef.update({ t: firebase.database.ServerValue.TIMESTAMP }); } catch (e) {} }
+    }, 20000);
+    mpSearch.tick = setInterval(mpSearchTick, 500);
+    mpSearchTick();
+    mpSearch.to = setTimeout(function () {
+      if (mpSearch && !mpSearch.joining) {
+        mpCancelSearch(true);
+        mpQueueStatus('No hay jugadores ahora mismo 😕 Inténtalo en un rato.');
+      }
+    }, 120000);
+    myRef.on('value', function (snap) {
+      var v = snap.val();
+      if (v && v.match && mpSearch && !mpSearch.joining) mpJoinMatch(v.match);
+    });
+    mpSearch.queueRef.on('value', function (snap) { mpTryHost(snap); });
+    mpSearchButtons();
+  }
+  function mpTryHost(snap) {
+    if (!mpSearch || mpSearch.joining || !snap) return;
+    var now = Date.now(), fresh = [];
+    snap.forEach(function (ch) {
+      var v = ch.val() || {};
+      if (v.t && (now - v.t) < 90000) fresh.push({ u: ch.key, name: v.name || ch.key, t: v.t, match: v.match || null });
+    });
+    if (fresh.length < 2) return;
+    fresh.sort(function (a, b) { return a.t - b.t; });
+    if (fresh[0].u !== mpMe || fresh[0].match) return; /* host = el que más lleva en la cola */
+    var other = null;
+    for (var i = 1; i < fresh.length; i++) {
+      if (fresh[i].u !== mpMe && !fresh[i].match) { other = fresh[i]; break; }
+    }
+    if (!other) return;
+    mpSearch.joining = true;
+    var matchId = mpDb.ref('matches').push().key;
+    var names = {};
+    names[mpMe] = mpMyName || mpMe;
+    names[other.u] = other.name;
+    mpDb.ref('matches/' + matchId).set({
+      host: mpMe, guest: other.u, names: names,
+      places: geoRandomLocs(),
+      created: firebase.database.ServerValue.TIMESTAMP,
+      state: 'play', results: {}, settled: false
+    }).then(function () {
+      try { mpDb.ref('queue/' + mpMe).update({ match: matchId }); } catch (e) {}
+      try { mpDb.ref('queue/' + other.u).update({ match: matchId }); } catch (e) {}
+    }).catch(function () {
+      if (mpSearch) mpSearch.joining = false;
+    });
+  }
+  function mpJoinMatch(matchId) {
+    if (mpMatch) return;
+    if (mpSearch) {
+      var s = mpSearch; mpSearch = null;
+      if (s.hb) clearInterval(s.hb);
+      if (s.to) clearTimeout(s.to);
+      if (s.tick) clearInterval(s.tick);
+      if (s.queueRef) { try { s.queueRef.off(); } catch (e) {} }
+      if (s.myRef) { try { s.myRef.off(); s.myRef.remove(); } catch (e) {} }
+    }
+    mpSearchButtons();
+    mpQueueStatus('✅ ¡Rival encontrado! Entrando a la partida…');
+    var ref = mpDb.ref('matches/' + matchId);
+    mpMatch = { id: matchId, ref: ref, started: false, S: null };
+    try { ref.child('joined/' + mpMe).set(true); } catch (e) {}
+    ref.on('value', function (snap) {
+      var m = snap.val();
+      if (!m || !mpMatch || mpMatch.id !== matchId) return;
+      if (!mpMatch.started && m.places && m.places.length === 5 && m.host && m.guest) {
+        mpMatch.started = true;
+        mpQueueStatus('');
+        mpStartMatchGame(m);
+        return;
+      }
+      if (m.settled) {
+        var line = document.getElementById('mpSettleLine');
+        if (line) line.textContent = '✅ Puntos aplicados a las cuentas.';
+      }
+    });
+  }
+  function mpStartMatchGame(m) {
+    var rivalU = (m.host === mpMe) ? m.guest : m.host;
+    var rivalName = (m.names && m.names[rivalU]) || rivalU;
+    var S = {
+      mode: 'online', name: mpMyName || mpMe, locs: m.places.slice(), reto: null,
+      mpRivalU: rivalU, mpRivalName: rivalName,
+      mpScoreMe: 0, mpScoreRival: 0, mpDone: false, mpWaiting: false, mpAbandon: false,
+      mpRoundRef: null, mpWaitTimer: null
+    };
+    if (mpMatch) mpMatch.S = S;
+    stopAll();
+    geoHost.innerHTML = '';
+    geoStage.classList.add('geo-full');
+    if (mapaHome) mapaHome.style.display = 'none';
+    geoStage.style.display = '';
+    var gt = document.getElementById('geoTitle');
+    if (gt) gt.textContent = NAMES.geo;
+    window.scrollTo(0, 0);
+    geoStart(S);
+  }
+
+  /* ----- Juego online: envío del pin, revelado y liquidación ----- */
+  function mpOnlineGuess(S, guess, dist, pts, place, map, guessBtn) {
+    var round = S.round;
+    S.mpWaiting = true; S.mpDone = false; S.mpAbandon = false;
+    var panel = document.getElementById('geoPanel');
+    if (panel) panel.style.display = '';
+    var res = document.getElementById('geoResult');
+    if (res) res.innerHTML = '✅ Tu pin quedó marcado (' + pts + ' pts de precisión).<br>⏳ Esperando al rival…';
+    var hint = document.getElementById('geoHint'); if (hint) hint.style.display = 'none';
+    var sw = document.getElementById('geoSwap'); if (sw) sw.disabled = true;
+    var pv = document.getElementById('geoPrev'); if (pv) pv.disabled = true;
+    var nx = document.getElementById('geoNext'); if (nx) nx.disabled = true;
+    guessBtn.textContent = '⏳ Esperando…';
+    guessBtn.disabled = true;
+    if (mpMatch) {
+      var rRef = mpMatch.ref.child('results/' + round);
+      S.mpRoundRef = rRef;
+      var payload = {};
+      payload[mpMe] = { lat: guess[0], lng: guess[1], pts: pts, distKm: Math.round(dist * 100) / 100 };
+      rRef.update(payload);
+      rRef.on('value', function (snap) {
+        if (!S.mpWaiting) return;
+        var v = snap.val() || {};
+        if (v[mpMe] && v[S.mpRivalU]) mpRevealOnline(S, v, place, map, guessBtn);
+      });
+    }
+    /* Abandono: 180 s sin pin del rival */
+    S.mpWaitTimer = setTimeout(function () {
+      if (!S.mpWaiting) return;
+      S.mpWaiting = false;
+      var r2 = document.getElementById('geoResult');
+      if (r2) r2.innerHTML = '😕 <b>Tu rival no responde.</b> Puedes salir del match — no se mueven puntos.';
+      guessBtn.textContent = '🚪 Salir del match';
+      guessBtn.disabled = false;
+      S.mpAbandon = true;
+    }, 180000);
+  }
+  function mpRevealOnline(S, v, place, map, guessBtn) {
+    S.mpWaiting = false;
+    if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
+    if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
+    var mine = v[mpMe], riv = v[S.mpRivalU];
+    if (!mine || !riv) return;
+    var rName = S.mpRivalName || 'Rival';
+    L.marker([place[0], place[1]], { icon: geoPin('🎯') }).addTo(map);
+    L.marker([riv.lat, riv.lng], { icon: geoPin('🟣') }).addTo(map);
+    L.polyline([[mine.lat, mine.lng], [place[0], place[1]]], { color: '#f5c542', weight: 2, dashArray: '6 6' }).addTo(map);
+    var swing = Math.abs(mine.pts - riv.pts), txt;
+    if (mine.pts > riv.pts) { S.mpScoreMe += swing; S.mpScoreRival -= swing; txt = '🏆 ¡Ganaste la ronda! Le quitaste ' + swing + ' pts a ' + geoEsc(rName) + '.'; }
+    else if (riv.pts > mine.pts) { S.mpScoreRival += swing; S.mpScoreMe -= swing; txt = '💀 ' + geoEsc(rName) + ' cayó más cerca y te quitó ' + swing + ' pts.'; }
+    else { txt = '🤝 Empate de ronda — nadie quita puntos.'; }
+    var panel = document.getElementById('geoPanel');
+    if (panel) panel.style.display = '';
+    var res = document.getElementById('geoResult');
+    if (res) res.innerHTML = '🎯 El lugar real estaba a <b>' + geoFmtDist(mine.distKm) + '</b> de tu pin · <b>' + mine.pts + ' pts</b><br>🟣 ' + geoEsc(rName) + ': a ' + geoFmtDist(riv.distKm) + ' (' + riv.pts + ' pts)<br>' + txt + '<br><b>Marcador: Tú ' + S.mpScoreMe + ' · ' + geoEsc(rName) + ' ' + S.mpScoreRival + '</b>';
+    try {
+      var wrap = document.getElementById('geoMapWrap');
+      if (wrap && !wrap.classList.contains('big')) wrap.classList.add('big');
+      var bounds = L.latLngBounds([[mine.lat, mine.lng], [place[0], place[1]], [riv.lat, riv.lng]]).pad(0.25);
+      map.fitBounds(bounds);
+      setTimeout(function () { try { map.invalidateSize(); map.fitBounds(bounds); } catch (e) {} }, 420);
+    } catch (e) {}
+    guessBtn.textContent = (S.round >= 4) ? '🏁 Ver resultado' : 'Siguiente ronda ➡';
+    guessBtn.disabled = false;
+    S.mpDone = true;
+  }
+  function mpOnlineEnd(S) {
+    if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
+    if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
+    var me = S.mpScoreMe, rv = S.mpScoreRival, rName = S.mpRivalName || 'Rival';
+    var verdict = me > rv ? '🏆 ¡GANASTE EL DUELO!' : (rv > me ? '💀 ' + geoEsc(rName) + ' ganó el duelo… esta vez.' : '🤝 ¡Empate total!');
+    geoHost.appendChild(el(
+      '<div class="g-score">🏁 Fin del duelo en vivo</div>' +
+      '<div class="g-msg" style="font-size:18px"><b>' + verdict + '</b></div>' +
+      '<div class="g-msg">Marcador final: <b>Tú ' + me + '</b> · <b>' + geoEsc(rName) + ' ' + rv + '</b></div>' +
+      '<div class="g-msg" id="mpSettleLine">⏳ Aplicando puntos a las cuentas…</div>' +
+      '<div class="g-row"><button class="g-btn gold" id="mpEndHome">🏠 Volver al mapa</button></div>'
+    ));
+    document.getElementById('mpEndHome').addEventListener('click', function () { mpExitMatch(); });
+    if (mpMatch && mpDb) {
+      var ref = mpMatch.ref;
+      ref.once('value').then(function (snap) {
+        var m = snap.val() || {};
+        var line = document.getElementById('mpSettleLine');
+        if (m.settled) { if (line) line.textContent = '✅ Puntos aplicados a las cuentas.'; return; }
+        if (m.host !== mpMe) { if (line) line.textContent = '⏳ Esperando la liquidación del anfitrión…'; return; }
+        /* El host liquida UNA vez, recalculando el neto desde los resultados reales */
+        var res = m.results || {}, net = {};
+        net[m.host] = 0; net[m.guest] = 0;
+        Object.keys(res).forEach(function (rk) {
+          var a = res[rk][m.host], b = res[rk][m.guest];
+          if (a && b) {
+            var sw2 = Math.abs(a.pts - b.pts);
+            if (a.pts > b.pts) { net[m.host] += sw2; net[m.guest] -= sw2; }
+            else if (b.pts > a.pts) { net[m.guest] += sw2; net[m.host] -= sw2; }
+          }
+        });
+        var apply = function (u, delta) {
+          mpDb.ref('players/' + u + '/points').transaction(function (cur) {
+            var n = (cur || 0) + delta;
+            return n < 0 ? 0 : n;
+          });
+        };
+        apply(m.host, net[m.host]);
+        apply(m.guest, net[m.guest]);
+        ref.update({ settled: true, finalNet: net });
+        if (line) line.textContent = '✅ Puntos aplicados a las cuentas.';
+      }).catch(function () {});
+    } else {
+      var line2 = document.getElementById('mpSettleLine');
+      if (line2) line2.textContent = '';
+    }
+  }
+  function mpDetachMatch() {
+    if (!mpMatch) return;
+    if (mpMatch.S) {
+      var S = mpMatch.S;
+      if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
+      if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
+      S.mpWaiting = false;
+    }
+    try { mpMatch.ref.off(); } catch (e) {}
+    mpMatch = null;
+  }
+  function mpExitMatch() {
+    mpDetachMatch();
+    closeGeo();
+  }
+
+  /* ----- Arranque de la capa online ----- */
+  (function mpInit() {
+    var bCreate = document.getElementById('mpCreate');
+    if (bCreate) bCreate.addEventListener('click', mpCreate);
+    var bEnter = document.getElementById('mpEnter');
+    if (bEnter) bEnter.addEventListener('click', mpEnter);
+    var bOut = document.getElementById('mpLogout');
+    if (bOut) bOut.addEventListener('click', mpLogout);
+    var bSearch = document.getElementById('mpSearchBtn');
+    if (bSearch) bSearch.addEventListener('click', mpStartSearch);
+    var bCancel = document.getElementById('mpCancelBtn');
+    if (bCancel) bCancel.addEventListener('click', function () { mpCancelSearch(); });
+    var gb = document.getElementById('geoBack');
+    if (gb) gb.addEventListener('click', function () { mpDetachMatch(); });
+    var savedUser = mpSavedUser();
+    if (savedUser) mpMe = savedUser;
+    mpRenderAccount();
+    if (mpMe) mpAttachPoints();
+    mpInitTop();
+    if (!mpDb) mpSetStatus('⚠️ Sin conexión con el servidor de cuentas (revisa tu internet).');
+  })();
+
 })();
 
     </script>
@@ -1734,7 +2215,10 @@
       games_online: "🌐 Juegos online", games_back: "Volver a los juegos",
       mapa_title: "🗺️ Mapa", mapa_back: "Volver al mapa",
       mapazo_card_desc: "Te soltamos en una calle del mundo — camina con los botones, busca pistas y marca en el mapa dónde crees que estás.",
-      mapazo_modes: "🎯 <strong>Solo:</strong> 5 lugares, suma puntos (máx 5.000 por ronda).<br />⚔️ <strong>Duelo por link:</strong> juega 5 lugares y manda el link de reto — el que caiga más cerca en cada ronda le quita puntos al otro."
+      mapazo_modes: "🎯 <strong>Solo:</strong> 5 lugares, suma puntos (máx 5.000 por ronda).<br />⚔️ <strong>Duelo por link:</strong> juega 5 lugares y manda el link de reto — el que caiga más cerca en cada ronda le quita puntos al otro.",
+      mp_account_title: "👤 Tu cuenta MAPAZO", mp_name_ph: "Tu nombre (3-16, sin espacios)", mp_pass_ph: "Contraseña",
+      mp_create: "Crear cuenta", mp_login: "Entrar", mp_logout: "Salir",
+      mp_top_title: "🏆 Top MAPAZO", mp_search: "🔍 Buscar partida", mp_cancel: "Cancelar"
     },
     en: {
       gate_sub: "🔒 Protected site — enter the password to get in", gate_ph: "Password", gate_btn: "Enter",
@@ -1768,7 +2252,10 @@
       games_online: "🌐 Online games", games_back: "Back to the games",
       mapa_title: "🗺️ Map", mapa_back: "Back to the map",
       mapazo_card_desc: "We drop you on a street somewhere in the world — walk with the buttons, look for clues and pin on the map where you think you are.",
-      mapazo_modes: "🎯 <strong>Solo:</strong> 5 places, stack up points (max 5,000 per round).<br />⚔️ <strong>Link duel:</strong> play 5 places and send the challenge link — whoever lands closer each round takes points from the other."
+      mapazo_modes: "🎯 <strong>Solo:</strong> 5 places, stack up points (max 5,000 per round).<br />⚔️ <strong>Link duel:</strong> play 5 places and send the challenge link — whoever lands closer each round takes points from the other.",
+      mp_account_title: "👤 Your MAPAZO account", mp_name_ph: "Your name (3-16, no spaces)", mp_pass_ph: "Password",
+      mp_create: "Create account", mp_login: "Log in", mp_logout: "Log out",
+      mp_top_title: "🏆 MAPAZO Top", mp_search: "🔍 Find a match", mp_cancel: "Cancel"
     },
     ht: {
       gate_sub: "🔒 Sit pwoteje — ekri modpas la pou w antre", gate_ph: "Modpas", gate_btn: "Antre",
@@ -1802,7 +2289,10 @@
       games_online: "🌐 Jwèt online", games_back: "Retounen nan jwèt yo",
       mapa_title: "🗺️ Mapa", mapa_back: "Retounen nan kat la",
       mapazo_card_desc: "Nou lage w nan yon lari nan monn lan — mache ak bouton yo, chèche endis epi make sou kat la ki kote w panse w ye.",
-      mapazo_modes: "🎯 <strong>Solo:</strong> 5 kote, kolekte pwen (maks 5.000 pa wonn).<br />⚔️ <strong>Dyèl pa lyen:</strong> jwe 5 kote epi voye lyen defi a — moun ki tonbe pi pre nan chak wonn pran pwen nan men lòt la."
+      mapazo_modes: "🎯 <strong>Solo:</strong> 5 kote, kolekte pwen (maks 5.000 pa wonn).<br />⚔️ <strong>Dyèl pa lyen:</strong> jwe 5 kote epi voye lyen defi a — moun ki tonbe pi pre nan chak wonn pran pwen nan men lòt la.",
+      mp_account_title: "👤 Kont MAPAZO ou", mp_name_ph: "Non ou (3-16, san espas)", mp_pass_ph: "Modpas",
+      mp_create: "Kreye kont", mp_login: "Antre", mp_logout: "Soti",
+      mp_top_title: "🏆 Top MAPAZO", mp_search: "🔍 Chèche yon pati", mp_cancel: "Anile"
     }
   };
   function applyLang(l) {
