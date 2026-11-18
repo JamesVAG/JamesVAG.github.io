@@ -540,6 +540,15 @@
 .mp-msg { font-size: 15px; margin: 8px 0; min-height: 20px; }
 .mp-toprow { display: flex; justify-content: space-between; gap: 10px; padding: 6px 2px; border-bottom: 1px solid #23242f; font-size: 15px; }
 .mp-toprow:last-child { border-bottom: none; }
+#mpCountOverlay { position: fixed; inset: 0; z-index: 1900; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+#mpCountOverlay .mp-count-num { font-size: 130px; line-height: 1; font-weight: 900; color: #f5c542; text-shadow: 0 6px 30px rgba(0,0,0,.85); animation: mpPulse 1s ease-in-out infinite; }
+#mpCountOverlay .mp-count-label { margin-top: 12px; font-size: 21px; font-weight: 800; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,.95); background: rgba(10,10,18,.55); padding: 6px 14px; border-radius: 999px; }
+@keyframes mpPulse { 0% { transform: scale(1); } 50% { transform: scale(1.16); } 100% { transform: scale(1); } }
+#mpAbandonBtn { position: absolute; top: 10px; right: 10px; z-index: 1500; background: rgba(60,16,16,.82); color: #ffb3b3; border: 1px solid rgba(255,120,120,.55); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 800; cursor: pointer; backdrop-filter: blur(4px); font-family: inherit; }
+#mpConfirmOverlay { position: fixed; inset: 0; z-index: 1950; display: none; align-items: center; justify-content: center; background: rgba(5,5,10,.55); }
+#mpConfirmOverlay .mp-confirm-card { background: #171826; border: 1px solid #3a3b52; border-radius: 16px; padding: 20px; max-width: 320px; margin: 0 16px; text-align: center; }
+#mpConfirmOverlay .mp-confirm-txt { font-size: 17px; line-height: 1.45; margin-bottom: 14px; color: #fff; }
+
 
 
       
@@ -1610,6 +1619,7 @@
       });
       var guessBtn = document.getElementById('geoGuess');
       if (!guessBtn) return;
+      if (S.mode === 'online') mpRoundBegin(S, place, map, guessBtn, function () { locked = true; });
       guessBtn.addEventListener('click', function () {
         if (locked) { if (S.mode === 'online' && S.mpAbandon) { mpExitMatch(); return; } S.round++; if (S.round >= 5) geoEnd(S); else geoRound(S); return; }
         if (!guess) return;
@@ -1741,7 +1751,7 @@
     }
   })();
 
-  /* ---------- MAPAZO ONLINE (Firebase RTDB: cuentas, Top, emparejamiento 1v1) ---------- */
+/* ---------- MAPAZO ONLINE (Firebase RTDB: cuentas, Top, emparejamiento 1v1) ---------- */
   var MP_FB_CONFIG = {
     apiKey: "AIzaSyCCpxdmZG4UHODF-UYjouCZ9bjXXBNeVq0",
     authDomain: "maps-2aafb.firebaseapp.com",
@@ -1765,6 +1775,40 @@
   var mpPointsRef = null; /* listener de mis puntos */
   var mpSearch = null;    /* estado de búsqueda de partida */
   var mpMatch = null;     /* estado del match en curso */
+  var mpAudioCtx = null;  /* WebAudio pa' los sonidos de la cuenta regresiva */
+
+  /* ----- Sonidos (WebAudio, sin archivos) ----- */
+  function mpEnsureAudio() {
+    try {
+      if (!mpAudioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) mpAudioCtx = new AC();
+      }
+      if (mpAudioCtx && mpAudioCtx.state === 'suspended') mpAudioCtx.resume();
+    } catch (e) {}
+  }
+  function mpBeep(freq, dur, type, vol) {
+    if (!mpAudioCtx) return;
+    try {
+      var t = mpAudioCtx.currentTime;
+      var o = mpAudioCtx.createOscillator(), g = mpAudioCtx.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(vol || 0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g); g.connect(mpAudioCtx.destination);
+      o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) {}
+  }
+  function mpTickSound(left) {
+    if (left <= 5) mpBeep(990, 0.09, 'square', 0.16); /* últimos 5 s: más agudo y fuerte */
+    else mpBeep(620, 0.06, 'square', 0.07);
+  }
+  function mpDingSound() {
+    mpBeep(880, 0.12, 'sine', 0.16);
+    setTimeout(function () { mpBeep(1318, 0.2, 'sine', 0.16); }, 115);
+  }
+  function mpBuzzSound() { mpBeep(150, 0.5, 'sawtooth', 0.2); }
 
   function mpSha256(str) {
     return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
@@ -1917,15 +1961,17 @@
     if (!mpRequireLogin()) return;
     if (!mpDb) { mpQueueStatus('⚠️ Sin conexión con el servidor — revisa tu internet.'); return; }
     if (mpSearch || mpMatch) return;
+    mpEnsureAudio();
     var myRef = mpDb.ref('queue/' + mpMe);
     mpSearch = {
       myRef: myRef, queueRef: mpDb.ref('queue'),
       startedAt: Date.now(), hb: null, to: null, tick: null, joining: false
     };
     try { myRef.onDisconnect().remove(); } catch (e) {}
-    myRef.set({ name: mpMyName || mpMe, t: firebase.database.ServerValue.TIMESTAMP });
+    /* t = entrada a la cola, se escribe UNA sola vez (define el orden); hb = latido de frescura */
+    myRef.set({ name: mpMyName || mpMe, t: firebase.database.ServerValue.TIMESTAMP, hb: firebase.database.ServerValue.TIMESTAMP });
     mpSearch.hb = setInterval(function () {
-      if (mpSearch) { try { mpSearch.myRef.update({ t: firebase.database.ServerValue.TIMESTAMP }); } catch (e) {} }
+      if (mpSearch) { try { mpSearch.myRef.update({ hb: firebase.database.ServerValue.TIMESTAMP }); } catch (e) {} }
     }, 20000);
     mpSearch.tick = setInterval(mpSearchTick, 500);
     mpSearchTick();
@@ -1944,32 +1990,52 @@
   }
   function mpTryHost(snap) {
     if (!mpSearch || mpSearch.joining || !snap) return;
-    var now = Date.now(), fresh = [];
+    var now = Date.now(), entries = [];
     snap.forEach(function (ch) {
       var v = ch.val() || {};
-      if (v.t && (now - v.t) < 90000) fresh.push({ u: ch.key, name: v.name || ch.key, t: v.t, match: v.match || null });
+      entries.push({ u: ch.key, name: v.name || ch.key, t: v.t || 0, hb: v.hb || v.t || 0, match: v.match || null });
     });
+    /* PRIMERO: si mi propio nodo ya tiene match, entro a esa partida y JAMÁS creo una */
+    var mine = null;
+    entries.forEach(function (e) { if (e.u === mpMe) mine = e; });
+    if (mine && mine.match) { mpJoinMatch(mine.match); return; }
+    /* Fresco = hb (o t) de menos de 90 s; orden por t ascendente, desempate por uname */
+    var fresh = entries.filter(function (e) { return e.hb && (now - e.hb) < 90000; });
+    fresh.sort(function (a, b) { return (a.t - b.t) || (a.u < b.u ? -1 : (a.u > b.u ? 1 : 0)); });
     if (fresh.length < 2) return;
-    fresh.sort(function (a, b) { return a.t - b.t; });
-    if (fresh[0].u !== mpMe || fresh[0].match) return; /* host = el que más lleva en la cola */
+    if (fresh[0].u !== mpMe || fresh[0].match) return; /* SOLO el dueño de la entrada fresca más vieja crea */
     var other = null;
     for (var i = 1; i < fresh.length; i++) {
       if (fresh[i].u !== mpMe && !fresh[i].match) { other = fresh[i]; break; }
     }
     if (!other) return;
+    var myT = fresh[0].t;
     mpSearch.joining = true;
-    var matchId = mpDb.ref('matches').push().key;
-    var names = {};
-    names[mpMe] = mpMyName || mpMe;
-    names[other.u] = other.name;
-    mpDb.ref('matches/' + matchId).set({
-      host: mpMe, guest: other.u, names: names,
-      places: geoRandomLocs(),
-      created: firebase.database.ServerValue.TIMESTAMP,
-      state: 'play', results: {}, settled: false
-    }).then(function () {
-      try { mpDb.ref('queue/' + mpMe).update({ match: matchId }); } catch (e) {}
-      try { mpDb.ref('queue/' + other.u).update({ match: matchId }); } catch (e) {}
+    /* Re-leo mi propio nodo antes de crear: si ya me invitaron, entro en vez de crear */
+    mpDb.ref('queue/' + mpMe).once('value').then(function (mySnap) {
+      var mv = mySnap.val();
+      if (mv && mv.match) { mpJoinMatch(mv.match); return null; }
+      /* Id DETERMINISTA: la pareja ordenada + mi t de entrada (un re-match futuro usa otro t) */
+      var pair = [mpMe, other.u].sort();
+      var pairId = 'pair_' + pair[0] + '_' + pair[1] + '_' + Math.floor(myT);
+      var names = {};
+      names[mpMe] = mpMyName || mpMe;
+      names[other.u] = other.name;
+      var matchObj = {
+        host: mpMe, guest: other.u, names: names,
+        places: geoRandomLocs(),
+        created: firebase.database.ServerValue.TIMESTAMP,
+        state: 'play', results: {}, settled: false
+      };
+      /* Creación atómica create-if-absent: si ya existe, aborto y entro como invitado */
+      return mpDb.ref('matches/' + pairId).transaction(function (cur) {
+        if (cur === null || cur === undefined) return matchObj;
+        return undefined;
+      }).then(function () {
+        try { mpDb.ref('queue/' + mpMe).update({ match: pairId }); } catch (e) {}
+        try { mpDb.ref('queue/' + other.u).update({ match: pairId }); } catch (e) {}
+        mpJoinMatch(pairId);
+      });
     }).catch(function () {
       if (mpSearch) mpSearch.joining = false;
     });
@@ -1992,6 +2058,10 @@
     ref.on('value', function (snap) {
       var m = snap.val();
       if (!m || !mpMatch || mpMatch.id !== matchId) return;
+      if (m.state === 'abandoned') {
+        if (m.abandonedBy !== mpMe) mpHandleRivalAbandoned(m);
+        return;
+      }
       if (!mpMatch.started && m.places && m.places.length === 5 && m.host && m.guest) {
         mpMatch.started = true;
         mpQueueStatus('');
@@ -2011,7 +2081,8 @@
       mode: 'online', name: mpMyName || mpMe, locs: m.places.slice(), reto: null,
       mpRivalU: rivalU, mpRivalName: rivalName,
       mpScoreMe: 0, mpScoreRival: 0, mpDone: false, mpWaiting: false, mpAbandon: false,
-      mpRoundRef: null, mpWaitTimer: null
+      mpRoundRef: null, mpWaitTimer: null, mpCtx: null, mpTimer: null,
+      mpRevealed: false, mpGraceTimer: null, mpFinished: false
     };
     if (mpMatch) mpMatch.S = S;
     stopAll();
@@ -2023,6 +2094,220 @@
     if (gt) gt.textContent = NAMES.geo;
     window.scrollTo(0, 0);
     geoStart(S);
+  }
+
+  /* ----- Cuenta regresiva de ronda (16 s) con sonido ----- */
+  function mpEnsureOverlay() {
+    var ov = document.getElementById('mpCountOverlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'mpCountOverlay';
+      ov.innerHTML = '<div class="mp-count-num" id="mpCountNum">16</div><div class="mp-count-label" id="mpCountLabel"></div>';
+      ov.style.display = 'none';
+      geoStage.appendChild(ov);
+    }
+    return ov;
+  }
+  function mpShowCountdown(n, iAmChooser) {
+    var ov = mpEnsureOverlay();
+    ov.style.display = 'flex';
+    var num = document.getElementById('mpCountNum');
+    if (num) num.textContent = n;
+    var lab = document.getElementById('mpCountLabel');
+    if (lab) lab.textContent = iAmChooser ? ('⏳ Tu rival tiene ' + n + ' s…') : ('⏳ ¡Te quedan ' + n + ' s pa\' decidir!');
+  }
+  function mpStopCountdown(S) {
+    if (S && S.mpTimer) { clearInterval(S.mpTimer.iv); S.mpTimer = null; }
+    var ov = document.getElementById('mpCountOverlay');
+    if (ov) ov.style.display = 'none';
+  }
+  function mpStartCountdown(S, iAmChooser) {
+    if (S.mpTimer || S.mpRevealed) return;
+    mpEnsureAudio();
+    S.mpTimer = { remain: 16, iAmChooser: iAmChooser, iv: null };
+    mpShowCountdown(16, iAmChooser);
+    mpTickSound(16);
+    S.mpTimer.iv = setInterval(function () {
+      if (!S.mpTimer) return;
+      S.mpTimer.remain--;
+      var r = S.mpTimer.remain;
+      if (r <= 0) {
+        var chooser = S.mpTimer.iAmChooser;
+        mpStopCountdown(S);
+        mpOnCountdownZero(S, chooser);
+        return;
+      }
+      mpShowCountdown(r, S.mpTimer.iAmChooser);
+      mpTickSound(r);
+    }, 1000);
+  }
+  function mpOnCountdownZero(S, iAmChooser) {
+    mpBuzzSound();
+    if (!mpMatch || S.mpRevealed) return;
+    if (iAmChooser) {
+      /* El que SÍ eligió escribe el timeout del que falta (create-if-absent) */
+      try {
+        mpMatch.ref.child('results/' + S.round + '/' + S.mpRivalU).transaction(function (cur) {
+          if (cur === null || cur === undefined) return { timeout: true, pts: 0, penalty: 2500, lat: null, lng: null, distKm: null };
+          return undefined;
+        });
+      } catch (e) {}
+      /* El revelado llega solo por el watcher cuando la entrada aparece */
+    } else {
+      /* Soy el que falta: el rival escribe mi timeout; si en 15 s no aparece, salida libre */
+      if (S.mpGraceTimer) clearTimeout(S.mpGraceTimer);
+      S.mpGraceTimer = setTimeout(function () {
+        if (S.mpRevealed || !mpMatch) return;
+        var panel = document.getElementById('geoPanel');
+        if (panel) panel.style.display = '';
+        var r2 = document.getElementById('geoResult');
+        if (r2) r2.innerHTML = '😕 <b>La partida se trabó.</b> Puedes salir — no se mueven puntos.';
+        if (S.mpCtx) {
+          if (S.mpCtx.lockFn) S.mpCtx.lockFn();
+          var gb = S.mpCtx.guessBtn;
+          if (gb) { gb.textContent = '🚪 Salir del match'; gb.disabled = false; }
+        }
+        S.mpAbandon = true;
+      }, 15000);
+    }
+  }
+
+  /* ----- Watcher de resultados de la ronda (lo adjunta el motor vía mpRoundBegin) ----- */
+  function mpRoundBegin(S, place, map, guessBtn, lockFn) {
+    if (!mpMatch || !mpDb) return;
+    mpStopCountdown(S);
+    if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
+    if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
+    S.mpRevealed = false; S.mpWaiting = false; S.mpDone = false; S.mpAbandon = false;
+    S.mpCtx = { place: place, map: map, guessBtn: guessBtn, lockFn: lockFn };
+    mpShowAbandonBtn(true);
+    var round = S.round;
+    var ref = mpMatch.ref.child('results/' + round);
+    S.mpRoundRef = ref;
+    ref.on('value', function (snap) {
+      if (!mpMatch || S.round !== round || S.mpRevealed) return;
+      mpOnRoundResults(S, snap.val() || {});
+    });
+  }
+  function mpOnRoundResults(S, v) {
+    var mine = v[mpMe], riv = v[S.mpRivalU];
+    if (mine && riv) {
+      var wasCounting = !!S.mpTimer;
+      mpStopCountdown(S);
+      if (wasCounting && !mine.timeout && !riv.timeout) mpDingSound();
+      mpRevealOnline(S, v);
+      return;
+    }
+    if (mine && !riv) mpStartCountdown(S, true);  /* ya elegí: la cuenta corre pa'l rival */
+    else if (!mine && riv) mpStartCountdown(S, false); /* el rival eligió: la cuenta corre pa' mí */
+  }
+
+  /* ----- Swing de una ronda, con penalización por timeout (+2,500 al que eligió) ----- */
+  function mpSwingFor(a, b) {
+    var pa = (a && !a.timeout) ? (a.pts || 0) : 0;
+    var pb = (b && !b.timeout) ? (b.pts || 0) : 0;
+    if (a && a.timeout && b && b.timeout) return [0, 0];
+    if (a && a.timeout && b) { var sw1 = pb + 2500; return [-sw1, sw1]; }
+    if (b && b.timeout && a) { var sw2 = pa + 2500; return [sw2, -sw2]; }
+    var sw = Math.abs(pa - pb);
+    if (pa > pb) return [sw, -sw];
+    if (pb > pa) return [-sw, sw];
+    return [0, 0];
+  }
+
+  /* ----- Abandono deliberado: cuesta 2,500 pts de la cuenta ----- */
+  function mpEnsureAbandonBtn() {
+    var b = document.getElementById('mpAbandonBtn');
+    if (!b) {
+      b = document.createElement('button');
+      b.id = 'mpAbandonBtn';
+      b.type = 'button';
+      b.textContent = '🚪 Abandonar';
+      b.style.display = 'none';
+      geoStage.appendChild(b);
+      b.addEventListener('click', function () { mpConfirmAbandon(); });
+    }
+    return b;
+  }
+  function mpShowAbandonBtn(show) {
+    if (show) { mpEnsureAbandonBtn().style.display = ''; return; }
+    var b = document.getElementById('mpAbandonBtn');
+    if (b) b.style.display = 'none';
+  }
+  function mpEnsureConfirm() {
+    var ov = document.getElementById('mpConfirmOverlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'mpConfirmOverlay';
+      ov.innerHTML = '<div class="mp-confirm-card">' +
+        '<div class="mp-confirm-txt">¿Abandonar la partida? 😬<br />Te quitan <b>2,500 puntos</b> de tu cuenta.</div>' +
+        '<div class="mp-row" style="justify-content:center;margin-bottom:0">' +
+        '<button class="mp-btn" id="mpAbYes" type="button" style="background:#7a1f1f;border-color:#a33;color:#ffd7d7">Sí, abandonar</button>' +
+        '<button class="mp-btn gold" id="mpAbNo" type="button">Seguir jugando</button>' +
+        '</div></div>';
+      ov.style.display = 'none';
+      geoStage.appendChild(ov);
+      ov.querySelector('#mpAbNo').addEventListener('click', function () { ov.style.display = 'none'; });
+      ov.querySelector('#mpAbYes').addEventListener('click', function () { ov.style.display = 'none'; mpDoAbandon(); });
+    }
+    return ov;
+  }
+  function mpHideConfirm() {
+    var ov = document.getElementById('mpConfirmOverlay');
+    if (ov) ov.style.display = 'none';
+  }
+  function mpConfirmAbandon() {
+    if (!mpMatch || !mpMatch.S || mpMatch.S.mpFinished) { mpExitMatch(); return; }
+    mpEnsureAudio();
+    mpEnsureConfirm().style.display = 'flex';
+  }
+  function mpDoAbandon() {
+    if (!mpMatch || !mpDb || !mpMe) { mpExitMatch(); return; }
+    if (mpMatch.abandoning) return;
+    mpMatch.abandoning = true;
+    var ref = mpMatch.ref, me = mpMe;
+    ref.once('value').then(function (snap) {
+      var m = snap.val() || {};
+      /* Una sola vez: si ya estaba abandonada o liquidada, salgo sin descuento */
+      if (m.state === 'abandoned' || m.settled) { mpExitMatch(); return; }
+      try {
+        mpDb.ref('players/' + me + '/points').transaction(function (cur) {
+          var n = (cur || 0) - 2500;
+          return n < 0 ? 0 : n;
+        });
+      } catch (e) {}
+      ref.update({ state: 'abandoned', abandonedBy: me }).then(
+        function () { mpExitMatch(); },
+        function () { mpExitMatch(); }
+      );
+    }).catch(function () { mpExitMatch(); });
+  }
+  function mpHandleRivalAbandoned(m) {
+    if (!mpMatch) return;
+    var S = mpMatch.S;
+    mpStopCountdown(S);
+    mpHideConfirm();
+    if (S) {
+      if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
+      if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
+      if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
+      S.mpWaiting = false;
+    }
+    if (!mpMatch.started || !S) {
+      mpQueueStatus('🏃 Tu rival abandonó la partida.');
+      mpDetachMatch();
+      return;
+    }
+    if (S.mpFinished) return; /* ya estabas en la pantalla final: manda esa */
+    mpShowAbandonBtn(false);
+    geoHost.innerHTML = '';
+    geoHost.appendChild(el(
+      '<div class="g-score">🏃 Tu rival abandonó la partida</div>' +
+      '<div class="g-msg">La partida terminó así — no se aplica ningún punto a las cuentas.</div>' +
+      '<div class="g-row"><button class="g-btn gold" id="mpAbHome">🏠 Volver al mapa</button></div>'
+    ));
+    var b = document.getElementById('mpAbHome');
+    if (b) b.addEventListener('click', function () { mpExitMatch(); });
   }
 
   /* ----- Juego online: envío del pin, revelado y liquidación ----- */
@@ -2039,19 +2324,14 @@
     var nx = document.getElementById('geoNext'); if (nx) nx.disabled = true;
     guessBtn.textContent = '⏳ Esperando…';
     guessBtn.disabled = true;
+    mpEnsureAudio();
     if (mpMatch) {
-      var rRef = mpMatch.ref.child('results/' + round);
-      S.mpRoundRef = rRef;
       var payload = {};
       payload[mpMe] = { lat: guess[0], lng: guess[1], pts: pts, distKm: Math.round(dist * 100) / 100 };
-      rRef.update(payload);
-      rRef.on('value', function (snap) {
-        if (!S.mpWaiting) return;
-        var v = snap.val() || {};
-        if (v[mpMe] && v[S.mpRivalU]) mpRevealOnline(S, v, place, map, guessBtn);
-      });
+      mpMatch.ref.child('results/' + round).update(payload);
+      /* La cuenta de 16 s y el revelado los maneja el watcher de la ronda (mpRoundBegin) */
     }
-    /* Abandono: 180 s sin pin del rival */
+    /* Respaldo: 180 s sin resolución de la ronda → salida libre (sin descuento) */
     S.mpWaitTimer = setTimeout(function () {
       if (!S.mpWaiting) return;
       S.mpWaiting = false;
@@ -2062,38 +2342,81 @@
       S.mpAbandon = true;
     }, 180000);
   }
-  function mpRevealOnline(S, v, place, map, guessBtn) {
-    S.mpWaiting = false;
-    if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
-    if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
+  function mpRevealOnline(S, v) {
+    if (S.mpRevealed) return;
     var mine = v[mpMe], riv = v[S.mpRivalU];
-    if (!mine || !riv) return;
+    if (!mine || !riv || !S.mpCtx) return;
+    S.mpRevealed = true;
+    S.mpWaiting = false;
+    S.mpAbandon = false;
+    mpStopCountdown(S);
+    if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
+    if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
+    if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
+    var place = S.mpCtx.place, map = S.mpCtx.map, guessBtn = S.mpCtx.guessBtn;
+    if (S.mpCtx.lockFn) { try { S.mpCtx.lockFn(); } catch (e) {} }
     var rName = S.mpRivalName || 'Rival';
+    /* Marcadores y líneas: solo los pines que existen (un timeout no tiene pin) */
     L.marker([place[0], place[1]], { icon: geoPin('🎯') }).addTo(map);
-    L.marker([riv.lat, riv.lng], { icon: geoPin('🟣') }).addTo(map);
-    L.polyline([[mine.lat, mine.lng], [place[0], place[1]]], { color: '#f5c542', weight: 2, dashArray: '6 6' }).addTo(map);
-    var swing = Math.abs(mine.pts - riv.pts), txt;
-    if (mine.pts > riv.pts) { S.mpScoreMe += swing; S.mpScoreRival -= swing; txt = '🏆 ¡Ganaste la ronda! Le quitaste ' + swing + ' pts a ' + geoEsc(rName) + '.'; }
-    else if (riv.pts > mine.pts) { S.mpScoreRival += swing; S.mpScoreMe -= swing; txt = '💀 ' + geoEsc(rName) + ' cayó más cerca y te quitó ' + swing + ' pts.'; }
-    else { txt = '🤝 Empate de ronda — nadie quita puntos.'; }
+    var ptsArr = [[place[0], place[1]]];
+    if (!mine.timeout && mine.lat != null) {
+      L.polyline([[mine.lat, mine.lng], [place[0], place[1]]], { color: '#f5c542', weight: 2, dashArray: '6 6' }).addTo(map);
+      ptsArr.push([mine.lat, mine.lng]);
+    }
+    if (!riv.timeout && riv.lat != null) {
+      L.marker([riv.lat, riv.lng], { icon: geoPin('🟣') }).addTo(map);
+      L.polyline([[riv.lat, riv.lng], [place[0], place[1]]], { color: '#b388ff', weight: 2, dashArray: '6 6' }).addTo(map);
+      ptsArr.push([riv.lat, riv.lng]);
+    }
+    /* Swing con penalización: timeout = 0 pts y +2,500 extra pa'l que eligió */
+    var d = mpSwingFor(mine, riv);
+    S.mpScoreMe += d[0];
+    S.mpScoreRival += d[1];
+    var lines = [];
+    if (mine.timeout) lines.push('⏰ ¡No elegiste a tiempo! Tu ronda quedó en <b>0 pts</b> (−2,500 de penalización).');
+    else lines.push('🎯 El lugar real estaba a <b>' + geoFmtDist(mine.distKm) + '</b> de tu pin · <b>' + mine.pts + ' pts</b>');
+    if (riv.timeout) lines.push('⏰ ¡' + geoEsc(rName) + ' no eligió! −2,500');
+    else lines.push('🟣 ' + geoEsc(rName) + ': a ' + geoFmtDist(riv.distKm) + ' (' + riv.pts + ' pts)');
+    var txt;
+    if (d[0] > 0) txt = '🏆 ¡Ganaste la ronda! Le quitaste ' + d[0] + ' pts a ' + geoEsc(rName) + (riv.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
+    else if (d[0] < 0) txt = '💀 ' + geoEsc(rName) + ' te quitó ' + (-d[0]) + ' pts' + (mine.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
+    else txt = '🤝 Empate de ronda — nadie quita puntos.';
+    lines.push(txt);
+    lines.push('<b>Marcador: Tú ' + S.mpScoreMe + ' · ' + geoEsc(rName) + ' ' + S.mpScoreRival + '</b>');
     var panel = document.getElementById('geoPanel');
     if (panel) panel.style.display = '';
     var res = document.getElementById('geoResult');
-    if (res) res.innerHTML = '🎯 El lugar real estaba a <b>' + geoFmtDist(mine.distKm) + '</b> de tu pin · <b>' + mine.pts + ' pts</b><br>🟣 ' + geoEsc(rName) + ': a ' + geoFmtDist(riv.distKm) + ' (' + riv.pts + ' pts)<br>' + txt + '<br><b>Marcador: Tú ' + S.mpScoreMe + ' · ' + geoEsc(rName) + ' ' + S.mpScoreRival + '</b>';
+    if (res) res.innerHTML = lines.join('<br>');
+    var hint = document.getElementById('geoHint'); if (hint) hint.style.display = 'none';
+    var sw = document.getElementById('geoSwap'); if (sw) sw.disabled = true;
+    var pv = document.getElementById('geoPrev'); if (pv) pv.disabled = true;
+    var nx = document.getElementById('geoNext'); if (nx) nx.disabled = true;
     try {
       var wrap = document.getElementById('geoMapWrap');
       if (wrap && !wrap.classList.contains('big')) wrap.classList.add('big');
-      var bounds = L.latLngBounds([[mine.lat, mine.lng], [place[0], place[1]], [riv.lat, riv.lng]]).pad(0.25);
-      map.fitBounds(bounds);
-      setTimeout(function () { try { map.invalidateSize(); map.fitBounds(bounds); } catch (e) {} }, 420);
+      if (ptsArr.length > 1) {
+        var bounds = L.latLngBounds(ptsArr).pad(0.25);
+        map.fitBounds(bounds);
+        setTimeout(function () { try { map.invalidateSize(); map.fitBounds(bounds); } catch (e) {} }, 420);
+      } else {
+        map.setView([place[0], place[1]], 5);
+        setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 420);
+      }
     } catch (e) {}
-    guessBtn.textContent = (S.round >= 4) ? '🏁 Ver resultado' : 'Siguiente ronda ➡';
-    guessBtn.disabled = false;
+    if (guessBtn) {
+      guessBtn.textContent = (S.round >= 4) ? '🏁 Ver resultado' : 'Siguiente ronda ➡';
+      guessBtn.disabled = false;
+    }
     S.mpDone = true;
   }
   function mpOnlineEnd(S) {
+    S.mpFinished = true;
+    mpStopCountdown(S);
+    mpShowAbandonBtn(false);
+    mpHideConfirm();
     if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
     if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
+    if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
     var me = S.mpScoreMe, rv = S.mpScoreRival, rName = S.mpRivalName || 'Rival';
     var verdict = me > rv ? '🏆 ¡GANASTE EL DUELO!' : (rv > me ? '💀 ' + geoEsc(rName) + ' ganó el duelo… esta vez.' : '🤝 ¡Empate total!');
     geoHost.appendChild(el(
@@ -2110,17 +2433,14 @@
         var m = snap.val() || {};
         var line = document.getElementById('mpSettleLine');
         if (m.settled) { if (line) line.textContent = '✅ Puntos aplicados a las cuentas.'; return; }
+        if (m.state === 'abandoned') { if (line) line.textContent = '🏃 La partida fue abandonada — no se aplican puntos.'; return; }
         if (m.host !== mpMe) { if (line) line.textContent = '⏳ Esperando la liquidación del anfitrión…'; return; }
-        /* El host liquida UNA vez, recalculando el neto desde los resultados reales */
+        /* El host liquida UNA vez, recalculando el neto desde los resultados reales (mpSwingFor incluye la penalización de +2,500 por timeout) */
         var res = m.results || {}, net = {};
         net[m.host] = 0; net[m.guest] = 0;
         Object.keys(res).forEach(function (rk) {
           var a = res[rk][m.host], b = res[rk][m.guest];
-          if (a && b) {
-            var sw2 = Math.abs(a.pts - b.pts);
-            if (a.pts > b.pts) { net[m.host] += sw2; net[m.guest] -= sw2; }
-            else if (b.pts > a.pts) { net[m.guest] += sw2; net[m.host] -= sw2; }
-          }
+          if (a && b) { var dd = mpSwingFor(a, b); net[m.host] += dd[0]; net[m.guest] += dd[1]; }
         });
         var apply = function (u, delta) {
           mpDb.ref('players/' + u + '/points').transaction(function (cur) {
@@ -2142,10 +2462,16 @@
     if (!mpMatch) return;
     if (mpMatch.S) {
       var S = mpMatch.S;
+      mpStopCountdown(S);
       if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
+      if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
       if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
       S.mpWaiting = false;
     }
+    mpShowAbandonBtn(false);
+    mpHideConfirm();
+    var ov = document.getElementById('mpCountOverlay');
+    if (ov) ov.style.display = 'none';
     try { mpMatch.ref.off(); } catch (e) {}
     mpMatch = null;
   }
@@ -2168,6 +2494,19 @@
     if (bCancel) bCancel.addEventListener('click', function () { mpCancelSearch(); });
     var gb = document.getElementById('geoBack');
     if (gb) gb.addEventListener('click', function () { mpDetachMatch(); });
+    /* Audio: se crea/reanuda en cualquier toque (gesto válido pa'l navegador) */
+    document.addEventListener('pointerdown', mpEnsureAudio);
+    /* Salir con el botón Volver en plena partida = abandono con costo: se intercepta en captura */
+    var stageEl = document.getElementById('geoStage');
+    if (stageEl) stageEl.addEventListener('click', function (ev) {
+      var t = ev.target;
+      var onBack = t && (t.id === 'geoBack' || (t.closest && t.closest('#geoBack')));
+      if (onBack && mpMatch && mpMatch.started && mpMatch.S && !mpMatch.S.mpFinished) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        mpConfirmAbandon();
+      }
+    }, true);
     var savedUser = mpSavedUser();
     if (savedUser) mpMe = savedUser;
     mpRenderAccount();
