@@ -501,6 +501,30 @@
 #gameHost .geo-panel .g-msg, #geoHost .geo-panel .g-msg { margin: 0; }
 #gameHost .geo-pin-wrap, #geoHost .geo-pin-wrap { background: none; border: none; }
 #gameHost .geo-pin, #geoHost .geo-pin { font-size: 26px; line-height: 32px; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+/* ===== MAPAZO v3: minimapa rediseñado · pines propios · animaciones · zoom ===== */
+#gameHost #geoMapWrap, #geoHost #geoMapWrap { border-radius: 20px; border: 2px solid rgba(245,197,66,.92); box-shadow: 0 12px 32px rgba(0,0,0,.68), 0 0 0 4px rgba(245,197,66,.13), inset 0 0 0 1px rgba(0,0,0,.45); transition: width .45s cubic-bezier(.25,.9,.3,1.12), height .45s cubic-bezier(.25,.9,.3,1.12), border-radius .45s ease; }
+#gameHost #geoMapWrap.big, #geoHost #geoMapWrap.big { border-radius: 24px; }
+#gameHost #geoMap, #geoHost #geoMap { background: #e9e5db; }
+#gameHost .geo-maptag, #geoHost .geo-maptag { background: linear-gradient(transparent, rgba(12,9,3,.88)); color: #f5c542; letter-spacing: .4px; padding: 12px 2px 5px; }
+#gameHost .geo-shrink, #geoHost .geo-shrink { background: rgba(22,17,4,.9); color: #f5c542; border-color: rgba(245,197,66,.65); }
+#gameHost .geo-pin, #geoHost .geo-pin { width: 32px; height: 32px; box-sizing: border-box; font-size: 18px; line-height: 27px; border-radius: 50%; background: rgba(10,10,18,.74); border: 2px solid #f5c542; box-shadow: 0 5px 16px rgba(0,0,0,.65); text-shadow: none; animation: geoPinDrop .45s cubic-bezier(.2,1.6,.4,1); }
+#gameHost .geo-pin.violet, #geoHost .geo-pin.violet { border-color: #b388ff; }
+@keyframes geoPinDrop { 0% { transform: translateY(-16px) scale(.6); opacity: 0; } 60% { transform: translateY(2px) scale(1.1); opacity: 1; } 100% { transform: translateY(0) scale(1); } }
+#gameHost .g-btn, #geoHost .g-btn, .mp-btn, #gameHost .geo-walkbtn, #geoHost .geo-walkbtn, #gameHost .geo-swap, #geoHost .geo-swap, #gameHost .geo-shrink, #geoHost .geo-shrink { transition: transform .08s ease; }
+#gameHost .g-btn:active, #geoHost .g-btn:active, .mp-btn:active, #gameHost .geo-walkbtn:active, #geoHost .geo-walkbtn:active, #gameHost .geo-swap:active, #geoHost .geo-swap:active, #gameHost .geo-shrink:active, #geoHost .geo-shrink:active { transform: scale(.93); }
+.mp-floater { position: absolute; top: 54px; transform: translateX(-50%); z-index: 1460; font-size: 30px; font-weight: 900; pointer-events: none; animation: mpFloatUp 1.6s ease-out forwards; }
+.mp-floater.up { color: #f5c542; text-shadow: 0 3px 14px rgba(0,0,0,.85), 0 0 18px rgba(245,197,66,.45); }
+.mp-floater.down { color: #ff6b6b; text-shadow: 0 3px 14px rgba(0,0,0,.85), 0 0 18px rgba(255,60,60,.35); }
+@keyframes mpFloatUp { 0% { opacity: 0; transform: translate(-50%, 12px) scale(.7); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.12); } 100% { opacity: 0; transform: translate(-50%, -58px) scale(1); } }
+.mp-score-pop { animation: mpScorePop .55s ease; }
+@keyframes mpScorePop { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.13); } 100% { transform: translateX(-50%) scale(1); } }
+#gameHost .geo-zoom, #geoHost .geo-zoom { position: absolute; left: 10px; top: 66px; z-index: 30; display: flex; flex-direction: column; gap: 6px; }
+#gameHost .geo-zoombtn, #geoHost .geo-zoombtn { width: 40px; height: 40px; border-radius: 12px; background: rgba(13,13,22,.85); color: #f5c542; border: 1px solid rgba(245,197,66,.55); font-size: 20px; font-weight: 900; cursor: pointer; backdrop-filter: blur(4px); font-family: inherit; line-height: 1; }
+#gameHost .geo-zoombtn:active, #geoHost .geo-zoombtn:active { transform: scale(.92); }
+#gameHost .geo-zoombtn:disabled, #geoHost .geo-zoombtn:disabled { opacity: .4; }
+#gameHost .geo-draglayer, #geoHost .geo-draglayer { position: absolute; inset: 0; z-index: 6; touch-action: none; cursor: grab; }
+#gameHost .geo-frame, #geoHost .geo-frame { transition: transform .18s ease; will-change: transform; }
+
 
         @media (max-width: 640px) {#gameHost .geo-mapbox, #geoHost .geo-mapbox { width: 150px; }
 #gameHost #geoMapWrap, #geoHost #geoMapWrap { height: 110px; }
@@ -863,6 +887,28 @@
     <script>
 /* ===== JUEGOS (offline, dentro de la página) ===== */
 (function () {
+  /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
+     la página se recarga sola — una pestaña vieja nunca se queda jugando
+     con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
+  var PANEL_VER = 3;
+  function panelCheckVersion() {
+    try {
+      fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && typeof j.v === 'number' && j.v > PANEL_VER) {
+            try {
+              if (sessionStorage.getItem('panel_reloaded_v') === String(j.v)) return;
+              sessionStorage.setItem('panel_reloaded_v', String(j.v));
+            } catch (e) {}
+            location.reload();
+          }
+        })
+        .catch(function () {});
+    } catch (e) {}
+  }
+  panelCheckVersion();
+  setInterval(panelCheckVersion, 300000);
   var host = document.getElementById('gameHost');
   var stage = document.getElementById('gameStage');
   var grid = document.getElementById('gamesGrid');
@@ -1392,6 +1438,7 @@
     [50.0865, 14.4114], [41.0086, 28.9802], [29.9792, 31.1342], [36.4618, 25.3753]
   ];
   var geoStartMode = null;
+  var geoZoomCtl = null; /* control del zoom de la foto (lo arma geoRoundPlay) */
 
   function geoEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function geoHavKm(lat1, lon1, lat2, lon2) {
@@ -1417,7 +1464,7 @@
     s.onload = function () { var q = geoLeafletWaiters; geoLeafletWaiters = null; if (q) q.forEach(function (f) { f(); }); };
     document.head.appendChild(s);
   }
-  function geoPin(emoji) { return L.divIcon({ className: 'geo-pin-wrap', html: '<div class="geo-pin">' + emoji + '</div>', iconSize: [32, 32], iconAnchor: [16, 16] }); }
+  function geoPin(emoji, tone) { return L.divIcon({ className: 'geo-pin-wrap', html: '<div class="geo-pin' + (tone ? ' ' + tone : '') + '">' + emoji + '</div>', iconSize: [32, 32], iconAnchor: [16, 16] }); }
 
   /* Busca las imágenes del bbox (limit=100) y las agrupa por sequence,
      conservando el orden en que la API las devuelve (el orden del
@@ -1460,6 +1507,176 @@
       });
     });
   }
+
+  /* ---------- Pool gigante de lugares (v3) ---------- */
+  /* Anclas de ciudades/pueblos de TODO el mundo (solo lat/lng, sin nombres:
+     el jugador nunca ve qué ciudad es). Cada ronda elige un ancla al azar +
+     jitter de ±0.06° y resuelve una secuencia larga de Mapillary; la verdad
+     de la ronda es la foto real encontrada. Con ~419 anclas × jitter × miles
+     de secuencias, repetir una foto es rarísimo. */
+  var GEO_ANCHORS = [
+    [40.71,-74.00],[42.36,-71.06],[39.95,-75.16],[38.90,-77.04],[39.29,-76.61],[40.44,-79.99],[42.89,-78.88],[41.88,-87.63],[42.33,-83.05],[41.50,-81.69],[39.96,-83.00],[39.77,-86.16],[43.04,-87.91],[44.98,-93.27],[38.63,-90.20],[39.10,-94.58],[39.74,-104.99],[33.45,-112.07],[36.17,-115.14],[34.05,-118.24],[32.72,-117.16],[37.77,-122.42],[37.34,-121.89],[38.58,-121.49],[45.52,-122.68],[47.61,-122.33],[40.76,-111.89],[35.08,-106.65],[32.22,-110.97],[32.78,-96.80],[29.76,-95.37],[30.27,-97.74],[29.42,-98.49],[32.75,-97.33],[35.47,-97.52],[36.15,-95.99],[29.95,-90.07],[35.15,-90.05],[36.16,-86.78],[33.75,-84.39],[25.76,-80.19],[28.54,-81.38],[27.95,-82.46],[30.33,-81.66],[35.23,-80.84],[35.78,-78.64],[37.54,-77.44],[21.31,-157.86],[61.22,-149.90],
+    [43.65,-79.38],[49.28,-123.12],[45.50,-73.57],[45.42,-75.70],[51.05,-114.07],[53.55,-113.49],[49.90,-97.14],[46.81,-71.21],[44.65,-63.57],[48.43,-123.37],
+    [19.43,-99.13],[20.67,-103.35],[25.69,-100.32],[19.04,-98.21],[32.51,-117.04],[21.16,-86.85],[20.97,-89.62],[17.07,-96.72],[19.19,-96.13],[16.86,-99.88],[19.29,-99.66],[20.59,-100.39],[22.16,-100.99],[21.12,-101.68],[19.71,-101.18],
+    [14.63,-90.55],[13.69,-89.22],[14.07,-87.19],[12.11,-86.24],[9.93,-84.09],[8.98,-79.52],[18.49,-69.93],[18.47,-66.11],[23.11,-82.37],[17.97,-76.79],[18.54,-72.34],[15.50,-88.03],
+    [4.71,-74.07],[6.24,-75.58],[3.45,-76.52],[10.39,-75.51],[11.00,-74.81],[-0.18,-78.47],[-2.19,-79.89],[-12.05,-77.04],[-16.41,-71.54],[-13.53,-71.97],[-16.49,-68.12],[-17.81,-63.16],[-33.45,-70.67],[-33.05,-71.62],[-34.60,-58.38],[-31.42,-64.18],[-32.94,-60.64],[-32.89,-68.85],[-34.90,-56.16],[-25.26,-57.58],[-23.55,-46.63],[-22.91,-43.17],[-15.79,-47.88],[-12.97,-38.50],[-3.73,-38.52],[-8.05,-34.88],[-19.92,-43.94],[-30.03,-51.23],[-25.43,-49.27],[-3.12,-60.02],[-1.46,-48.49],[10.48,-66.90],[10.65,-71.65],[6.80,-58.16],[5.85,-55.17],[4.92,-52.31],[-19.02,-65.26],[-53.16,-70.91],[-54.80,-68.30],[-3.75,-73.25],[-8.11,-79.03],[-23.65,-70.40],[-36.83,-73.05],
+    [51.51,-0.13],[48.86,2.35],[40.42,-3.70],[41.39,2.17],[39.47,-0.38],[37.39,-5.99],[43.26,-2.93],[38.72,-9.14],[41.16,-8.63],[41.90,12.50],[45.46,9.19],[40.85,14.27],[45.07,7.69],[43.77,11.25],[45.44,12.32],[44.49,11.34],[44.41,8.93],[52.37,4.90],[51.92,4.48],[52.07,4.30],[52.09,5.12],[50.85,4.35],[51.22,4.40],[52.52,13.41],[48.14,11.58],[53.55,9.99],[50.94,6.96],[50.11,8.68],[48.78,9.18],[51.23,6.78],[51.34,12.37],[51.05,13.74],[52.37,9.73],[49.45,11.08],[48.21,16.37],[47.81,13.04],[47.07,15.44],[47.38,8.54],[46.20,6.14],[46.95,7.45],[47.56,7.59],[50.08,14.44],[49.20,16.61],[48.15,17.11],[47.50,19.05],[52.23,21.01],[50.06,19.94],[54.35,18.65],[52.41,16.93],[51.11,17.04],[37.98,23.73],[40.64,22.94],[41.01,28.98],[39.93,32.86],[38.42,27.14],[36.88,30.70],[55.68,12.57],[56.16,10.20],[59.33,18.07],[57.71,11.97],[55.60,13.00],[59.91,10.75],[60.39,5.32],[60.17,24.94],[61.50,23.79],[64.15,-21.94],[53.35,-6.26],[51.90,-8.48],[55.95,-3.19],[55.86,-4.25],[53.48,-2.24],[52.48,-1.90],[53.41,-2.98],[53.80,-1.55],[51.45,-2.59],[51.48,-3.18],[54.60,-5.93],[44.43,26.10],[46.77,23.62],[45.75,21.21],[42.70,23.32],[42.14,24.75],[44.82,20.46],[45.81,15.98],[46.05,14.51],[43.86,18.41],[42.00,21.43],[41.33,19.82],[42.44,19.26],[42.66,21.17],[47.01,28.86],[50.45,30.52],[49.84,24.03],[46.48,30.72],[49.99,36.23],[53.90,27.56],[54.69,25.28],[56.95,24.11],[59.44,24.75],[55.76,37.62],[59.93,30.34],[55.79,49.12],[55.01,82.93],[56.84,60.65],[35.90,14.51],[35.19,33.38],[39.57,2.65],[37.02,-7.93],[44.84,-0.58],[45.76,4.84],[43.30,5.37],[43.70,7.27],[43.60,1.44],[47.22,-1.55],[48.57,7.75],[43.61,3.88],[45.19,5.72],
+    [30.04,31.24],[31.20,29.92],[30.01,31.21],[25.69,32.64],[24.09,32.90],[15.50,32.53],[8.98,38.76],[-1.29,36.82],[-4.05,39.67],[-6.79,39.28],[0.35,32.58],[-1.94,30.06],[2.05,45.32],[11.59,43.15],[15.32,38.93],[6.52,3.37],[9.06,7.49],[5.60,-0.19],[5.36,-4.01],[14.72,-17.47],[12.64,-8.00],[12.37,-1.52],[9.51,-13.71],[8.48,-13.23],[6.31,-10.81],[6.14,1.22],[6.37,2.39],[13.51,2.11],[12.13,15.04],[-8.84,13.23],[-4.32,15.31],[-4.26,15.24],[0.42,9.47],[3.85,11.50],[4.05,9.70],[-22.56,17.07],[-15.39,28.32],[-17.83,31.05],[-25.97,32.57],[-18.91,47.54],[-26.20,28.05],[-33.93,18.42],[-29.85,31.02],[-25.75,28.19],[-29.12,26.21],[36.75,3.06],[36.80,10.18],[32.90,13.19],[34.02,-6.84],[33.59,-7.61],[31.63,-7.99],[34.02,-5.00],[35.78,-5.81],[-24.63,25.92],[-13.96,33.79],[-20.16,57.50],
+    [25.20,55.27],[24.45,54.37],[25.29,51.53],[24.71,46.68],[21.49,39.19],[29.38,47.99],[26.23,50.59],[23.59,58.41],[35.69,51.39],[36.26,59.62],[32.65,51.68],[29.59,52.58],[33.31,44.36],[30.51,47.81],[31.95,35.93],[33.89,35.50],[33.51,36.29],[31.77,35.21],[32.08,34.78],[40.41,49.87],[41.72,44.78],[40.19,44.52],[43.24,76.89],[51.13,71.43],[41.30,69.24],[42.87,74.59],[38.56,68.79],[37.96,58.33],[34.53,69.17],[33.73,73.09],[24.86,67.00],[31.55,74.34],[28.61,77.21],[19.08,72.88],[22.57,88.36],[13.08,80.27],[12.97,77.59],[17.39,78.49],[18.52,73.86],[23.03,72.58],[26.91,75.79],[26.85,80.95],[9.97,76.28],[27.71,85.32],[23.81,90.41],[6.93,79.86],[4.18,73.51],[13.76,100.50],[18.79,98.99],[12.92,100.88],[7.88,98.39],[21.03,105.85],[10.82,106.63],[16.05,108.22],[11.56,104.93],[17.97,102.60],[16.84,96.17],[21.92,96.09],[3.14,101.69],[5.41,100.33],[1.49,103.74],[1.35,103.82],[-6.21,106.85],[-7.25,112.75],[-6.91,107.61],[-3.60,98.67],[-8.65,115.22],[14.60,120.98],[14.68,121.04],[10.32,123.90],[7.07,125.61],[25.03,121.57],[22.62,120.31],[24.14,120.68],[22.32,114.17],[22.20,113.54],[39.90,116.40],[31.23,121.47],[23.13,113.26],[22.55,114.06],[30.57,104.07],[29.56,106.55],[30.59,114.31],[34.34,108.94],[32.06,118.80],[30.27,120.16],[39.13,117.20],[25.04,102.72],[45.80,126.53],[43.83,87.62],[29.65,91.10],[37.57,126.98],[35.18,129.08],[37.46,126.71],[35.87,128.60],[35.68,139.69],[34.69,135.50],[35.01,135.77],[35.18,136.91],[33.59,130.40],[43.06,141.35],[34.39,132.46],[38.27,140.87],[35.44,139.64],[47.92,106.92],[4.89,114.94],[-8.56,125.56],[27.47,89.59],
+    [-33.87,151.21],[-37.81,144.96],[-27.47,153.03],[-31.95,115.86],[-34.93,138.60],[-35.28,149.13],[-42.88,147.33],[-28.02,153.43],[-12.46,130.84],[-16.92,145.77],[-36.85,174.76],[-41.29,174.78],[-43.53,172.64],[-37.79,175.28],[-18.12,178.45],[-9.48,147.15],[-22.27,166.46],[-17.68,-149.57],[-13.85,-171.75],[-21.21,-175.20]
+  ];
+
+  /* Como geoFetchSeqs pero con coordenadas por foto: devuelve las secuencias
+     como { key, ids, first } (first = [lat,lng] de la primera foto con GPS),
+     de la más larga a la más corta. */
+  function geoFetchSeqsC(place, widened, cb) {
+    var dLat = widened ? 0.009 : 0.003, dLng = widened ? 0.012 : 0.004;
+    var bbox = (place[1] - dLng) + ',' + (place[0] - dLat) + ',' + (place[1] + dLng) + ',' + (place[0] + dLat);
+    fetch('https://graph.mapillary.com/images?access_token=' + encodeURIComponent(GEO_TOKEN) + '&fields=id,sequence,geometry&bbox=' + bbox + '&limit=100')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var arr = (j && j.data) || [];
+        var bySeq = {}, order = [];
+        arr.forEach(function (x) {
+          if (!x || x.id == null || !x.sequence) return;
+          if (!bySeq[x.sequence]) { bySeq[x.sequence] = { key: x.sequence, ids: [], first: null }; order.push(x.sequence); }
+          var s = bySeq[x.sequence];
+          s.ids.push(x.id);
+          if (!s.first && x.geometry && x.geometry.coordinates) s.first = [x.geometry.coordinates[1], x.geometry.coordinates[0]];
+        });
+        var seqs = order.map(function (k) { return bySeq[k]; });
+        seqs.sort(function (a, b) { return b.ids.length - a.ids.length; });
+        cb(seqs);
+      })
+      .catch(function () { cb([]); });
+  }
+  function geoSpotFromSeq(seq, center) {
+    var f = seq.first || center;
+    return { lat: f[0], lng: f[1], img: seq.ids[0], resolved: true };
+  }
+  /* Resuelve UN centro (ancla+jitter) a un spot con foto exacta: exige una
+     secuencia larga (>=10) en el bbox chico o en el amplio; si no, null. */
+  function geoResolveCenter(center, cb) {
+    geoFetchSeqsC(center, false, function (small) {
+      if (small.length && small[0].ids.length >= 10) { cb(geoSpotFromSeq(small[0], center)); return; }
+      geoFetchSeqsC(center, true, function (wide) {
+        var seen = {}, out = [];
+        small.concat(wide).forEach(function (s) { if (s.ids.length && !seen[s.key]) { seen[s.key] = 1; out.push(s); } });
+        out.sort(function (a, b) { return b.ids.length - a.ids.length; });
+        if (out.length && out[0].ids.length >= 10) { cb(geoSpotFromSeq(out[0], center)); return; }
+        cb(null);
+      });
+    });
+  }
+  /* Último recurso: uno de los 20 lugares clásicos, resolviendo también su foto. */
+  function geoFallbackSpot(cb) {
+    var order = shuffle(GEO_PLACES.map(function (p, i) { return i; }));
+    (function next(i) {
+      if (i >= order.length) { var p0 = GEO_PLACES[order[0]]; cb({ lat: p0[0], lng: p0[1], img: null, resolved: true }); return; }
+      var p = GEO_PLACES[order[i]];
+      geoFetchSeqsC(p, true, function (seqs) {
+        if (seqs.length && seqs[0].ids.length) { cb(geoSpotFromSeq(seqs[0], p)); return; }
+        next(i + 1);
+      });
+    })(0);
+  }
+  /* Genera UN spot nuevo: hasta 8 intentos de ancla+jitter; `used` evita
+     repetir ancla dentro de la misma partida/generación. */
+  function geoGenSpotCore(used, cb) {
+    var tries = 0;
+    (function attempt() {
+      if (tries >= 8) { geoFallbackSpot(cb); return; }
+      tries++;
+      var ai = -1;
+      for (var k = 0; k < 12 && ai < 0; k++) {
+        var cand = Math.floor(Math.random() * GEO_ANCHORS.length);
+        if (!used[cand]) ai = cand;
+      }
+      if (ai < 0) { geoFallbackSpot(cb); return; }
+      used[ai] = 1;
+      var a = GEO_ANCHORS[ai];
+      var center = [a[0] + (Math.random() * 0.12 - 0.06), a[1] + (Math.random() * 0.12 - 0.06)];
+      geoResolveCenter(center, function (spot) { if (spot) cb(spot); else attempt(); });
+    })();
+  }
+  /* Genera n spots de una vez (el host online los resuelve antes de crear la partida). */
+  function geoGenSpots(n, cb) {
+    var used = {}, out = [];
+    (function next() {
+      if (out.length >= n) { cb(out); return; }
+      geoGenSpotCore(used, function (spot) { out.push(spot); next(); });
+    })();
+  }
+  /* Resolución perezosa de la ronda (SOLO / duelo por link): genera el spot
+     de esta ronda evitando repetir anclas dentro de la misma partida. */
+  function geoResolveRoundSpot(S, cb) {
+    if (!S.genUsed) S.genUsed = {};
+    geoGenSpotCore(S.genUsed, function (spot) {
+      S.spots[S.round] = spot;
+      cb();
+    });
+  }
+  /* Carga la secuencia EXACTA de una foto conocida (el invitado online y el
+     retado por link juegan la misma foto que el anfitrión/creador): busca el
+     grupo que contiene imgKey alrededor de sus propias coordenadas. */
+  function geoFetchSeqForImage(imgKey, lat, lng, cb) {
+    var center = [lat, lng];
+    function pick(seqs) {
+      for (var i = 0; i < seqs.length; i++) if (seqs[i].ids.indexOf(imgKey) >= 0) return seqs[i];
+      return null;
+    }
+    geoFetchSeqsC(center, false, function (small) {
+      var hit = pick(small);
+      if (hit) { cb([hit.ids]); return; }
+      geoFetchSeqsC(center, true, function (wide) {
+        var hit2 = pick(wide);
+        if (hit2) { cb([hit2.ids]); return; }
+        cb([[imgKey]]);
+      });
+    });
+  }
+  function geoPendingSpots() { return [{}, {}, {}, {}, {}]; }
+  function geoRetoSpots(reto) {
+    if (reto.spots && reto.spots.length) return reto.spots.map(function (s) { return { lat: s.lat, lng: s.lng, img: s.img || null, resolved: true }; });
+    return (reto.locs || []).map(function (i) { var p = GEO_PLACES[i] || [0, 0]; return { lat: p[0], lng: p[1], img: null, resolved: true }; });
+  }
+  function geoSpotsPayload(S) {
+    return S.spots.map(function (s) {
+      return { lat: Math.round(s.lat * 100000) / 100000, lng: Math.round(s.lng * 100000) / 100000, img: s.img || null };
+    });
+  }
+  /* Animación de conteo (la usan el revelado local y el online) */
+  function geoCountUpEl(elm, from, to, dur) {
+    if (!elm) return;
+    var t0 = Date.now();
+    var step = function () {
+      var k = Math.min(1, (Date.now() - t0) / dur);
+      var e = 1 - Math.pow(1 - k, 3);
+      elm.textContent = Math.round(from + (to - from) * e);
+      if (k < 1) setTimeout(step, 30);
+    };
+    step();
+  }
+  /* FX del revelado local: conteo de los puntos de la ronda + flotante dorado */
+  function geoRevealFx(pts) {
+    try {
+      var panel = document.getElementById('geoResult');
+      if (panel) {
+        var ns = panel.querySelectorAll('.geo-countup');
+        for (var i = 0; i < ns.length; i++) geoCountUpEl(ns[i], 0, parseInt(ns[i].getAttribute('data-to'), 10) || 0, 900);
+      }
+      var stage = geoHost.querySelector('.geo-stage');
+      if (stage && pts) {
+        var f = document.createElement('div');
+        f.className = 'mp-floater up';
+        f.style.left = '50%';
+        f.textContent = '+' + pts;
+        stage.appendChild(f);
+        setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 1700);
+      }
+    } catch (e) {}
+  }
+
   /* Refresca el contador "Paso X/Y" y el estado de Avanzar/Atrás. */
   function geoWalkUI(S) {
     var n = S.imgs ? S.imgs.length : 0;
@@ -1471,6 +1688,7 @@
     if (next) next.disabled = !n || S.imgIdx >= n - 1;
   }
   function geoShowImg(S, overlayMs) {
+    if (geoZoomCtl) geoZoomCtl.reset();
     var fw = document.getElementById('geoFrame');
     if (!fw || !S.imgs || !S.imgs.length) return;
     var id = S.imgs[S.imgIdx];
@@ -1504,7 +1722,7 @@
     ));
     document.getElementById('geoSolo').addEventListener('click', function () {
       if (!mpRequireLogin()) return;
-      geoStart({ mode: 'solo', name: '', locs: geoRandomLocs(), reto: null });
+      geoStart({ mode: 'solo', name: '', spots: geoPendingSpots(), reto: null });
     });
     document.getElementById('geoDuelBtn').addEventListener('click', function () { geoNameScreen('create', null); });
   };
@@ -1521,8 +1739,8 @@
     ));
     document.getElementById('geoNameGo').addEventListener('click', function () {
       var nm = document.getElementById('geoName').value.trim() || (kind === 'create' ? 'James' : 'Rival');
-      if (kind === 'answer') geoStart({ mode: 'answer', name: nm, locs: reto.locs.slice(), reto: reto });
-      else geoStart({ mode: 'create', name: nm, locs: geoRandomLocs(), reto: null });
+      if (kind === 'answer') geoStart({ mode: 'answer', name: nm, spots: geoRetoSpots(reto), reto: reto });
+      else geoStart({ mode: 'create', name: nm, spots: geoPendingSpots(), reto: null });
     });
   }
 
@@ -1532,8 +1750,24 @@
   }
 
   function geoRound(S) {
-    var myRound = S.round, myLoc = S.locs[S.round];
-    var place = GEO_PLACES[myLoc];
+    var spot = S.spots[S.round];
+    if (!spot || !spot.resolved) {
+      /* SOLO / duelo por link: el spot de esta ronda se genera al momento
+         (pool gigante) — pantalla de búsqueda breve y a jugar. */
+      geoHost.innerHTML = '';
+      geoHost.appendChild(el(
+        '<div class="geo-stage"><div class="geo-view"><div class="geo-loading">🌍 Buscando una calle del mundo…</div></div></div>'
+      ));
+      var r0 = S.round;
+      geoResolveRoundSpot(S, function () { if (S.round === r0) geoRound(S); });
+      return;
+    }
+    geoRoundPlay(S, spot);
+  }
+
+  function geoRoundPlay(S, spot) {
+    var myRound = S.round, myLoc = spot;
+    var place = [spot.lat, spot.lng];
     S.imgs = null; S.imgIdx = 0; S.seqs = null; S.seqIdx = 0;
     geoHost.innerHTML = '';
     var scoreLine = S.mode === 'solo' ? ('Total: ' + S.total + ' pts')
@@ -1542,7 +1776,7 @@
       : ('Tú ' + S.myDuel + ' · ' + geoEsc(S.reto.n) + ' ' + S.rivalDuel);
     geoHost.appendChild(el(
       '<div class="geo-stage">' +
-      '<div class="geo-view" id="geoFrame"><div class="geo-loading" id="geoLoading">📸 Cargando la calle…</div><div class="geo-viewhint" id="geoViewHint" style="display:none">🚶 Camina con Avanzar/Atrás o las flechas del visor · Arrastra pa\' mirar alrededor</div></div>' +
+      '<div class="geo-view" id="geoFrame"><div class="geo-loading" id="geoLoading">📸 Cargando la calle…</div><div class="geo-viewhint" id="geoViewHint" style="display:none">🚶 Camina con Avanzar/Atrás o las flechas del visor · Arrastra pa\' mirar alrededor</div><div class="geo-zoom"><button class="geo-zoombtn" id="geoZoomIn" type="button">＋</button><button class="geo-zoombtn" id="geoZoomOut" type="button">－</button><button class="geo-zoombtn" id="geoZoomReset" type="button" style="display:none">⤾</button></div><div class="geo-draglayer" id="geoDragLayer" style="display:none"></div></div>' +
       '<div class="geo-score">Ronda ' + (S.round + 1) + '/5 · <span>' + scoreLine + '</span></div>' +
       '<button class="geo-swap" id="geoSwap" type="button" disabled>🔄 Otra foto</button>' +
       '<div class="geo-walk"><button class="geo-walkbtn" id="geoPrev" type="button" disabled>⬅️ Atrás</button><span class="geo-step" id="geoStep"></span><button class="geo-walkbtn gold" id="geoNext" type="button" disabled>🚶 Avanzar ➡️</button></div>' +
@@ -1570,8 +1804,52 @@
       if (!S.imgs || S.imgIdx >= S.imgs.length - 1) return;
       S.imgIdx++; geoShowImg(S, 800); geoWalkUI(S);
     });
-    geoFetchImage(place, function (seqs) {
-      if (S.round !== myRound || S.locs[S.round] !== myLoc) return;
+    /* Zoom digital sobre la foto (transform sobre el iframe): botones + / −,
+       arrastre pa' desplazar cuando está acercada, doble toque pa' resetear.
+       Se reinicia solo al cambiar de foto/paso (geoShowImg -> geoZoomCtl). */
+    (function () {
+      var zIn = document.getElementById('geoZoomIn'), zOut = document.getElementById('geoZoomOut'),
+          zReset = document.getElementById('geoZoomReset'), layer = document.getElementById('geoDragLayer');
+      var st = { s: 1, x: 0, y: 0 };
+      function apply() {
+        var f = document.getElementById('geoFrame');
+        var ifr = f ? f.querySelector('iframe.geo-frame') : null;
+        if (ifr) ifr.style.transform = st.s > 1 ? ('translate(' + st.x + 'px,' + st.y + 'px) scale(' + st.s + ')') : '';
+        if (layer) layer.style.display = st.s > 1 ? '' : 'none';
+        if (zReset) zReset.style.display = st.s > 1 ? '' : 'none';
+        if (zOut) zOut.disabled = st.s <= 1;
+      }
+      function setS(ns) {
+        st.s = Math.max(1, Math.min(3, Math.round(ns * 10) / 10));
+        if (st.s === 1) { st.x = 0; st.y = 0; }
+        apply();
+      }
+      geoZoomCtl = { reset: function () { st.s = 1; st.x = 0; st.y = 0; apply(); } };
+      if (zIn) zIn.addEventListener('click', function () { setS(st.s + 0.6); });
+      if (zOut) zOut.addEventListener('click', function () { setS(st.s - 0.6); });
+      if (zReset) zReset.addEventListener('click', function () { geoZoomCtl.reset(); });
+      if (layer) {
+        var drag = null;
+        layer.addEventListener('pointerdown', function (e) {
+          drag = { x: e.clientX, y: e.clientY, ox: st.x, oy: st.y };
+          try { layer.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        layer.addEventListener('pointermove', function (e) {
+          if (!drag) return;
+          var lim = 260 * st.s;
+          st.x = Math.max(-lim, Math.min(lim, drag.ox + (e.clientX - drag.x)));
+          st.y = Math.max(-lim, Math.min(lim, drag.oy + (e.clientY - drag.y)));
+          apply();
+        });
+        var endDrag = function () { drag = null; };
+        layer.addEventListener('pointerup', endDrag);
+        layer.addEventListener('pointercancel', endDrag);
+        layer.addEventListener('dblclick', function () { geoZoomCtl.reset(); });
+      }
+      apply();
+    })();
+    var onSeqs = function (seqs) {
+      if (S.round !== myRound || S.spots[S.round] !== myLoc) return;
       var fw = document.getElementById('geoFrame');
       if (!fw) return;
       if (seqs && seqs.length) {
@@ -1580,23 +1858,21 @@
         if (vh) vh.style.display = '';
         geoShowImg(S, 4000);
         geoWalkUI(S);
-      } else if (S.mode !== 'answer' && S.mode !== 'online') {
-        var used = {}; S.locs.forEach(function (x) { used[x] = 1; });
-        var alt = -1;
-        for (var i = 0; i < GEO_PLACES.length; i++) if (!used[i]) { alt = i; break; }
-        if (alt >= 0) { S.locs[S.round] = alt; geoRound(S); return; }
-        fw.innerHTML = '<div class="geo-loading">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
       } else {
         fw.innerHTML = '<div class="geo-loading">Sin foto pa\' este lugar — adivina solo con el mapa 🌍</div>';
       }
-    });
+    };
+    /* Con img (online / link): la secuencia EXACTA de esa foto — la misma
+       pa' los dos jugadores. Sin img (respaldo): búsqueda clásica por bbox. */
+    if (spot.img) geoFetchSeqForImage(spot.img, spot.lat, spot.lng, onSeqs);
+    else geoFetchImage(place, onSeqs);
     geoLoadLeaflet(function () {
-      if (S.round !== myRound || S.locs[S.round] !== myLoc) return;
+      if (S.round !== myRound || S.spots[S.round] !== myLoc) return;
       var mapEl = document.getElementById('geoMap');
       if (!mapEl || !window.L || mapEl._leaflet_id) return;
       var wrap = document.getElementById('geoMapWrap');
       var map = L.map('geoMap', { zoomControl: false }).setView([22, 0], 2);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd', attribution: '© OpenStreetMap · © CARTO' }).addTo(map);
       later(function () { try { map.invalidateSize(); } catch (e) {} }, 250);
       var guess = null, guessMarker = null, locked = false;
       function setBig(big) {
@@ -1631,12 +1907,12 @@
         if (S.mode === 'online') { mpOnlineGuess(S, guess, dist, pts, place, map, guessBtn); return; }
         L.marker([place[0], place[1]], { icon: geoPin('🎯') }).addTo(map);
         var ptsArr = [[guess[0], guess[1]], [place[0], place[1]]];
-        var msg = '🎯 El lugar real estaba a <b>' + geoFmtDist(dist) + '</b> de tu pin · <b>+' + pts + ' pts</b>';
+        var msg = '🎯 El lugar real estaba a <b>' + geoFmtDist(dist) + '</b> de tu pin · <b>+<span class="geo-countup" data-to="' + pts + '">0</span> pts</b>';
         if (S.mode === 'answer') {
           var rp = S.reto.pins[S.round];
           var rDist = geoHavKm(rp[0], rp[1], place[0], place[1]);
           var rPts = S.reto.pts[S.round];
-          L.marker([rp[0], rp[1]], { icon: geoPin('🟣') }).addTo(map);
+          L.marker([rp[0], rp[1]], { icon: geoPin('🟣', 'violet') }).addTo(map);
           ptsArr.push([rp[0], rp[1]]);
           var swing = Math.abs(pts - rPts), roundTxt;
           if (dist < rDist) { S.myDuel += swing; S.rivalDuel -= swing; roundTxt = '🏆 ¡Ganaste la ronda! Le quitaste ' + swing + ' pts a ' + geoEsc(S.reto.n) + '.'; }
@@ -1652,6 +1928,7 @@
         var panel = document.getElementById('geoPanel');
         if (panel) panel.style.display = '';
         document.getElementById('geoResult').innerHTML = msg;
+        geoRevealFx(pts);
         var hint = document.getElementById('geoHint');
         if (hint) hint.style.display = 'none';
         var sw = document.getElementById('geoSwap');
@@ -1697,7 +1974,7 @@
       return;
     }
     if (S.mode === 'create') {
-      var link = 'https://jamesvag.github.io/#reto=' + geoB64Enc({ n: S.name, locs: S.locs, pins: S.myPins, pts: S.myPts });
+      var link = 'https://jamesvag.github.io/#reto=' + geoB64Enc({ n: S.name, spots: geoSpotsPayload(S), pins: S.myPins, pts: S.myPts });
       geoHost.appendChild(el(
         '<div class="g-score">🏁 ¡Duelo listo!</div>' +
         '<div class="g-msg">Sacaste <b>' + S.total + '</b> pts en tus 5 lugares. Manda este link de reto a tu adversario — cuando lo abra, juega los mismos 5 lugares y el que caiga más cerca en cada ronda le quita puntos al otro 😈</div>' +
@@ -1711,7 +1988,7 @@
     else if (S.rivalDuel > S.myDuel) { winner = S.reto.n; verdict = '💀 ' + geoEsc(S.reto.n) + ' ganó el duelo… esta vez.'; }
     else { winner = ''; verdict = '🤝 ¡Empate total!'; }
     var rTotal = S.reto.pts.reduce(function (a, b) { return a + b; }, 0);
-    var rlink = 'https://jamesvag.github.io/#reto=' + geoB64Enc({ n: S.reto.n, locs: S.locs, pins: S.reto.pins, pts: S.reto.pts, res: { n2: S.name, pins2: S.myPins, pts2: S.myPts, s1: S.rivalDuel, s2: S.myDuel, w: winner } });
+    var rlink = 'https://jamesvag.github.io/#reto=' + geoB64Enc({ n: S.reto.n, spots: geoSpotsPayload(S), pins: S.reto.pins, pts: S.reto.pts, res: { n2: S.name, pins2: S.myPins, pts2: S.myPts, s1: S.rivalDuel, s2: S.myDuel, w: winner } });
     geoHost.appendChild(el(
       '<div class="g-score">🏁 Fin del duelo</div>' +
       '<div class="g-msg" style="font-size:18px"><b>' + verdict + '</b></div>' +
@@ -1734,7 +2011,7 @@
       var r = data.res;
       banner.innerHTML = '<div class="g-msg" style="margin:0">🏁 <b>Resultado del duelo:</b> ' + geoEsc(data.n) + ' ' + r.s1 + ' · ' + geoEsc(r.n2) + ' ' + r.s2 + (r.w ? ' — 🏆 ganó <b>' + geoEsc(r.w) + '</b>' : ' — 🤝 empate') + '</div>';
       banner.style.display = '';
-    } else if (data.locs && data.pins && data.pts) {
+    } else if ((data.spots || data.locs) && data.pins && data.pts) {
       banner.innerHTML = '<div class="g-msg" style="margin:0">⚔️ <b>' + geoEsc(data.n) + '</b> te reta en 🌍 MAPAZO — toca pa\' jugar los mismos 5 lugares.</div><div class="g-row" style="margin:8px 0 0"><button class="g-btn gold" id="duelAccept">▶ Aceptar el reto</button></div>';
       banner.style.display = '';
       document.getElementById('duelAccept').addEventListener('click', function () {
@@ -1969,7 +2246,7 @@
     };
     try { myRef.onDisconnect().remove(); } catch (e) {}
     /* t = entrada a la cola, se escribe UNA sola vez (define el orden); hb = latido de frescura */
-    myRef.set({ name: mpMyName || mpMe, t: firebase.database.ServerValue.TIMESTAMP, hb: firebase.database.ServerValue.TIMESTAMP });
+    myRef.set({ name: mpMyName || mpMe, t: firebase.database.ServerValue.TIMESTAMP, hb: firebase.database.ServerValue.TIMESTAMP, v: 3 });
     mpSearch.hb = setInterval(function () {
       if (mpSearch) { try { mpSearch.myRef.update({ hb: firebase.database.ServerValue.TIMESTAMP }); } catch (e) {} }
     }, 20000);
@@ -1983,7 +2260,7 @@
     }, 120000);
     myRef.on('value', function (snap) {
       var v = snap.val();
-      if (v && v.match && mpSearch && !mpSearch.joining) mpJoinMatch(v.match);
+      if (v && v.match && mpSearch && !mpSearch.joining) mpJoinChecked(v.match);
     });
     mpSearch.queueRef.on('value', function (snap) { mpTryHost(snap); });
     mpSearchButtons();
@@ -1993,14 +2270,16 @@
     var now = Date.now(), entries = [];
     snap.forEach(function (ch) {
       var v = ch.val() || {};
-      entries.push({ u: ch.key, name: v.name || ch.key, t: v.t || 0, hb: v.hb || v.t || 0, match: v.match || null });
+      entries.push({ u: ch.key, name: v.name || ch.key, t: v.t || 0, hb: v.hb || v.t || 0, match: v.match || null, v: v.v || 0 });
     });
     /* PRIMERO: si mi propio nodo ya tiene match, entro a esa partida y JAMÁS creo una */
     var mine = null;
     entries.forEach(function (e) { if (e.u === mpMe) mine = e; });
-    if (mine && mine.match) { mpJoinMatch(mine.match); return; }
-    /* Fresco = hb (o t) de menos de 90 s; orden por t ascendente, desempate por uname */
-    var fresh = entries.filter(function (e) { return e.hb && (now - e.hb) < 90000; });
+    if (mine && mine.match) { mpJoinChecked(mine.match); return; }
+    /* Protocolo v3 SOLO: las entradas sin v:3 (pestañas con el código viejo) se
+       ignoran por completo — no cuentan como pareja ni se les escribe match.
+       Fresco = hb (o t) de menos de 90 s; orden por t ascendente, desempate por uname */
+    var fresh = entries.filter(function (e) { return e.v === 3 && e.hb && (now - e.hb) < 90000; });
     fresh.sort(function (a, b) { return (a.t - b.t) || (a.u < b.u ? -1 : (a.u > b.u ? 1 : 0)); });
     if (fresh.length < 2) return;
     if (fresh[0].u !== mpMe || fresh[0].match) return; /* SOLO el dueño de la entrada fresca más vieja crea */
@@ -2014,28 +2293,58 @@
     /* Re-leo mi propio nodo antes de crear: si ya me invitaron, entro en vez de crear */
     mpDb.ref('queue/' + mpMe).once('value').then(function (mySnap) {
       var mv = mySnap.val();
-      if (mv && mv.match) { mpJoinMatch(mv.match); return null; }
+      if (mv && mv.match) { mpJoinChecked(mv.match); return null; }
       /* Id DETERMINISTA: la pareja ordenada + mi t de entrada (un re-match futuro usa otro t) */
       var pair = [mpMe, other.u].sort();
       var pairId = 'pair_' + pair[0] + '_' + pair[1] + '_' + Math.floor(myT);
       var names = {};
       names[mpMe] = mpMyName || mpMe;
       names[other.u] = other.name;
-      var matchObj = {
-        host: mpMe, guest: other.u, names: names,
-        places: geoRandomLocs(),
-        created: firebase.database.ServerValue.TIMESTAMP,
-        state: 'play', results: {}, settled: false
-      };
-      /* Creación atómica create-if-absent: si ya existe, aborto y entro como invitado */
-      return mpDb.ref('matches/' + pairId).transaction(function (cur) {
-        if (cur === null || cur === undefined) return matchObj;
-        return undefined;
-      }).then(function () {
-        try { mpDb.ref('queue/' + mpMe).update({ match: pairId }); } catch (e) {}
-        try { mpDb.ref('queue/' + other.u).update({ match: pairId }); } catch (e) {}
-        mpJoinMatch(pairId);
+      /* El HOST resuelve los 5 spots hasta la FOTO exacta antes de crear la
+         partida: el invitado juega EXACTAMENTE las mismas fotos, sin buscar
+         por su cuenta. Recién con los spots listos se crea el nodo. */
+      mpQueueStatus('🌍 Preparando los 5 lugares…');
+      geoGenSpots(5, function (spots) {
+        if (!mpSearch) return;
+        var matchObj = {
+          v: 3,
+          host: mpMe, guest: other.u, names: names,
+          spots: spots,
+          created: firebase.database.ServerValue.TIMESTAMP,
+          state: 'play', results: {}, settled: false
+        };
+        /* Creación atómica create-if-absent: si ya existe, aborto y entro como invitado */
+        mpDb.ref('matches/' + pairId).transaction(function (cur) {
+          if (cur === null || cur === undefined) return matchObj;
+          return undefined;
+        }).then(function () {
+          try { mpDb.ref('queue/' + mpMe).update({ match: pairId }); } catch (e) {}
+          try { mpDb.ref('queue/' + other.u).update({ match: pairId }); } catch (e) {}
+          mpJoinMatch(pairId);
+        }).catch(function () {
+          if (mpSearch) mpSearch.joining = false;
+        });
       });
+      return null;
+    }).catch(function () {
+      if (mpSearch) mpSearch.joining = false;
+    });
+  }
+
+  /* Entrar a una partida SOLO si es del protocolo v3: un match sin v:3 (creado
+     por una pestaña con el código viejo) se ignora y se limpia de mi nodo de
+     cola pa' no ciclar — así una pestaña vieja nunca contamina a un cliente
+     nuevo: simplemente no se emparejan entre versiones. */
+  function mpJoinChecked(matchId) {
+    if (mpMatch) return;
+    mpDb.ref('matches/' + matchId).once('value').then(function (snap) {
+      var m = snap.val();
+      if (!m || m.v !== 3) {
+        try { mpDb.ref('queue/' + mpMe + '/match').remove(); } catch (e) {}
+        if (mpSearch) mpSearch.joining = false;
+        return;
+      }
+      mpJoinMatch(matchId);
     }).catch(function () {
       if (mpSearch) mpSearch.joining = false;
     });
@@ -2058,11 +2367,12 @@
     ref.on('value', function (snap) {
       var m = snap.val();
       if (!m || !mpMatch || mpMatch.id !== matchId) return;
+      if (m.v !== 3) { mpDetachMatch(); return; } /* partida de otra versión: fuera, sin tocar nada */
       if (m.state === 'abandoned') {
         if (m.abandonedBy !== mpMe) mpHandleRivalAbandoned(m);
         return;
       }
-      if (!mpMatch.started && m.places && m.places.length === 5 && m.host && m.guest) {
+      if (!mpMatch.started && ((m.spots && m.spots.length === 5) || (m.places && m.places.length === 5)) && m.host && m.guest) {
         mpMatch.started = true;
         mpQueueStatus('');
         mpStartMatchGame(m);
@@ -2077,8 +2387,17 @@
   function mpStartMatchGame(m) {
     var rivalU = (m.host === mpMe) ? m.guest : m.host;
     var rivalName = (m.names && m.names[rivalU]) || rivalU;
+    /* Spots v3: {lat, lng, img} ya resueltos por el host hasta la foto exacta.
+       Compatibilidad: una partida vieja con `places` (índices de GEO_PLACES)
+       se convierte a spots sin imagen (cada cliente busca como antes). */
+    var spots;
+    if (m.spots && m.spots.length === 5) {
+      spots = m.spots.map(function (s) { return { lat: s.lat, lng: s.lng, img: s.img || null, resolved: true }; });
+    } else {
+      spots = (m.places || []).map(function (i) { var p = GEO_PLACES[i] || [0, 0]; return { lat: p[0], lng: p[1], img: null, resolved: true }; });
+    }
     var S = {
-      mode: 'online', name: mpMyName || mpMe, locs: m.places.slice(), reto: null,
+      mode: 'online', name: mpMyName || mpMe, spots: spots, reto: null,
       mpRivalU: rivalU, mpRivalName: rivalName,
       mpScoreMe: 0, mpScoreRival: 0, mpDone: false, mpWaiting: false, mpAbandon: false,
       mpRoundRef: null, mpWaitTimer: null, mpCtx: null, mpTimer: null,
@@ -2096,13 +2415,13 @@
     geoStart(S);
   }
 
-  /* ----- Cuenta regresiva de ronda (16 s) con sonido ----- */
+  /* ----- Cuenta regresiva de ronda (15 s) con sonido ----- */
   function mpEnsureOverlay() {
     var ov = document.getElementById('mpCountOverlay');
     if (!ov) {
       ov = document.createElement('div');
       ov.id = 'mpCountOverlay';
-      ov.innerHTML = '<div class="mp-count-num" id="mpCountNum">16</div><div class="mp-count-label" id="mpCountLabel"></div>';
+      ov.innerHTML = '<div class="mp-count-num" id="mpCountNum">15</div><div class="mp-count-label" id="mpCountLabel"></div>';
       ov.style.display = 'none';
       geoStage.appendChild(ov);
     }
@@ -2124,9 +2443,9 @@
   function mpStartCountdown(S, iAmChooser) {
     if (S.mpTimer || S.mpRevealed) return;
     mpEnsureAudio();
-    S.mpTimer = { remain: 16, iAmChooser: iAmChooser, iv: null };
-    mpShowCountdown(16, iAmChooser);
-    mpTickSound(16);
+    S.mpTimer = { remain: 15, iAmChooser: iAmChooser, iv: null };
+    mpShowCountdown(15, iAmChooser);
+    mpTickSound(15);
     S.mpTimer.iv = setInterval(function () {
       if (!S.mpTimer) return;
       S.mpTimer.remain--;
@@ -2213,6 +2532,63 @@
     if (pa > pb) return [sw, -sw];
     if (pb > pa) return [-sw, sw];
     return [0, 0];
+  }
+
+  /* ----- Animaciones del revelado (estilo MAPAZO: dorado/rojo) ----- */
+  function mpCountUpEl(elm, from, to, dur) {
+    if (!elm) return;
+    var t0 = Date.now();
+    var step = function () {
+      var k = Math.min(1, (Date.now() - t0) / dur);
+      var e = 1 - Math.pow(1 - k, 3);
+      elm.textContent = Math.round(from + (to - from) * e);
+      if (k < 1) setTimeout(step, 30);
+    };
+    step();
+  }
+  function mpAnimateReveal(S, d, prevMe, prevRival) {
+    try {
+      /* Conteo animado de los números del panel de resultado (.mp-countup) */
+      var host = document.getElementById('geoHost');
+      if (host) {
+        var nodes = host.querySelectorAll('.mp-countup');
+        for (var i = 0; i < nodes.length; i++) {
+          var to = parseInt(nodes[i].getAttribute('data-to'), 10) || 0;
+          var from = parseInt(nodes[i].getAttribute('data-from'), 10) || 0;
+          mpCountUpEl(nodes[i], from, to, 900);
+        }
+      }
+      /* Marcador superior: los totales cuentan de lo viejo a lo nuevo + pulso */
+      var span = document.querySelector('#geoHost .geo-score span, #gameHost .geo-score span');
+      if (span) {
+        var rName = S.mpRivalName || 'Rival';
+        var bar = span.parentElement;
+        if (bar) { bar.classList.remove('mp-score-pop'); void bar.offsetWidth; bar.classList.add('mp-score-pop'); }
+        var t0 = Date.now(), dur = 900, me = S.mpScoreMe, rv = S.mpScoreRival;
+        var stepBar = function () {
+          var k = Math.min(1, (Date.now() - t0) / dur);
+          var e = 1 - Math.pow(1 - k, 3);
+          span.textContent = 'Tú ' + Math.round(prevMe + (me - prevMe) * e) + ' · ' + rName + ' ' + Math.round(prevRival + (rv - prevRival) * e);
+          if (k < 1) setTimeout(stepBar, 30);
+        };
+        stepBar();
+      }
+      /* Flotantes +N (dorado) / −N (rojo) subiendo sobre el marcador */
+      var stage = document.querySelector('#geoHost .geo-stage, #gameHost .geo-stage');
+      if (stage && (d[0] !== 0 || d[1] !== 0)) {
+        var mk = function (delta, left) {
+          if (!delta) return;
+          var f = document.createElement('div');
+          f.className = 'mp-floater ' + (delta > 0 ? 'up' : 'down');
+          f.style.left = left;
+          f.textContent = (delta > 0 ? '+' : '−') + Math.abs(delta);
+          stage.appendChild(f);
+          setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 1700);
+        };
+        mk(d[0], '32%');
+        mk(d[1], '68%');
+      }
+    } catch (e) {}
   }
 
   /* ----- Abandono deliberado: cuesta 2,500 pts de la cuenta ----- */
@@ -2317,7 +2693,7 @@
     var panel = document.getElementById('geoPanel');
     if (panel) panel.style.display = '';
     var res = document.getElementById('geoResult');
-    if (res) res.innerHTML = '✅ Tu pin quedó marcado (' + pts + ' pts de precisión).<br>⏳ Esperando al rival…';
+    if (res) res.innerHTML = '✅ Tu pin quedó marcado.<br>⏳ Esperando al rival…';
     var hint = document.getElementById('geoHint'); if (hint) hint.style.display = 'none';
     var sw = document.getElementById('geoSwap'); if (sw) sw.disabled = true;
     var pv = document.getElementById('geoPrev'); if (pv) pv.disabled = true;
@@ -2329,7 +2705,7 @@
       var payload = {};
       payload[mpMe] = { lat: guess[0], lng: guess[1], pts: pts, distKm: Math.round(dist * 100) / 100 };
       mpMatch.ref.child('results/' + round).update(payload);
-      /* La cuenta de 16 s y el revelado los maneja el watcher de la ronda (mpRoundBegin) */
+      /* La cuenta de 15 s y el revelado los maneja el watcher de la ronda (mpRoundBegin) */
     }
     /* Respaldo: 180 s sin resolución de la ronda → salida libre (sin descuento) */
     S.mpWaitTimer = setTimeout(function () {
@@ -2364,25 +2740,28 @@
       ptsArr.push([mine.lat, mine.lng]);
     }
     if (!riv.timeout && riv.lat != null) {
-      L.marker([riv.lat, riv.lng], { icon: geoPin('🟣') }).addTo(map);
+      L.marker([riv.lat, riv.lng], { icon: geoPin('🟣', 'violet') }).addTo(map);
       L.polyline([[riv.lat, riv.lng], [place[0], place[1]]], { color: '#b388ff', weight: 2, dashArray: '6 6' }).addTo(map);
       ptsArr.push([riv.lat, riv.lng]);
     }
     /* Swing con penalización: timeout = 0 pts y +2,500 extra pa'l que eligió */
+    var prevMe = S.mpScoreMe, prevRival = S.mpScoreRival;
     var d = mpSwingFor(mine, riv);
     S.mpScoreMe += d[0];
     S.mpScoreRival += d[1];
+    var cu = function (n) { return '<b class="mp-countup" data-to="' + n + '">0</b>'; };
+    var cuFrom = function (from, to) { return '<span class="mp-countup" data-from="' + from + '" data-to="' + to + '">' + from + '</span>'; };
     var lines = [];
     if (mine.timeout) lines.push('⏰ ¡No elegiste a tiempo! Tu ronda quedó en <b>0 pts</b> (−2,500 de penalización).');
-    else lines.push('🎯 El lugar real estaba a <b>' + geoFmtDist(mine.distKm) + '</b> de tu pin · <b>' + mine.pts + ' pts</b>');
+    else lines.push('🎯 El lugar real estaba a <b>' + geoFmtDist(mine.distKm) + '</b> de tu pin · <b>' + cu(mine.pts) + ' pts</b>');
     if (riv.timeout) lines.push('⏰ ¡' + geoEsc(rName) + ' no eligió! −2,500');
-    else lines.push('🟣 ' + geoEsc(rName) + ': a ' + geoFmtDist(riv.distKm) + ' (' + riv.pts + ' pts)');
+    else lines.push('🟣 ' + geoEsc(rName) + ': a ' + geoFmtDist(riv.distKm) + ' (' + cu(riv.pts) + ' pts)');
     var txt;
-    if (d[0] > 0) txt = '🏆 ¡Ganaste la ronda! Le quitaste ' + d[0] + ' pts a ' + geoEsc(rName) + (riv.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
-    else if (d[0] < 0) txt = '💀 ' + geoEsc(rName) + ' te quitó ' + (-d[0]) + ' pts' + (mine.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
+    if (d[0] > 0) txt = '🏆 ¡Ganaste la ronda! Le quitaste ' + cu(d[0]) + ' pts a ' + geoEsc(rName) + (riv.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
+    else if (d[0] < 0) txt = '💀 ' + geoEsc(rName) + ' te quitó ' + cu(-d[0]) + ' pts' + (mine.timeout ? ' (incluye los +2,500 de penalización ⏰)' : '') + '.';
     else txt = '🤝 Empate de ronda — nadie quita puntos.';
     lines.push(txt);
-    lines.push('<b>Marcador: Tú ' + S.mpScoreMe + ' · ' + geoEsc(rName) + ' ' + S.mpScoreRival + '</b>');
+    lines.push('<b>Marcador: Tú ' + cuFrom(prevMe, S.mpScoreMe) + ' · ' + geoEsc(rName) + ' ' + cuFrom(prevRival, S.mpScoreRival) + '</b>');
     var panel = document.getElementById('geoPanel');
     if (panel) panel.style.display = '';
     var res = document.getElementById('geoResult');
@@ -2392,8 +2771,12 @@
     var pv = document.getElementById('geoPrev'); if (pv) pv.disabled = true;
     var nx = document.getElementById('geoNext'); if (nx) nx.disabled = true;
     try {
+      /* Revelación AUTOMÁTICA: el mapa se abre SOLO en grande pa' los dos
+         clientes, sin tocar el minimapa — se fuerza el estado expandido y se
+         refresca el tamaño al momento y tras la transición CSS. */
       var wrap = document.getElementById('geoMapWrap');
       if (wrap && !wrap.classList.contains('big')) wrap.classList.add('big');
+      try { map.invalidateSize(); } catch (e) {}
       if (ptsArr.length > 1) {
         var bounds = L.latLngBounds(ptsArr).pad(0.25);
         map.fitBounds(bounds);
@@ -2403,6 +2786,7 @@
         setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 420);
       }
     } catch (e) {}
+    mpAnimateReveal(S, d, prevMe, prevRival);
     if (guessBtn) {
       guessBtn.textContent = (S.round >= 4) ? '🏁 Ver resultado' : 'Siguiente ronda ➡';
       guessBtn.disabled = false;
