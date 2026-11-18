@@ -521,6 +521,8 @@
 .mp-bigswing.tie { color: #cfd4dc; text-shadow: 0 3px 16px rgba(0,0,0,.85); }
 .mp-bigswing small { display: block; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #aab; margin-top: 2px; }
 @keyframes mpBigPop { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.mp-nextin { text-align: center; font-size: 17px; font-weight: 800; color: #f5c542; margin-top: 8px; letter-spacing: .5px; text-shadow: 0 2px 10px rgba(0,0,0,.8); animation: mpNextPulse 1s ease-in-out infinite; }
+@keyframes mpNextPulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
 @keyframes mpFloatUp { 0% { opacity: 0; transform: translate(-50%, 12px) scale(.7); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.12); } 100% { opacity: 0; transform: translate(-50%, -58px) scale(1); } }
 .mp-score-pop { animation: mpScorePop .55s ease; }
 @keyframes mpScorePop { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.13); } 100% { transform: translateX(-50%) scale(1); } }
@@ -896,7 +898,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 4;
+  var PANEL_VER = 5;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -2449,7 +2451,7 @@
       mode: 'online', name: mpMyName || mpMe, spots: spots, reto: null,
       mpRivalU: rivalU, mpRivalName: rivalName,
       mpScoreMe: 0, mpScoreRival: 0, mpDone: false, mpWaiting: false, mpAbandon: false,
-      mpRoundRef: null, mpWaitTimer: null, mpCtx: null, mpTimer: null,
+      mpRoundRef: null, mpWaitTimer: null, mpCtx: null, mpTimer: null, mpNextTimer: null,
       mpRevealed: false, mpGraceTimer: null, mpFinished: false
     };
     if (mpMatch) mpMatch.S = S;
@@ -2544,6 +2546,7 @@
   function mpRoundBegin(S, place, map, guessBtn, lockFn) {
     if (!mpMatch || !mpDb) return;
     mpStopCountdown(S);
+    mpClearNextCountdown(S);
     if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
     if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
     S.mpRevealed = false; S.mpWaiting = false; S.mpDone = false; S.mpAbandon = false;
@@ -2725,6 +2728,7 @@
     if (!mpMatch) return;
     var S = mpMatch.S;
     mpStopCountdown(S);
+    mpClearNextCountdown(S);
     mpHideConfirm();
     if (S) {
       if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
@@ -2862,10 +2866,87 @@
       guessBtn.disabled = false;
     }
     S.mpDone = true;
+    /* AVANCE AUTOMÁTICO: la ronda siguiente entra sola al acabar la cuenta
+       inter-ronda (el botón queda solo como atajo pa' saltar la espera). */
+    mpStartNextCountdown(S);
+  }
+
+  /* ----- Avance automático de ronda (SOLO online) -----
+     Al cerrarse la ronda, ambos clientes cuentan 10 s y avanzan solos.
+     La sincronía sale del nodo de la partida: el primer cliente que revela
+     sella results/{ronda}/_closedAt con la hora del servidor (transacción
+     create-if-absent) y AMBOS cuentan hasta _closedAt + 10 s — avanzan casi
+     a la vez aunque uno haya visto la revelación un poco después. Un cliente
+     que llega tarde a la revelación calcula lo que queda desde ese sello y,
+     si ya pasó, avanza directo. El botón "Siguiente ronda ➡" sigue vivo como
+     atajo: si el jugador lo toca, avanza al momento y esta cuenta muere con
+     el cambio de ronda (mpRoundBegin la limpia y el guardia de ronda la
+     invalida). */
+  function mpClearNextCountdown(S) {
+    if (S && S.mpNextTimer) { clearInterval(S.mpNextTimer.iv); S.mpNextTimer = null; }
+    var e = document.getElementById('mpNextIn');
+    if (e && e.parentNode) e.parentNode.removeChild(e);
+  }
+  function mpAutoAdvance(S, round) {
+    if (!mpMatch || !S || S.mpFinished || S.round !== round || !S.mpRevealed) return;
+    S.round++;
+    if (S.round >= 5) geoEnd(S); else geoRound(S);
+  }
+  function mpStartNextCountdown(S) {
+    if (!mpMatch || !S || S.mpFinished) return;
+    var round = S.round;
+    mpClearNextCountdown(S);
+    var panel = document.getElementById('geoPanel');
+    if (panel) {
+      var el = document.createElement('div');
+      el.id = 'mpNextIn';
+      el.className = 'mp-nextin';
+      panel.appendChild(el);
+    }
+    var label = (round >= 4) ? '🏁 Resultado final en ' : '⏭️ Siguiente ronda en ';
+    var begun = false;
+    var setLabel = function (n) {
+      var e = document.getElementById('mpNextIn');
+      if (e) e.textContent = label + n;
+    };
+    setLabel(10);
+    var begin = function (target) {
+      if (begun) return;
+      begun = true;
+      if (!mpMatch || !S || S.round !== round || !S.mpRevealed || S.mpFinished) return;
+      var iv = setInterval(function () {
+        if (!mpMatch || !S || S.round !== round) { clearInterval(iv); return; }
+        var left = Math.ceil((target - Date.now()) / 1000);
+        if (left <= 0) {
+          clearInterval(iv);
+          if (S.mpNextTimer && S.mpNextTimer.iv === iv) S.mpNextTimer = null;
+          setLabel(0);
+          mpAutoAdvance(S, round);
+          return;
+        }
+        setLabel(left);
+      }, 200);
+      S.mpNextTimer = { iv: iv, target: target, round: round };
+      setLabel(Math.max(0, Math.ceil((target - Date.now()) / 1000)));
+    };
+    /* Respaldo local: si el sello no resuelve rápido (red lenta), la cuenta
+       arranca igual con la hora local — el botón también sigue disponible. */
+    setTimeout(function () { begin(Date.now() + 10000); }, 1500);
+    try {
+      mpMatch.ref.child('results/' + round + '/_closedAt').transaction(function (cur) {
+        if (cur === null || cur === undefined) return firebase.database.ServerValue.TIMESTAMP;
+        return undefined;
+      }).then(function (res) {
+        var v = null;
+        try { v = (res && res.snapshot) ? res.snapshot.val() : null; } catch (e) {}
+        begin(typeof v === 'number' ? v + 10000 : Date.now() + 10000);
+      }).catch(function () { begin(Date.now() + 10000); });
+    } catch (e) { begin(Date.now() + 10000); }
   }
   function mpOnlineEnd(S) {
     S.mpFinished = true;
     mpStopCountdown(S);
+    mpClearNextCountdown(S);
     mpShowAbandonBtn(false);
     mpHideConfirm();
     if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
@@ -2917,6 +2998,7 @@
     if (mpMatch.S) {
       var S = mpMatch.S;
       mpStopCountdown(S);
+      mpClearNextCountdown(S);
       if (S.mpWaitTimer) { clearTimeout(S.mpWaitTimer); S.mpWaitTimer = null; }
       if (S.mpGraceTimer) { clearTimeout(S.mpGraceTimer); S.mpGraceTimer = null; }
       if (S.mpRoundRef) { try { S.mpRoundRef.off(); } catch (e) {} S.mpRoundRef = null; }
