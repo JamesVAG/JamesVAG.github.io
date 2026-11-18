@@ -913,7 +913,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 8;
+  var PANEL_VER = 9;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -1997,7 +1997,7 @@
       apply();
     })();
     var onSeqs = function (seqs) {
-      if (S.round !== myRound || S.spots[S.round] !== myLoc) return;
+      var curSpot9 = S.spots[S.round]; if (S.round !== myRound || !curSpot9 || !curSpot9.resolved || Math.abs(curSpot9.lat - myLoc.lat) > 1e-9 || Math.abs(curSpot9.lng - myLoc.lng) > 1e-9) return;
       var fw = document.getElementById('geoFrame');
       if (!fw) return;
       if (seqs && seqs.length) {
@@ -2019,7 +2019,7 @@
     else if (spot.img) geoFetchSeqForImage(spot.img, spot.lat, spot.lng, onSeqs);
     else geoFetchImage(place, onSeqs);
     geoLoadLeaflet(function () {
-      if (S.round !== myRound || S.spots[S.round] !== myLoc) return;
+      var curSpot9 = S.spots[S.round]; if (S.round !== myRound || !curSpot9 || !curSpot9.resolved || Math.abs(curSpot9.lat - myLoc.lat) > 1e-9 || Math.abs(curSpot9.lng - myLoc.lng) > 1e-9) return;
       var mapEl = document.getElementById('geoMap');
       if (!mapEl || !window.L || mapEl._leaflet_id) return;
       var wrap = document.getElementById('geoMapWrap');
@@ -2547,41 +2547,166 @@
     var ref = mpDb.ref('matches/' + matchId);
     mpMatch = { id: matchId, ref: ref, started: false, S: null };
     try { ref.child('joined/' + mpMe).set(true); } catch (e) {}
+    /* Vigilante de resincronización (v9): cada 18 s relee el nodo y
+       reconcilia la pantalla con la verdad de la partida (mpResync) — si
+       el listener pierde un evento, la pantalla se corrige sola. */
+    mpMatch.resyncIv = setInterval(function () {
+      if (!mpMatch || !mpMatch.started || !mpMatch.S || mpMatch.S.mpFinished) return;
+      mpResync();
+    }, 18000);
     ref.on('value', function (snap) {
-      var m = snap.val();
-      if (!m || !mpMatch || mpMatch.id !== matchId) return;
-      if (m.v !== 3) { mpDetachMatch(); return; } /* partida de otra versión: fuera, sin tocar nada */
-      if (m.state === 'abandoned') {
-        if (m.abandonedBy !== mpMe) mpHandleRivalAbandoned(m);
-        return;
-      }
-      if (!mpMatch.started && (mpSpotsArray(m.spots).length >= 1 || (m.places && m.places.length === 5)) && m.host && m.guest) {
-        mpMatch.started = true;
-        mpQueueStatus('');
-        mpStartMatchGame(m);
-        return;
-      }
-      /* Partida en curso: fusiono los spots que el host va publicando ronda
-         a ronda; si estoy esperando el de mi ronda, arranco en cuanto llega */
-      if (mpMatch.started && mpMatch.S) {
-        var Sx = mpMatch.S;
-        var arrS = mpSpotsArray(m.spots);
-        for (var si = 0; si < arrS.length; si++) {
-          var spx = arrS[si];
-          if (spx && spx.lat != null) Sx.spots[si] = { lat: spx.lat, lng: spx.lng, img: spx.img || null, seqId: spx.seqId || null, seq: mpSeqArr(spx.seq), resolved: true };
+      try {
+        var m = snap.val();
+        if (!m || !mpMatch || mpMatch.id !== matchId) return;
+        if (m.v !== 3) { mpDetachMatch(); return; } /* partida de otra versión: fuera, sin tocar nada */
+        if (m.state === 'abandoned') {
+          if (m.abandonedBy !== mpMe && !mpMatch.abandonHandled) { mpMatch.abandonHandled = true; mpHandleRivalAbandoned(m); }
+          return;
         }
-        if (Sx.mpPendingRound != null && Sx.round === Sx.mpPendingRound && Sx.spots[Sx.round] && Sx.spots[Sx.round].resolved) {
-          Sx.mpPendingRound = null;
-          if (Sx.mpSpotWaitTimer) { clearTimeout(Sx.mpSpotWaitTimer); Sx.mpSpotWaitTimer = null; }
-          geoRound(Sx);
+        if (!mpMatch.started && (mpSpotsArray(m.spots).length >= 1 || (m.places && m.places.length === 5)) && m.host && m.guest) {
+          mpMatch.started = true;
+          mpQueueStatus('');
+          mpStartMatchGame(m);
+          return;
         }
-      }
-      if (m.settled) {
-        var line = document.getElementById('mpSettleLine');
-        if (line) line.textContent = '✅ Puntos aplicados a las cuentas.';
-      }
+        /* Partida en curso: fusiono los spots que el host va publicando ronda
+           a ronda; si estoy esperando el de mi ronda, arranco en cuanto llega */
+        if (mpMatch.started && mpMatch.S) mpMergeSpots(mpMatch.S, m);
+        if (m.settled) {
+          var line = document.getElementById('mpSettleLine');
+          if (line) line.textContent = '✅ Puntos aplicados a las cuentas.';
+        }
+      } catch (e) { try { console.warn('mpMatchListener', e); } catch (e2) {} }
     });
   }
+  /* ¿Es el mismo lugar ya resuelto? (misma foto en las mismas coords) */
+  function mpSameSpot(a, b) {
+    if (!a || !b) return false;
+    return a.lat === b.lat && a.lng === b.lng &&
+      (a.img || null) === (b.img || null) && (a.seqId || null) === (b.seqId || null);
+  }
+  /* Fusiona los spots del nodo en S SIN romper la identidad de los objetos:
+     el motor guarda la referencia del spot de la ronda en curso (myLoc) y
+     sus callbacks la comparan — reemplazar el objeto en cada snapshot
+     abortaba el setup de la ronda del invitado (congelamiento v8). Solo se
+     reemplaza cuando el lugar cambió de verdad. Si estoy esperando el spot
+     de mi ronda, arranco en cuanto aparece. */
+  function mpMergeSpots(S, m) {
+    if (!S || !m) return;
+    var arrS = mpSpotsArray(m.spots);
+    for (var si = 0; si < arrS.length; si++) {
+      var spx = arrS[si];
+      if (!spx || spx.lat == null) continue;
+      var norm = { lat: spx.lat, lng: spx.lng, img: spx.img || null, seqId: spx.seqId || null, seq: mpSeqArr(spx.seq), resolved: true };
+      if (!mpSameSpot(S.spots[si], norm)) S.spots[si] = norm;
+    }
+    if (S.mpPendingRound != null && S.round === S.mpPendingRound && S.spots[S.round] && S.spots[S.round].resolved) {
+      S.mpPendingRound = null;
+      if (S.mpSpotWaitTimer) { clearTimeout(S.mpSpotWaitTimer); S.mpSpotWaitTimer = null; }
+      geoRound(S);
+    }
+  }
+  /* Repinta las barras de vida desde S (sin animación: corrección directa) */
+  function mpPaintHpBars(S) {
+    try {
+      var pct = function (hp) { return Math.max(0, hp) / 60; };
+      var fMe = document.getElementById('geoHpMe'), fRv = document.getElementById('geoHpRival');
+      if (fMe) { fMe.style.width = pct(S.mpHpMe) + '%'; fMe.classList.toggle('low', S.mpHpMe <= 1500); }
+      if (fRv) { fRv.style.width = pct(S.mpHpRival) + '%'; fRv.classList.toggle('low', S.mpHpRival <= 1500); }
+      var nMe = document.getElementById('geoHpMeNum'), nRv = document.getElementById('geoHpRivalNum');
+      if (nMe) nMe.textContent = Math.max(0, S.mpHpMe).toLocaleString('en-US');
+      if (nRv) nRv.textContent = Math.max(0, S.mpHpRival).toLocaleString('en-US');
+    } catch (e) {}
+  }
+  /* Recalcula vidas y daño desde TODOS los resultados completos del nodo:
+     la verdad de la partida, sin depender de qué eventos vio este cliente. */
+  function mpRecomputeHp(S, m) {
+    var res = (m && m.results) || {};
+    var host = m && m.host, guest = m && m.guest;
+    var dealt = {}, net = {};
+    if (host) { dealt[host] = 0; net[host] = 0; }
+    if (guest) { dealt[guest] = 0; net[guest] = 0; }
+    Object.keys(res).forEach(function (rk) {
+      var a = res[rk] && res[rk][host], b = res[rk] && res[rk][guest];
+      if (a && b) {
+        var dd = mpDamageFor(a, b); dealt[host] += dd[0]; dealt[guest] += dd[1];
+        var sw = mpSwingFor(a, b); net[host] += sw[0]; net[guest] += sw[1];
+      }
+    });
+    var hpMe = Math.max(0, 6000 - (dealt[S.mpRivalU] || 0));
+    var hpRival = Math.max(0, 6000 - (dealt[mpMe] || 0));
+    return {
+      hpMe: hpMe, hpRival: hpRival,
+      dealtMe: dealt[mpMe] || 0, dealtRival: dealt[S.mpRivalU] || 0,
+      scoreMe: net[mpMe] || 0, scoreRival: net[S.mpRivalU] || 0,
+      over: hpMe <= 0 || hpRival <= 0
+    };
+  }
+  /* ----- Resincronización (v9): la red de seguridad del cliente online -----
+     Relee el nodo con get() y reconcilia la pantalla con la verdad:
+     abandono no visto, spots, resultados de la ronda en curso (re-dispara
+     la cuenta de 15 s o la revelación por el MISMO camino del watcher) y
+     vidas recalculadas. Corre cada 18 s y al volver la pestaña a visible. */
+  function mpResync() {
+    if (!mpMatch || !mpDb || !mpMatch.started || mpMatch.resyncBusy) return;
+    var S0 = mpMatch.S;
+    if (!S0 || S0.mpFinished) return;
+    mpMatch.resyncBusy = true;
+    var id = mpMatch.id;
+    mpMatch.ref.once('value').then(function (snap) {
+      try {
+        if (!mpMatch || mpMatch.id !== id) return;
+        var m = snap.val();
+        if (!m) return;
+        if (m.state === 'abandoned') {
+          if (m.abandonedBy !== mpMe && !mpMatch.abandonHandled) { mpMatch.abandonHandled = true; mpHandleRivalAbandoned(m); }
+          return;
+        }
+        var S = mpMatch.S;
+        if (!S || S.mpFinished) return;
+        mpMergeSpots(S, m);
+        var res = m.results || {};
+        var cur = res[S.round] || {};
+        var bothIn = !!(cur[mpMe] && cur[S.mpRivalU]);
+        if (!S.mpRevealed && S.mpCtx) {
+          /* El watcher perdió el evento (o la cuenta nunca arrancó): fuerzo
+             el flujo normal — mpOnRoundResults es idempotente (la cuenta
+             no se duplica y la revelación está guardada por mpRevealed). */
+          try { mpOnRoundResults(S, cur); } catch (e) {}
+        } else if (!S.mpRevealed && !S.mpCtx && !S.mpWaiting && window.L && S.spots[S.round] && S.spots[S.round].resolved) {
+          /* La ronda nunca arrancó en esta pantalla (el setup abortó antes
+             de mpRoundBegin): la reconstruyo. Solo con Leaflet ya cargado,
+             pa' que el arranque sea síncrono y completo. */
+          try { geoRound(S); } catch (e) {}
+        }
+        /* Vidas según el nodo — solo corrijo si no hay una revelación de la
+           ronda en curso pendiente de aplicar (esa trae su propio daño). */
+        var rec = mpRecomputeHp(S, m);
+        var pendingReveal = bothIn && !S.mpRevealed;
+        if (!pendingReveal && (rec.hpMe !== S.mpHpMe || rec.hpRival !== S.mpHpRival ||
+            rec.dealtMe !== S.mpDealtMe || rec.dealtRival !== S.mpDealtRival ||
+            rec.scoreMe !== S.mpScoreMe || rec.scoreRival !== S.mpScoreRival)) {
+          S.mpHpMe = rec.hpMe; S.mpHpRival = rec.hpRival;
+          S.mpDealtMe = rec.dealtMe; S.mpDealtRival = rec.dealtRival;
+          S.mpScoreMe = rec.scoreMe; S.mpScoreRival = rec.scoreRival;
+          if (rec.over) S.mpMatchOver = true;
+          mpPaintHpBars(S);
+        }
+        /* Si la partida ya se acabó en los datos y estoy revelado pero la
+           cuenta de avance se perdió, la relanzo. */
+        if (S.mpMatchOver && S.mpRevealed && !S.mpFinished && !S.mpNextTimer) {
+          try { mpStartNextCountdown(S); } catch (e) {}
+        }
+        if (m.settled) {
+          var line = document.getElementById('mpSettleLine');
+          if (line) line.textContent = '✅ Puntos aplicados a las cuentas.';
+        }
+      } catch (e) { try { console.warn('mpResync', e); } catch (e2) {} }
+    }).catch(function () {}).then(function () {
+      if (mpMatch && mpMatch.id === id) mpMatch.resyncBusy = false;
+    });
+  }
+
   /* La RTDB puede devolver spots como objeto con claves numéricas: lo paso
      a un arreglo por índice de ronda (los huecos quedan undefined). */
   function mpSpotsArray(s) {
@@ -2673,17 +2798,19 @@
     mpShowCountdown(15, iAmChooser);
     mpTickSound(15);
     S.mpTimer.iv = setInterval(function () {
-      if (!S.mpTimer) return;
-      S.mpTimer.remain--;
-      var r = S.mpTimer.remain;
-      if (r <= 0) {
-        var chooser = S.mpTimer.iAmChooser;
-        mpStopCountdown(S);
-        mpOnCountdownZero(S, chooser);
-        return;
-      }
-      mpShowCountdown(r, S.mpTimer.iAmChooser);
-      mpTickSound(r);
+      try {
+        if (!S.mpTimer) return;
+        S.mpTimer.remain--;
+        var r = S.mpTimer.remain;
+        if (r <= 0) {
+          var chooser = S.mpTimer.iAmChooser;
+          mpStopCountdown(S);
+          mpOnCountdownZero(S, chooser);
+          return;
+        }
+        mpShowCountdown(r, S.mpTimer.iAmChooser);
+        mpTickSound(r);
+      } catch (e) {}
     }, 1000);
   }
   function mpOnCountdownZero(S, iAmChooser) {
@@ -2732,8 +2859,10 @@
     var ref = mpMatch.ref.child('results/' + round);
     S.mpRoundRef = ref;
     ref.on('value', function (snap) {
-      if (!mpMatch || S.round !== round || S.mpRevealed) return;
-      mpOnRoundResults(S, snap.val() || {});
+      try {
+        if (!mpMatch || S.round !== round || S.mpRevealed) return;
+        mpOnRoundResults(S, snap.val() || {});
+      } catch (e) { try { console.warn('mpRoundWatcher', e); } catch (e2) {} }
     });
   }
   function mpOnRoundResults(S, v) {
@@ -3337,6 +3466,7 @@
   }
   function mpDetachMatch() {
     if (!mpMatch) return;
+    if (mpMatch.resyncIv) { clearInterval(mpMatch.resyncIv); mpMatch.resyncIv = null; }
     if (mpMatch.S) {
       var S = mpMatch.S;
       mpStopCountdown(S);
@@ -3375,6 +3505,11 @@
     if (gb) gb.addEventListener('click', function () { mpDetachMatch(); });
     /* Audio: se crea/reanuda en cualquier toque (gesto válido pa'l navegador) */
     document.addEventListener('pointerdown', mpEnsureAudio);
+    /* Al volver la pestaña a visible o recuperar el foco, resincronizo la
+       partida AL INSTANTE: si el listener perdió eventos con la pestaña
+       dormida, la pantalla se corrige sin esperar al vigilante de 18 s. */
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) mpResync(); });
+    window.addEventListener('focus', function () { mpResync(); });
     /* Salir con el botón Volver en plena partida = abandono con costo: se intercepta en captura */
     var stageEl = document.getElementById('geoStage');
     if (stageEl) stageEl.addEventListener('click', function (ev) {
