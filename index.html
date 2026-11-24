@@ -450,6 +450,10 @@
           <div class="btc15-verdict" id="btc15Verdict">Cargando…</div>
           <div class="btc15-prob" id="btc15Prob">--%</div>
           <div class="btc15-badge" id="btc15Badge"></div>
+          <div class="btc15-yn">
+            <div class="btc15-yn-box" id="btc15YnSi"><span>SÍ · sube</span><b id="btc15PSi">--%</b><em id="btc15BestSi"></em></div>
+            <div class="btc15-yn-box" id="btc15YnNo"><span>NO · baja</span><b id="btc15PNo">--%</b><em id="btc15BestNo"></em></div>
+          </div>
           <canvas id="btc15Chart"></canvas>
           <div class="btc15-grid">
             <div><span>Precio</span><b id="btc15Price">—</b></div>
@@ -459,6 +463,25 @@
           </div>
           <div class="btc15-stats" id="btc15Stats"></div>
           <div class="btc15-prev" id="btc15Prev"></div>
+          <div class="btc15-sim">
+            <div class="btc15-sim-head">🎮 SIMULADOR <span class="btc15-sim-bal">Saldo: <b id="btc15Bal">$100.00</b></span></div>
+            <div class="btc15-sim-rec" id="btc15Rec">Récord: 0 ganadas · 0 perdidas</div>
+            <div class="btc15-sim-row">
+              <input type="number" id="btc15Amt" value="10" min="1" step="1" inputmode="decimal">
+              <button type="button" class="btc15-chip" data-amt="1">$1</button>
+              <button type="button" class="btc15-chip" data-amt="5">$5</button>
+              <button type="button" class="btc15-chip" data-amt="10">$10</button>
+              <button type="button" class="btc15-chip" data-amt="25">$25</button>
+            </div>
+            <div class="btc15-sim-row">
+              <button type="button" class="btc15-bet si" id="btc15BetSi">Apostar al SÍ</button>
+              <button type="button" class="btc15-bet no" id="btc15BetNo">Apostar al NO</button>
+            </div>
+            <div class="btc15-sim-open" id="btc15Open"></div>
+            <div class="btc15-sim-msg" id="btc15Msg"></div>
+            <div class="btc15-sim-hist" id="btc15Hist"></div>
+            <button type="button" class="btc15-reset" id="btc15Reset">Reiniciar saldo a $100</button>
+          </div>
           <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso de las últimas velas). No es garantía: el BTC se puede voltear en segundos. Kalshi liquida con su índice oficial (CF Benchmarks); el precio aquí es de Coinbase y puede variar por unos dólares.</p>
         </div>
         <style>
@@ -478,6 +501,27 @@
 #view-btc .btc15-prev .chip { font-size:.8rem; font-weight:700; padding:4px 9px; border-radius:999px; border:1px solid #2c2d3d; background:#1b1c29; color:#fff; }
 #view-btc .btc15-prev .chip.u { color:#22c55e; }
 #view-btc .btc15-prev .chip.d { color:#ef4444; }
+#view-btc .btc15-yn { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:4px 0 12px; }
+#view-btc .btc15-yn-box { background:#1b1c29; border:2px solid #2c2d3d; border-radius:12px; padding:10px; text-align:center; }
+#view-btc .btc15-yn-box span { display:block; font-size:.8rem; font-weight:800; color:#c9ccda; text-transform:uppercase; letter-spacing:.04em; }
+#view-btc .btc15-yn-box b { font-size:1.7rem; color:#fff; }
+#view-btc .btc15-yn-box em { display:block; font-style:normal; font-size:.75rem; font-weight:900; color:#f5c542; min-height:16px; }
+#view-btc .btc15-yn-box.best { border-color:#f5c542; box-shadow:0 0 14px rgba(245,197,66,.35); }
+#view-btc .btc15-sim { margin-top:14px; background:#1b1c29; border:1px solid #2c2d3d; border-radius:12px; padding:12px; }
+#view-btc .btc15-sim-head { font-weight:900; font-size:1rem; color:#fff; display:flex; justify-content:space-between; align-items:center; }
+#view-btc .btc15-sim-bal { font-size:.9rem; color:#c9ccda; }
+#view-btc .btc15-sim-bal b { color:#f5c542; }
+#view-btc .btc15-sim-rec { font-size:.85rem; color:#9aa0b4; margin-top:2px; }
+#view-btc .btc15-sim-row { display:flex; gap:6px; margin-top:10px; }
+#view-btc .btc15-sim-row input { flex:1; min-width:0; background:#0d0d16; border:1px solid #2c2d3d; border-radius:10px; color:#fff; font-size:1rem; font-weight:700; padding:10px; }
+#view-btc .btc15-chip { background:#14141f; border:1px solid #2c2d3d; color:#fff; border-radius:10px; padding:10px 12px; font-weight:800; cursor:pointer; font-family:inherit; }
+#view-btc .btc15-bet { flex:1; border:none; border-radius:10px; padding:13px 8px; font-size:1rem; font-weight:900; cursor:pointer; font-family:inherit; color:#0d0d16; }
+#view-btc .btc15-bet.si { background:#22c55e; }
+#view-btc .btc15-bet.no { background:#ef4444; color:#fff; }
+#view-btc .btc15-sim-open { margin-top:10px; font-size:.92rem; font-weight:700; color:#f5c542; min-height:20px; }
+#view-btc .btc15-sim-msg { font-size:.88rem; color:#c9ccda; min-height:18px; margin-top:2px; }
+#view-btc .btc15-sim-hist { margin-top:8px; font-size:.85rem; color:#c9ccda; line-height:1.5; }
+#view-btc .btc15-reset { margin-top:10px; background:none; border:1px solid #2c2d3d; color:#9aa0b4; border-radius:8px; padding:7px 10px; font-size:.8rem; font-weight:700; cursor:pointer; font-family:inherit; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
       </section>
@@ -566,7 +610,7 @@
           var out = [];
           for (var k = 4; k >= 1; k--) {
             var s = wStart - 900 * k, e = s + 900;
-            var oc = candleAt(s); var cl = lastCloseBefore(e + 1);
+            var oc = candleAt(s); var cl = lastCloseBefore(e);
             if (oc && cl) out.push({ s: s, up: cl > oc.o });
           }
           return out;
@@ -611,6 +655,7 @@
 
         function render() {
           var r = compute();
+          gradeBets(); renderSim(r);
           var vEl = $('btc15Verdict'), pEl = $('btc15Prob'), bEl = $('btc15Badge');
           if (!r) { vEl.textContent = 'Conectando…'; vEl.className = 'btc15-verdict'; return; }
           var up = r.pUp >= 0.5;
@@ -635,8 +680,85 @@
             var lbl = new Date(w.s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return '<span class="chip ' + (w.up ? 'u' : 'd') + '">' + lbl + ' ' + (w.up ? '↑ subió' : '↓ bajó') + '</span>';
           }).join('');
+          var pSi = Math.round(r.pUp * 100), pNo = 100 - pSi;
+          $('btc15PSi').textContent = pSi + '%';
+          $('btc15PNo').textContent = pNo + '%';
+          $('btc15YnSi').classList.toggle('best', pSi >= pNo);
+          $('btc15YnNo').classList.toggle('best', pNo > pSi);
+          $('btc15BestSi').textContent = pSi >= pNo ? '\u2B50 MEJOR OPCIÓN' : '';
+          $('btc15BestNo').textContent = pNo > pSi ? '\u2B50 MEJOR OPCIÓN' : '';
           draw(r);
         }
+
+        /* ----- Simulador (saldo falso, se guarda en el teléfono) ----- */
+        var sim = { bal: 100, bets: [], w: 0, l: 0 };
+        try { var sv = JSON.parse(localStorage.getItem('btc15_sim') || 'null'); if (sv && typeof sv.bal === 'number') sim = sv; } catch (e) {}
+        function simSave() { try { localStorage.setItem('btc15_sim', JSON.stringify(sim)); } catch (e) {} }
+        function money(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function openBet() { for (var i = 0; i < sim.bets.length; i++) if (sim.bets[i].st === 'open') return sim.bets[i]; return null; }
+        function gradeBets() {
+          if (!candles.length) return;
+          var nowS = Math.floor(Date.now() / 1000);
+          var changed = false;
+          sim.bets.forEach(function (b) {
+            if (b.st !== 'open') return;
+            var end = b.w + 900;
+            if (nowS < end + 30) return;
+            var closeRef = lastCloseBefore(end);
+            if (closeRef === null) {
+              if (candles[0].t > b.w) { b.st = 'void'; b.pnl = 0; sim.bal += b.amt; changed = true; }
+              return;
+            }
+            var up = closeRef > b.open;
+            var won = (b.side === 'si') === up;
+            b.st = won ? 'won' : 'lost';
+            b.pnl = won ? (b.amt / b.price - b.amt) : -b.amt;
+            if (won) { sim.bal += b.amt / b.price; sim.w++; } else { sim.l++; }
+            changed = true;
+          });
+          if (changed) simSave();
+        }
+        function placeBet(side) {
+          var r = compute();
+          var msg = $('btc15Msg');
+          if (!r || price === null) { msg.textContent = 'Espera a que cargue el precio…'; return; }
+          if (openBet()) { msg.textContent = 'Ya tienes una apuesta abierta en esta ventana.'; return; }
+          var amt = parseFloat($('btc15Amt').value);
+          if (!amt || amt <= 0) { msg.textContent = 'Pon un monto válido.'; return; }
+          if (amt > sim.bal) { msg.textContent = 'Saldo insuficiente (simulado).'; return; }
+          var pr = side === 'si' ? r.pUp : 1 - r.pUp;
+          pr = Math.max(0.02, Math.min(0.98, pr));
+          sim.bal -= amt;
+          sim.bets.push({ w: r.wStart, side: side, amt: amt, price: pr, open: r.openRef, st: 'open', pnl: 0 });
+          simSave();
+          msg.textContent = 'Apuesta simulada: ' + (side === 'si' ? 'SÍ' : 'NO') + ' ' + money(amt) + ' a ' + Math.round(pr * 100) + '¢. Se resuelve al cerrar la ventana.';
+          renderSim(r);
+        }
+        function renderSim(r) {
+          $('btc15Bal').textContent = money(sim.bal);
+          $('btc15Rec').textContent = 'Récord: ' + sim.w + ' ganadas · ' + sim.l + ' perdidas';
+          var ob = openBet();
+          var oEl = $('btc15Open');
+          if (ob) {
+            var lbl = new Date(ob.w * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            oEl.textContent = '⏳ En juego — ventana ' + lbl + ': ' + (ob.side === 'si' ? 'SÍ (sube)' : 'NO (baja)') + ' · ' + money(ob.amt) + ' a ' + Math.round(ob.price * 100) + '¢ → paga ' + money(ob.amt / ob.price) + ' si aciertas';
+          } else { oEl.textContent = ''; }
+          var done = sim.bets.filter(function (b) { return b.st === 'won' || b.st === 'lost'; }).slice(-5).reverse();
+          $('btc15Hist').innerHTML = done.map(function (b) {
+            var lbl = new Date(b.w * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return (b.st === 'won' ? '✅' : '❌') + ' ' + lbl + ' ' + (b.side === 'si' ? 'SÍ' : 'NO') + ' ' + money(b.amt) + ' → ' + (b.pnl >= 0 ? '+' : '') + money(b.pnl).replace('$-', '-$');
+          }).join('<br>');
+        }
+        $('btc15BetSi').addEventListener('click', function () { placeBet('si'); });
+        $('btc15BetNo').addEventListener('click', function () { placeBet('no'); });
+        document.querySelectorAll('.btc15-chip').forEach(function (ch) {
+          ch.addEventListener('click', function () { $('btc15Amt').value = ch.getAttribute('data-amt'); });
+        });
+        $('btc15Reset').addEventListener('click', function () {
+          sim = { bal: 100, bets: [], w: 0, l: 0 }; simSave();
+          $('btc15Msg').textContent = 'Saldo reiniciado a $100.';
+          renderSim(null);
+        });
 
         loadCandles().then(function () { loadPrice().then(render); });
         setInterval(function () {
@@ -1118,7 +1240,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 10;
+  var PANEL_VER = 11;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
