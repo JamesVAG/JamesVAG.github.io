@@ -570,6 +570,16 @@
             ['MLB — Ganador', 'KXMLBGAME', 'game', 'MLB'],
             ['NBA — Rebotes de jugador', 'KXNBAREB', 'props', 'NBA'],
             ['NBA — Asistencias de jugador', 'KXNBAAST', 'props', 'NBA'],
+            ['NBA — Spread', 'KXNBASPREAD', 'props', 'NBA'],
+            ['NBA — Triples de jugador', 'KXNBA3PT', 'props', 'NBA'],
+            ['NBA — Puntos + Asistencias', 'KXNBAPA', 'props', 'NBA'],
+            ['NBA — Puntos + Rebotes', 'KXNBAPR', 'props', 'NBA'],
+            ['NBA — Rebotes + Asistencias', 'KXNBARA', 'props', 'NBA'],
+            ['NBA — Doble doble', 'KXNBA2D', 'props', 'NBA'],
+            ['NBA — Robos de jugador', 'KXNBASTL', 'props', 'NBA'],
+            ['NBA — Bloqueos de jugador', 'KXNBABLK', 'props', 'NBA'],
+            ['NBA — Robos + Bloqueos', 'KXNBASTOCK', 'props', 'NBA'],
+            ['NBA — Tiros libres de jugador', 'KXNBAFTM', 'props', 'NBA'],
             ['Tenis ATP — Ganador', 'KXATPMATCH', 'game', 'Tenis'],
             ['Tenis WTA — Ganador', 'KXWTAMATCH', 'game', 'Tenis'],
             ['Tenis Challenger ATP — Ganador', 'KXATPCHALLENGERMATCH', 'game', 'Tenis'],
@@ -2149,7 +2159,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 30;
+  var PANEL_VER = 31;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
