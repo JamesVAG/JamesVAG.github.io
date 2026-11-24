@@ -277,7 +277,7 @@
         <button class="nav-item" data-view="juegos"><span class="ic">🎮</span> <span data-i18n="nav_games">Juegos</span></button>
         <button class="nav-item" data-view="mapa"><span class="ic">🗺️</span> <span data-i18n="nav_mapa">Mapa</span></button>
         <button class="nav-item" data-view="btc"><span class="ic">📈</span> BTC 15</button>
-        <button class="nav-item" data-view="oro"><span class="ic">🥇</span> ORO 15</button>
+        <button class="nav-item" data-view="oro"><span class="ic">🥇</span> ORO 1H</button>
         <button class="nav-item" data-view="apuestas"><span class="ic">📊</span> Apuestas</button>
         <button class="nav-item" id="navStream"><span class="ic">🎥</span> <span data-i18n="nav_stream">Modo Stream</span></button>
       </nav>
@@ -1064,7 +1064,7 @@
       </section>
 
 <section class="view" id="view-oro">
-        <h2 class="view-title">🥇 ORO 15 — Kalshi</h2>
+        <h2 class="view-title">🥇 ORO — por hora (Kalshi)</h2>
         <div class="btc15-card">
           <div class="btc15-verdict" id="gold15Verdict">Cargando…</div>
           <div class="btc15-prob" id="gold15Prob">--%</div>
@@ -1095,10 +1095,10 @@
           <div class="btc15-hz" id="gold15Hz">
             <div class="btc15-hz-head">⏱ PREDICCIÓN POR TIEMPO</div>
             <div class="btc15-hz-grid">
-              <div class="btc15-hz-cell"><span>+2 MIN</span><b id="gold15Hz2">—</b></div>
-              <div class="btc15-hz-cell"><span>+5 MIN</span><b id="gold15Hz5">—</b></div>
-              <div class="btc15-hz-cell"><span>+10 MIN</span><b id="gold15Hz10">—</b></div>
               <div class="btc15-hz-cell"><span>+15 MIN</span><b id="gold15Hz15">—</b></div>
+              <div class="btc15-hz-cell"><span>+30 MIN</span><b id="gold15Hz30">—</b></div>
+              <div class="btc15-hz-cell"><span>+45 MIN</span><b id="gold15Hz45">—</b></div>
+              <div class="btc15-hz-cell"><span>+60 MIN</span><b id="gold15Hz60">—</b></div>
             </div>
             <div class="btc15-hz-note">Probabilidad de que el ORO esté más arriba que ahora en ese tiempo, con el mismo modelo + análisis en vivo.</div>
           </div>
@@ -1141,7 +1141,7 @@
             <div class="btc15-sim-msg" id="gold15Msg"></div>
             <div class="btc15-sim-hist" id="gold15Hist"></div>
           </div>
-          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso + análisis en tiempo real del libro de órdenes y del flujo de trades). El simulador califica con la misma regla de la ventana: gana el lado que quede sobre el objetivo en el promedio del último minuto. No es garantía: el oro se puede voltear en segundos. El precio aquí es el del oro spot (PAXG en Coinbase, que sigue el precio del oro) y puede variar por unos dólares. Kalshi liquida el oro por hora (serie KXGOLDH) contra su objetivo; esta predicción es por ventanas de 15 minutos, con la apertura de cada ventana como objetivo.</p>
+          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia al objetivo + volatilidad + impulso + análisis en tiempo real del libro de órdenes y del flujo de trades). El simulador califica igual que Kalshi: gana el lado que quede sobre el objetivo en el promedio del último minuto de la hora. No es garantía: el oro se puede voltear en segundos. Kalshi liquida el oro POR HORA (serie KXGOLDH) contra su objetivo; esta vista predice la hora completa contra ese objetivo, o contra la apertura de la hora si Kalshi no conecta. El precio es el del oro spot (PAXG en Coinbase, que sigue el precio del oro) y puede variar por unos dólares.</p>
         </div>
         <style>
 #view-btc .btc15-card { background:#14141f; border:1px solid #2c2d3d; border-radius:16px; padding:16px 14px; }
@@ -1864,7 +1864,8 @@
       </script>
 <script>
       (function () {
-        var $ = function (id) { return document.getElementById(id); };
+        window.addEventListener('error', function (e) { var v = document.getElementById('gold15Verdict'); if (v && (v.textContent === 'Cargando…' || v.textContent === 'Conectando…')) v.textContent = 'Error: ' + (e.message || 'desconocido'); });
+                var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
         var lastCandleFetch = 0;
@@ -1880,7 +1881,7 @@
         function fmtSign(n) { return (n >= 0 ? '+$' : '-$') + fmt(Math.abs(n)); }
 
         function fetchCoinbase() {
-          var end = new Date(); var start = new Date(end.getTime() - 100 * 60000);
+          var end = new Date(); var start = new Date(end.getTime() - 300 * 60000);
           var url = 'https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=60&start=' + start.toISOString() + '&end=' + end.toISOString();
           return fetch(url).then(function (r) { if (!r.ok) throw new Error('cb'); return r.json(); }).then(function (rows) {
             var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
@@ -1923,13 +1924,13 @@
         function compute() {
           if (!candles.length || price === null) return null;
           var nowS = Math.floor(Date.now() / 1000);
-          var wStart = Math.floor(nowS / 900) * 900;
-          var wEnd = wStart + 900;
+          var wStart = Math.floor(nowS / 3600) * 3600;
+          var wEnd = wStart + 3600;
           var oc = candleAt(wStart);
           var openRef = oc ? oc.o : lastCloseBefore(wStart + 1);
           if (!openRef) return null;
           var refKalshi = false;
-          if (false && kalshi.ok && kalshi.openT <= wStart && kalshi.closeT >= wEnd && Date.now() - kalshi.at < 90000) { openRef = kalshi.strike; refKalshi = true; }
+          if (kalshi.ok && kalshi.openT <= wStart && kalshi.closeT >= wEnd && Date.now() - kalshi.at < 90000) { openRef = kalshi.strike; refKalshi = true; }
           var closes = candles.map(function (c) { return c.c; });
           var rets = [];
           for (var i = Math.max(1, closes.length - 31); i < closes.length; i++) rets.push(Math.log(closes[i] / closes[i - 1]));
@@ -1963,7 +1964,7 @@
         function prevWindows(wStart) {
           var out = [];
           for (var k = 4; k >= 1; k--) {
-            var s = wStart - 900 * k, e = s + 900;
+            var s = wStart - 3600 * k, e = s + 3600;
             var oc = candleAt(s); var cl = lastCloseBefore(e);
             if (oc && cl) out.push({ s: s, up: cl > oc.o });
           }
@@ -2058,7 +2059,7 @@
           else { act.textContent = '⏸ ESPERAR — sin ventaja clara'; act.className = 'btc15-action wait'; }
           var kT = $('gold15KalTarget'), kE = $('gold15KalEdge');
           if (kalshi.ok) {
-            kT.innerHTML = '🎯 Objetivo de Kalshi: <b>$' + fmt(kalshi.strike) + '</b> — es el objetivo del mercado POR HORA de Kalshi (el SÍ de la hora gana si el oro cierra sobre ese precio); la predicción de 15 min usa la apertura de la ventana';
+            kT.innerHTML = '🎯 Objetivo de Kalshi: <b>$' + fmt(kalshi.strike) + '</b> — es el objetivo de Kalshi para ESTA HORA: el SÍ gana si el oro cierra la hora sobre ese precio, y el modelo apunta a ese objetivo';
             $('gold15KalSi').textContent = kalshi.yesAsk ? Math.round(kalshi.yesAsk * 100) + '¢' : '—';
             $('gold15KalNo').textContent = kalshi.noAsk ? Math.round(kalshi.noAsk * 100) + '¢' : '—';
             var eSi = Math.round(r.pUp * 100) - Math.round(kalshi.yesAsk * 100);
@@ -2072,7 +2073,7 @@
             $('gold15KalNo').textContent = '—';
             kE.textContent = '';
           }
-          [2, 5, 10, 15].forEach(function (h) {
+          [15, 30, 45, 60].forEach(function (h) {
             var zh = (r.drift / r.sd) * Math.sqrt(h) + r.anScore * 0.35 / Math.sqrt(h / 2);
             var ph = Math.max(0.01, Math.min(0.99, Phi(zh)));
             var up = ph >= 0.5;
@@ -2132,7 +2133,7 @@
           var changed = false;
           sim.bets.forEach(function (b) {
             if (b.st !== 'open') return;
-            var end = b.w + 900;
+            var end = b.w + 3600;
             if (nowS < end + 30) return;
             var closeRef = finalAvg(end);
             if (closeRef === null) {
@@ -2239,7 +2240,7 @@
           if (!p || !isFinite(p)) return;
           var now = Date.now();
           ticks.push({ t: now, p: p });
-          var cut = now - 16 * 60000;
+          var cut = now - 61 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
           price = p;
@@ -2268,7 +2269,7 @@
           if (cv.width !== Math.round(W * dpr)) { cv.width = W * dpr; cv.height = H * dpr; }
           var ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
           ctx.clearRect(0, 0, W, H);
-          var now = Date.now(), tMin = now - 15 * 60000;
+          var now = Date.now(), tMin = now - 60 * 60000;
           var r = compute();
           var openRef = r ? r.openRef : null;
           var data = ticks.filter(function (x) { return x.t >= tMin; });
@@ -2281,7 +2282,7 @@
           data.forEach(function (x) { min = Math.min(min, x.p); max = Math.max(max, x.p); });
           if (openRef) { min = Math.min(min, openRef); max = Math.max(max, openRef); }
           var pad = (max - min) * 0.15 || 5; min -= pad; max += pad;
-          var X = function (t) { return (t - tMin) / (15 * 60000) * W; };
+          var X = function (t) { return (t - tMin) / (60 * 60000) * W; };
           var Y = function (p) { return H - (p - min) / (max - min) * H; };
           ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.fillStyle = '#8a8fa3'; ctx.lineWidth = 1;
           for (var g = 1; g <= 2; g++) { var gy = H * g / 3; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); var gp = max - (max - min) * g / 3; ctx.fillText('$' + fmt(gp), 4, gy - 3); }
@@ -2486,6 +2487,7 @@
           if (Date.now() - lastCandleFetch > 15000) loadCandles().then(render);
         }, 5000);
         setInterval(render, 1000);
+        setTimeout(function () { var v = $('gold15Verdict'); if (v && (v.textContent === 'Cargando…' || v.textContent === 'Conectando…')) v.textContent = 'DIAG velas=' + candles.length + ' precio=' + price; }, 7000);
       })();
       </script>
 
@@ -2960,7 +2962,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 32;
+  var PANEL_VER = 33;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
