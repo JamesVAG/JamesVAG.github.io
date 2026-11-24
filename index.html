@@ -663,10 +663,22 @@
                 var icon = ls.st === 'won' ? '✅' : ls.st === 'lost' ? '❌' : '⏳';
                 var liveTxt = ls.st === 'live' && leg.ticker ? ' <span style="color:#7db4ff">· en vivo ' + pct(ls.price) + '</span>' : '';
                 var cyc = isLocal && !leg.ticker ? ' data-cyc="' + esc(b.id) + ':' + li + '" style="cursor:pointer" title="Toca para marcar"' : '';
-                return '<div class="bets-leg"><div><div class="g">' + esc(leg.game) + (leg.league ? ' · ' + esc(leg.league) : '') + '</div><div class="p">' + esc(leg.pick) + '</div></div><div class="r"><div class="pc">' + pct(leg.entry) + '</div><div class="st"' + cyc + '>' + icon + liveTxt + '</div></div></div>';
+                return '<div class="bets-leg"><div><div class="g">' + esc(leg.game) + (leg.league ? ' · ' + esc(leg.league) : '') + (leg.when ? ' · ' + whenLabel(leg.when) : '') + '</div><div class="p">' + esc(leg.pick) + '</div></div><div class="r"><div class="pc">' + pct(leg.entry) + '</div><div class="st"' + cyc + '>' + icon + liveTxt + '</div></div></div>';
               }).join('');
               return '<div class="bets-card"><div class="bets-top"><div><div class="bets-title">' + esc(b.title) + '</div><div class="bets-meta">' + esc(b.platform || '') + ' · ' + esc(b.date || '') + ' · Entrada: ' + money(b.stake) + ' · Paga: ' + money(b.payout) + del + '</div></div>' + badge + '</div>' + probLine + legs + '</div>';
             }).join('');
+          }
+          var catalog = null;
+          function whenLabel(iso) {
+            if (!iso) return '';
+            var t = new Date(new Date(iso).getTime() - 3 * 3600 * 1000);
+            if (isNaN(t.getTime())) return '';
+            var tz = 'America/New_York';
+            var dayFmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric' });
+            var dstr = dayFmt.format(t);
+            var dl = dstr === dayFmt.format(new Date()) ? 'Hoy' : dstr === dayFmt.format(new Date(Date.now() + 86400000)) ? 'Mañana' : new Intl.DateTimeFormat('es-ES', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'numeric' }).format(t);
+            var tm = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(t);
+            return '⏱ ' + dl + ' ' + tm;
           }
           function refreshMarkets() {
             var tickers = {};
@@ -695,7 +707,7 @@
           function renderDraft() {
             if (!draft.length) { $('bfDraftLegs').innerHTML = '<div class="gn-res">Todavía no añadiste patas.</div>'; return; }
             $('bfDraftLegs').innerHTML = draft.map(function (l, i) {
-              return '<div class="bf-leg"><span>' + esc(l.pick) + ' <span style="color:#9aa0b4">(' + esc(l.game) + (l.entry != null ? ' · ' + pct(l.entry) : '') + ')</span></span><button class="bf-x" data-rm="' + i + '">✕</button></div>';
+              return '<div class="bf-leg"><span>' + esc(l.pick) + ' <span style="color:#9aa0b4">(' + esc(l.game) + (l.entry != null ? ' · ' + pct(l.entry) : '') + (l.when ? ' · ' + whenLabel(l.when) : '') + ')</span></span><button class="bf-x" data-rm="' + i + '">✕</button></div>';
             }).join('');
           }
           function pickLabel(m, kind) {
@@ -706,31 +718,30 @@
             return (ys || t) + ' win';
           }
           var curEvents = [], curMarkets = [], curSeries = null;
+          function fillPicker() {
+            var sdata = (catalog && catalog.series && catalog.series[curSeries[1]]) || null;
+            curEvents = (sdata && sdata.events) || [];
+            if (!curEvents.length) { $('bfKMsg').textContent = 'Hoy no hay partidos de este mercado en el catálogo. Bro lo actualiza a diario: pídele que lo cargue si falta el tuyo.'; $('bfEventsWrap').style.display = 'none'; return; }
+            $('bfEvents').innerHTML = curEvents.map(function (e, i) { return '<option value="' + i + '">' + esc(e.title) + (e.occ ? ' — ' + whenLabel(e.occ) : '') + '</option>'; }).join('');
+            $('bfEventsWrap').style.display = 'block';
+            $('bfKMsg').textContent = 'Catálogo actualizado: ' + esc((catalog && catalog.updated) || '') + '. Precios de Kalshi al momento de cargarlo.';
+            loadMarkets();
+          }
           function loadEvents() {
             var si = parseInt($('bfSeries').value, 10);
             curSeries = SERIES[si];
+            if (catalog) { fillPicker(); return; }
             $('bfKMsg').textContent = 'Cargando partidos…';
-            kFetch('https://api.elections.kalshi.com/trade-api/v2/events?series_ticker=' + curSeries[1] + '&status=open&limit=200&with_nested_markets=false').then(function (j) {
-              curEvents = (j && j.events) || [];
-              if (!curEvents.length) { $('bfKMsg').textContent = 'No hay partidos abiertos en este mercado ahora mismo.'; $('bfEventsWrap').style.display = 'none'; return; }
-              $('bfEvents').innerHTML = curEvents.map(function (e, i) { return '<option value="' + i + '">' + esc(e.title) + '</option>'; }).join('');
-              $('bfEventsWrap').style.display = 'block';
-              $('bfKMsg').textContent = '';
-              loadMarkets();
-            }).catch(function () { $('bfKMsg').textContent = 'No se pudo conectar con Kalshi. Revisa tu conexión e inténtalo otra vez.'; });
+            fetch('catalog.json?x=' + Date.now()).then(function (r) { return r.json(); }).then(function (j) { catalog = j; fillPicker(); }).catch(function () { $('bfKMsg').textContent = 'No se pudo cargar el catálogo de partidos. Inténtalo otra vez.'; });
           }
           function loadMarkets() {
             var ev = curEvents[parseInt($('bfEvents').value, 10)];
             if (!ev) return;
-            $('bfMarkets').innerHTML = '<div class="gn-res">Cargando opciones…</div>';
-            kFetch('https://api.elections.kalshi.com/trade-api/v2/markets?event_ticker=' + ev.event_ticker + '&limit=100').then(function (j) {
-              curMarkets = ((j && j.markets) || []).filter(function (m) { return m.status === 'active' || m.status === 'open'; });
-              if (!curMarkets.length) { $('bfMarkets').innerHTML = '<div class="gn-res">Este partido no tiene opciones abiertas.</div>'; return; }
-              $('bfMarkets').innerHTML = curMarkets.map(function (m, i) {
-                var ask = askOf(m);
-                return '<button class="bf-mkt" data-mi="' + i + '">' + esc(pickLabel(m, curSeries[2])) + '<b>' + pct(ask) + '</b></button>';
-              }).join('');
-            }).catch(function () { $('bfMarkets').innerHTML = '<div class="gn-res">No se pudieron cargar las opciones.</div>'; });
+            curMarkets = ev.markets || [];
+            if (!curMarkets.length) { $('bfMarkets').innerHTML = '<div class="gn-res">Este partido no tiene opciones abiertas.</div>'; return; }
+            $('bfMarkets').innerHTML = curMarkets.map(function (m, i) {
+              return '<button class="bf-mkt" data-mi="' + i + '">' + esc(pickLabel({ title: m.t, yes_sub_title: m.ys }, curSeries[2])) + '<b>' + pct(m.ask) + '</b></button>';
+            }).join('');
           }
           function saveBet() {
             if (!draft.length) { $('bfMsg').textContent = 'Añade al menos una pata primero.'; return; }
@@ -774,7 +785,7 @@
             var myP = 1, mkP = 1;
             chosen.forEach(function (l) { myP *= l.myProb; if (l.market) mkP *= l.market; });
             var rows = chosen.map(function (l) {
-              return '<div class="bets-leg"><div><div class="g">' + esc(l.game) + ' · ' + esc(l.league || '') + '</div><div class="p">' + esc(l.pick) + '</div><div class="gn-res">🧠 ' + esc(l.reason || '') + '</div></div><div class="r"><div class="pc" style="color:#f5c542">' + pct(l.myProb) + '</div><div class="st" style="color:#9aa0b4">app: ' + pct(l.market) + '</div></div></div>';
+              return '<div class="bets-leg"><div><div class="g">' + esc(l.game) + ' · ' + esc(l.league || '') + (l.when ? ' · ' + whenLabel(l.when) : '') + '</div><div class="p">' + esc(l.pick) + '</div><div class="gn-res">🧠 ' + esc(l.reason || '') + '</div></div><div class="r"><div class="pc" style="color:#f5c542">' + pct(l.myProb) + '</div><div class="st" style="color:#9aa0b4">app: ' + pct(l.market) + '</div></div></div>';
             }).join('');
             $('gnOut').innerHTML = '<div class="bets-prob">Probabilidad real según el análisis: <b>' + pct(myP) + '</b> · la app la vende como ' + pct(mkP) + '</div>' + rows +
               '<button class="bf-btn" id="gnSave" style="margin-top:10px">💾 Guardar en mis apuestas</button>' +
@@ -806,8 +817,7 @@
               var m = curMarkets[parseInt(b.getAttribute('data-mi'), 10)];
               var ev = curEvents[parseInt($('bfEvents').value, 10)];
               if (!m || !ev) return;
-              var ask = askOf(m);
-              draft.push({ game: String(ev.title).split(':')[0], league: curSeries[3], pick: pickLabel(m, curSeries[2]), ticker: m.ticker, entry: ask });
+              draft.push({ game: String(ev.title).split(':')[0], league: curSeries[3], pick: pickLabel({ title: m.t, yes_sub_title: m.ys }, curSeries[2]), ticker: m.tk, entry: m.ask, when: ev.occ || null });
               renderDraft();
             });
             $('bfAddManual').addEventListener('click', function () {
@@ -2139,7 +2149,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 28;
+  var PANEL_VER = 29;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
