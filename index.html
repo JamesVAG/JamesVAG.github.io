@@ -1864,7 +1864,7 @@
       </script>
 <script>
       (function () {
-        window.addEventListener('error', function (e) { var v = document.getElementById('gold15Verdict'); if (v && (v.textContent === 'Cargando…' || v.textContent === 'Conectando…')) v.textContent = 'Error: ' + (e.message || 'desconocido'); });
+        
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
@@ -2010,7 +2010,7 @@
 
         function render() {
           if (document.hidden) return;
-          var secB = $('view-btc');
+          var secB = $('view-oro');
           if (secB && secB.offsetParent === null) return;
           var r = compute();
           gradeBets(); renderSim(r);
@@ -2340,7 +2340,7 @@
         }
         function proTick() {
           if (document.hidden) return;
-          var secP = $('view-btc');
+          var secP = $('view-oro');
           if (secP && secP.offsetParent === null) return;
           if (!proOn) return;
           proResize();
@@ -2487,7 +2487,7 @@
           if (Date.now() - lastCandleFetch > 15000) loadCandles().then(render);
         }, 5000);
         setInterval(render, 1000);
-        setTimeout(function () { var v = $('gold15Verdict'); if (v && (v.textContent === 'Cargando…' || v.textContent === 'Conectando…')) v.textContent = 'DIAG velas=' + candles.length + ' precio=' + price; }, 7000);
+        
       })();
       </script>
 
@@ -2962,7 +2962,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 33;
+  var PANEL_VER = 34;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
