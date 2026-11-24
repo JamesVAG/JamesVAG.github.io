@@ -277,6 +277,7 @@
         <button class="nav-item" data-view="juegos"><span class="ic">🎮</span> <span data-i18n="nav_games">Juegos</span></button>
         <button class="nav-item" data-view="mapa"><span class="ic">🗺️</span> <span data-i18n="nav_mapa">Mapa</span></button>
         <button class="nav-item" data-view="btc"><span class="ic">📈</span> BTC 15</button>
+        <button class="nav-item" data-view="apuestas"><span class="ic">📊</span> Apuestas</button>
         <button class="nav-item" id="navStream"><span class="ic">🎥</span> <span data-i18n="nav_stream">Modo Stream</span></button>
       </nav>
       <div class="foot" style="margin-top:12px">
@@ -444,6 +445,151 @@
         </div>
       </section>
 
+      <section class="view" id="view-apuestas">
+        <style>
+          .bets-wrap{max-width:760px;margin:0 auto;padding:6px 2px 30px}
+          .bets-h{font-size:22px;font-weight:900;margin:6px 0 2px}
+          .bets-sub{color:#9aa0b4;font-size:13px;margin-bottom:14px}
+          .bets-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+          .bets-stat{background:linear-gradient(160deg,#171a29,#10121d);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 8px;text-align:center}
+          .bets-stat .n{font-size:19px;font-weight:900;color:#fff}
+          .bets-stat .l{font-size:10.5px;color:#9aa0b4;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+          .bets-card{background:linear-gradient(165deg,#151827,#0f1119);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:14px;margin-bottom:14px;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+          .bets-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+          .bets-title{font-size:16px;font-weight:800;color:#fff}
+          .bets-meta{color:#9aa0b4;font-size:12.5px;margin-top:2px}
+          .bets-badge{font-size:12px;font-weight:900;padding:5px 10px;border-radius:999px;white-space:nowrap}
+          .bets-badge.live{background:rgba(59,130,246,.18);color:#7db4ff;border:1px solid rgba(59,130,246,.5)}
+          .bets-badge.won{background:rgba(34,197,94,.16);color:#4ade80;border:1px solid rgba(34,197,94,.5)}
+          .bets-badge.lost{background:rgba(239,68,68,.14);color:#f87171;border:1px solid rgba(239,68,68,.5)}
+          .bets-prob{margin:10px 0 4px;font-size:13.5px;color:#e8eaf2}
+          .bets-prob b{color:#f5c542}
+          .bets-leg{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid rgba(255,255,255,.06)}
+          .bets-leg .g{font-size:12px;color:#9aa0b4}
+          .bets-leg .p{font-size:14.5px;font-weight:700;color:#fff}
+          .bets-leg .r{text-align:right;white-space:nowrap}
+          .bets-leg .pc{font-size:14.5px;font-weight:800;color:#e8eaf2}
+          .bets-leg .st{font-size:12px}
+          .bets-empty{color:#9aa0b4;text-align:center;padding:28px 0}
+        </style>
+        <div class="bets-wrap">
+          <div class="bets-h">📊 Mis apuestas</div>
+          <div class="bets-sub">Estadísticas en vivo: cada pata se sigue sola con el precio de Kalshi y se marca ✅/❌ cuando el juego termina.</div>
+          <div class="bets-stats" id="betsStats"></div>
+          <div id="betsList"><div class="bets-empty">Cargando apuestas…</div></div>
+        </div>
+        <script>
+        (function () {
+          var betsData = null, mkt = {}, started = false;
+          function $(i) { return document.getElementById(i); }
+          function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+          function money(v) { return v == null ? '—' : '$' + Number(v).toFixed(2); }
+          function pct(v) { return v == null ? '—' : Math.round(v * 100) + '%'; }
+          function kUrl(u) {
+            return [u,
+              'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+              'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)];
+          }
+          function kFetch(u) {
+            var routes = kUrl(u);
+            function next(i) {
+              if (i >= routes.length) return Promise.reject(new Error('sin ruta'));
+              return fetch(routes[i]).then(function (r) { if (!r.ok) throw new Error('bad'); return r.json(); }).catch(function () { return next(i + 1); });
+            }
+            return next(0);
+          }
+          function legState(leg) {
+            if (leg.ticker && mkt[leg.ticker]) {
+              var m = mkt[leg.ticker];
+              if (m.result === 'yes') return { st: 'won', price: 1 };
+              if (m.result === 'no') return { st: 'lost', price: 0 };
+              return { st: 'live', price: m.price };
+            }
+            if (leg.status === 'won') return { st: 'won', price: 1 };
+            if (leg.status === 'lost') return { st: 'lost', price: 0 };
+            return { st: 'live', price: leg.entry };
+          }
+          function betState(bet) {
+            var anyLost = false, allWon = true, prob = 1, hasProb = false;
+            bet.legs.forEach(function (leg) {
+              var s = legState(leg);
+              if (s.st === 'lost') anyLost = true;
+              if (s.st !== 'won') allWon = false;
+              if (s.st === 'live' && s.price != null) { prob *= s.price; hasProb = true; }
+            });
+            if (anyLost) return { st: 'lost', prob: 0 };
+            if (allWon) return { st: 'won', prob: 1 };
+            return { st: 'live', prob: hasProb ? prob : null };
+          }
+          function render() {
+            if (!betsData) return;
+            var bets = betsData.bets || [];
+            var nW = 0, nL = 0, nLive = 0, staked = 0, returned = 0, settledMoney = 0;
+            bets.forEach(function (b) {
+              var s = betState(b);
+              if (s.st === 'won') nW++; else if (s.st === 'lost') nL++; else nLive++;
+              if (b.stake != null) {
+                staked += b.stake;
+                if (s.st === 'won' && b.payout != null) { returned += b.payout; settledMoney += b.stake; }
+                if (s.st === 'lost') settledMoney += b.stake;
+              }
+            });
+            var bal = returned - settledMoney;
+            $('betsStats').innerHTML =
+              '<div class="bets-stat"><div class="n">' + bets.length + '</div><div class="l">Apuestas</div></div>' +
+              '<div class="bets-stat"><div class="n" style="color:#4ade80">' + nW + '</div><div class="l">Ganadas</div></div>' +
+              '<div class="bets-stat"><div class="n" style="color:#f87171">' + nL + '</div><div class="l">Perdidas</div></div>' +
+              '<div class="bets-stat"><div class="n" style="color:' + (bal >= 0 ? '#4ade80' : '#f87171') + '">' + (settledMoney ? money(bal) : '—') + '</div><div class="l">Balance</div></div>';
+            if (!bets.length) { $('betsList').innerHTML = '<div class="bets-empty">Todavía no hay apuestas registradas.</div>'; return; }
+            $('betsList').innerHTML = bets.map(function (b) {
+              var s = betState(b);
+              var badge = s.st === 'won' ? '<span class="bets-badge won">✅ GANADA</span>' : s.st === 'lost' ? '<span class="bets-badge lost">❌ PERDIDA</span>' : '<span class="bets-badge live">🔴 EN VIVO</span>';
+              var probLine = s.st === 'live' && s.prob != null ? '<div class="bets-prob">Probabilidad de pegar completa ahora mismo: <b>' + pct(s.prob) + '</b></div>' : '';
+              var legs = b.legs.map(function (leg) {
+                var ls = legState(leg);
+                var icon = ls.st === 'won' ? '✅' : ls.st === 'lost' ? '❌' : '⏳';
+                var liveTxt = ls.st === 'live' && leg.ticker ? ' <span style="color:#7db4ff">· en vivo ' + pct(ls.price) + '</span>' : '';
+                return '<div class="bets-leg"><div><div class="g">' + esc(leg.game) + (leg.league ? ' · ' + esc(leg.league) : '') + '</div><div class="p">' + esc(leg.pick) + '</div></div><div class="r"><div class="pc">' + pct(leg.entry) + '</div><div class="st">' + icon + liveTxt + '</div></div></div>';
+              }).join('');
+              return '<div class="bets-card"><div class="bets-top"><div><div class="bets-title">' + esc(b.title) + '</div><div class="bets-meta">' + esc(b.platform || '') + ' · ' + esc(b.date || '') + ' · Entrada: ' + money(b.stake) + ' · Paga: ' + money(b.payout) + '</div></div>' + badge + '</div>' + probLine + legs + '</div>';
+            }).join('');
+          }
+          function refreshMarkets() {
+            if (!betsData) return;
+            var tickers = {};
+            (betsData.bets || []).forEach(function (b) { b.legs.forEach(function (l) { if (l.ticker) tickers[l.ticker] = 1; }); });
+            Object.keys(tickers).forEach(function (tk) {
+              if (mkt[tk] && (mkt[tk].result === 'yes' || mkt[tk].result === 'no')) return;
+              kFetch('https://api.elections.kalshi.com/trade-api/v2/markets/' + tk).then(function (j) {
+                var m = j && j.market;
+                if (!m) return;
+                var ask = m.yes_ask_dollars != null ? parseFloat(m.yes_ask_dollars) : (m.yes_ask != null ? m.yes_ask / 100 : null);
+                mkt[tk] = { price: ask, result: m.result || '' };
+                render();
+              }).catch(function () {});
+            });
+          }
+          function load() {
+            fetch('bets.json?x=' + Date.now()).then(function (r) { return r.json(); }).then(function (j) {
+              betsData = j; render(); refreshMarkets();
+            }).catch(function () {
+              $('betsList').innerHTML = '<div class="bets-empty">No se pudieron cargar las apuestas todavía.</div>';
+            });
+          }
+          function start() {
+            if (started) { refreshMarkets(); return; }
+            started = true;
+            load();
+            setInterval(function () {
+              var sec = $('view-apuestas');
+              if (sec && sec.offsetParent !== null && !document.hidden) { load(); }
+            }, 60000);
+          }
+          var btn = document.querySelector('[data-view="apuestas"]');
+          if (btn) btn.addEventListener('click', start);
+        })();
+        </script>
+      </section>
       <section class="view" id="view-btc">
         <h2 class="view-title">&#128200; BTC 15 — Kalshi</h2>
         <div class="btc15-card">
@@ -1715,7 +1861,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 24;
+  var PANEL_VER = 25;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
