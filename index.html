@@ -466,6 +466,12 @@
             <div><span>Diferencia</span><b id="btc15Diff">—</b></div>
             <div><span>Cierra en</span><b id="btc15Timer">—</b></div>
           </div>
+          <div class="btc15-risk" id="btc15Risk">
+            <div class="btc15-risk-head">⚠️ RIESGO DE CRUCE DEL OBJETIVO</div>
+            <div class="btc15-risk-big" id="btc15RiskBig">—</div>
+            <div class="btc15-risk-bar"><i id="btc15RiskBar"></i></div>
+            <div class="btc15-risk-sub" id="btc15RiskSub"></div>
+          </div>
           <div class="btc15-stats" id="btc15Stats"></div>
           <div class="btc15-hz" id="btc15Hz">
             <div class="btc15-hz-head">⏱ PREDICCIÓN POR TIEMPO</div>
@@ -596,6 +602,12 @@
 #view-btc .btc15-amt-wrap input { flex:1; min-width:0; background:transparent; border:none; outline:none; color:#fff; font-size:1.45rem; font-weight:900; text-align:center; font-family:inherit; padding:6px 0; }
 #view-btc .btc15-bet { box-shadow:0 5px 16px rgba(0,0,0,.4); letter-spacing:.02em; }
 #view-btc .btc15-sell { box-shadow:0 5px 16px rgba(0,0,0,.4); }
+#view-btc .btc15-risk { margin-top:12px; background:linear-gradient(180deg,#1e1f2c,#15151e); border:1px solid #34354a; border-radius:12px; padding:12px; box-shadow:0 8px 22px rgba(0,0,0,.35); }
+#view-btc .btc15-risk-head { font-weight:900; font-size:.95rem; color:#fff; letter-spacing:.05em; }
+#view-btc .btc15-risk-big { margin-top:8px; font-size:1.12rem; font-weight:900; line-height:1.35; color:#fff; }
+#view-btc .btc15-risk-bar { height:9px; border-radius:99px; background:#101018; overflow:hidden; margin-top:8px; }
+#view-btc .btc15-risk-bar i { display:block; height:100%; width:0%; background:#22c55e; border-radius:99px; transition:width .6s; }
+#view-btc .btc15-risk-sub { margin-top:8px; font-size:.85rem; color:#c9ccda; line-height:1.45; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
       </section>
@@ -683,7 +695,18 @@
           var anScore = 0.45 * mkt.imb + 0.30 * mkt.flow + 0.25 * mtf;
           var z = (Math.log(price / openRef) + drift * tRem) / (sd * Math.sqrt(tRem)) + anScore * 0.35;
           var pUp = Math.max(0.01, Math.min(0.99, Phi(z)));
-          return { wStart: wStart, wEnd: wEnd, openRef: openRef, pUp: pUp, sd: sd, rsi: rsi(closes, 14), tRemSec: wEnd - nowS, anImb: mkt.imb, anFlow: mkt.flow, anMtf: mtf, anScore: anScore, refKalshi: refKalshi, drift: drift };
+          var dd = Math.log(price / openRef);
+          var sT = sd * Math.sqrt(tRem);
+          var aD = Math.abs(dd);
+          var mD = dd >= 0 ? drift : -drift;
+          var pCross;
+          if (aD < 1e-9) { pCross = 1; }
+          else {
+            var ex = Math.max(-50, Math.min(50, -2 * mD * aD / (sd * sd)));
+            pCross = normCdf((-aD - mD * tRem) / sT) + Math.exp(ex) * normCdf((-aD + mD * tRem) / sT);
+          }
+          pCross = Math.max(0, Math.min(1, pCross));
+          return { wStart: wStart, wEnd: wEnd, openRef: openRef, pUp: pUp, sd: sd, rsi: rsi(closes, 14), tRemSec: wEnd - nowS, anImb: mkt.imb, anFlow: mkt.flow, anMtf: mtf, anScore: anScore, refKalshi: refKalshi, drift: drift, pCross: pCross, cushion: dd / sT, typMove: price * sT };
         }
 
         function prevWindows(wStart) {
@@ -803,6 +826,17 @@
             el.textContent = (up ? 'SUBE ' : 'BAJA ') + Math.round((up ? ph : 1 - ph) * 100) + '%';
             el.style.color = up ? '#22c55e' : '#ef4444';
           });
+          var above = price >= r.openRef;
+          var distUsd = price - r.openRef;
+          var pc = Math.round(r.pCross * 100);
+          var lvl = r.pCross < 0.10 ? 0 : r.pCross <= 0.35 ? 1 : 2;
+          var big = $('btc15RiskBig');
+          big.textContent = (above ? '📉 Probabilidad de que BAJE del objetivo antes del cierre: ' : '📈 Probabilidad de que SUBA sobre el objetivo antes del cierre: ') + pc + '% — ' + (lvl === 0 ? '🟢 SEGURO' : lvl === 1 ? '🟡 CUIDADO' : '🔴 PELIGRO');
+          big.style.color = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
+          var bar = $('btc15RiskBar');
+          bar.style.width = Math.min(100, Math.abs(r.cushion) / 2.5 * 100) + '%';
+          bar.style.background = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
+          $('btc15RiskSub').textContent = 'Distancia al objetivo: ' + (distUsd >= 0 ? '+' : '−') + '$' + fmt(Math.abs(distUsd)) + ' · En lo que queda, el BTC se mueve típicamente ±$' + fmt(r.typMove) + ' · Colchón: ' + Math.abs(r.cushion).toFixed(1) + 'σ' + (lvl === 2 ? ' — está a un movimiento normal de cruzar, aunque el % diga sube.' : '');
           var pv = prevWindows(r.wStart);
           $('btc15Prev').innerHTML = pv.map(function (w) {
             var lbl = new Date(w.s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1626,7 +1660,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 18;
+  var PANEL_VER = 19;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
