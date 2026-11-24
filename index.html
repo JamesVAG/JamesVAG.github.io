@@ -462,7 +462,7 @@
           <div id="btc15LivePro" style="display:none"></div>
           <div class="btc15-grid">
             <div><span>Precio</span><b id="btc15Price">—</b></div>
-            <div><span>Apertura ventana</span><b id="btc15Open">—</b></div>
+            <div><span id="btc15OpenLbl">Apertura ventana</span><b id="btc15Open">—</b></div>
             <div><span>Diferencia</span><b id="btc15Diff">—</b></div>
             <div><span>Cierra en</span><b id="btc15Timer">—</b></div>
           </div>
@@ -473,6 +473,16 @@
             <div class="btc15-an-row"><span id="btc15AnFlowT">Flujo de trades: —</span><div class="btc15-bar"><i id="btc15AnFlow"></i></div></div>
             <div class="btc15-an-row"><span id="btc15AnMtf">Tendencia 5m/15m: —</span></div>
             <div class="btc15-an-verdict" id="btc15AnVerdict"></div>
+            <div class="btc15-action wait" id="btc15Action">—</div>
+          </div>
+          <div class="btc15-kal" id="btc15Kal">
+            <div class="btc15-kal-head">🎯 KALSHI — EL MERCADO REAL</div>
+            <div class="btc15-kal-row" id="btc15KalTarget">Cargando Kalshi…</div>
+            <div class="btc15-kal-prices">
+              <div>SÍ en Kalshi <b id="btc15KalSi">—</b></div>
+              <div>NO en Kalshi <b id="btc15KalNo">—</b></div>
+            </div>
+            <div class="btc15-kal-edge" id="btc15KalEdge"></div>
           </div>
           <div class="btc15-prev" id="btc15Prev"></div>
           <div class="btc15-sim">
@@ -495,7 +505,7 @@
             <div class="btc15-sim-msg" id="btc15Msg"></div>
             <div class="btc15-sim-hist" id="btc15Hist"></div>
           </div>
-          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso + análisis en tiempo real del libro de órdenes y del flujo de trades). No es garantía: el BTC se puede voltear en segundos. Kalshi liquida con su índice oficial (CF Benchmarks); el precio aquí es de Coinbase y puede variar por unos dólares.</p>
+          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso + análisis en tiempo real del libro de órdenes y del flujo de trades). No es garantía: el BTC se puede voltear en segundos. Kalshi liquida con el promedio de los 60 precios del índice BRTI en el último minuto, contra su objetivo; el precio aquí es de Coinbase y puede variar por unos dólares.</p>
         </div>
         <style>
 #view-btc .btc15-card { background:#14141f; border:1px solid #2c2d3d; border-radius:16px; padding:16px 14px; }
@@ -551,6 +561,18 @@
 #view-btc .btc15-bar { height:9px; border-radius:99px; background:rgba(239,68,68,.4); overflow:hidden; margin-top:4px; }
 #view-btc .btc15-bar i { display:block; height:100%; width:50%; background:#22c55e; border-radius:99px; transition:width .6s; }
 #view-btc .btc15-an-verdict { margin-top:10px; font-size:.95rem; font-weight:900; min-height:20px; }
+#view-btc .btc15-action { margin-top:12px; text-align:center; font-size:1.35rem; font-weight:900; padding:13px 10px; border-radius:12px; border:1px solid #f5c542; color:#f5c542; background:rgba(245,197,66,.12); }
+#view-btc .btc15-action.buy-si { background:rgba(34,197,94,.18); color:#22c55e; border-color:#22c55e; }
+#view-btc .btc15-action.buy-no { background:rgba(239,68,68,.15); color:#ef4444; border-color:#ef4444; }
+#view-btc .btc15-action.wait { background:rgba(245,197,66,.12); color:#f5c542; border-color:#f5c542; }
+#view-btc .btc15-kal { margin-top:12px; background:#1b1c29; border:1px solid #2c2d3d; border-radius:12px; padding:12px; }
+#view-btc .btc15-kal-head { font-weight:900; font-size:.95rem; color:#fff; margin-bottom:6px; }
+#view-btc .btc15-kal-row { font-size:.92rem; color:#c9ccda; line-height:1.45; }
+#view-btc .btc15-kal-row b { color:#f5c542; }
+#view-btc .btc15-kal-prices { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+#view-btc .btc15-kal-prices div { background:#14141f; border:1px solid #2c2d3d; border-radius:10px; padding:8px 10px; font-size:.85rem; color:#9aa0b4; text-align:center; }
+#view-btc .btc15-kal-prices b { display:block; font-size:1.3rem; color:#fff; }
+#view-btc .btc15-kal-edge { margin-top:9px; font-size:.92rem; font-weight:800; color:#f5c542; min-height:20px; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
       </section>
@@ -620,6 +642,8 @@
           var oc = candleAt(wStart);
           var openRef = oc ? oc.o : lastCloseBefore(wStart + 1);
           if (!openRef) return null;
+          var refKalshi = false;
+          if (kalshi.ok && kalshi.openT <= wStart && kalshi.closeT >= wEnd && Date.now() - kalshi.at < 90000) { openRef = kalshi.strike; refKalshi = true; }
           var closes = candles.map(function (c) { return c.c; });
           var rets = [];
           for (var i = Math.max(1, closes.length - 31); i < closes.length; i++) rets.push(Math.log(closes[i] / closes[i - 1]));
@@ -636,7 +660,7 @@
           var anScore = 0.45 * mkt.imb + 0.30 * mkt.flow + 0.25 * mtf;
           var z = (Math.log(price / openRef) + drift * tRem) / (sd * Math.sqrt(tRem)) + anScore * 0.35;
           var pUp = Math.max(0.01, Math.min(0.99, Phi(z)));
-          return { wStart: wStart, wEnd: wEnd, openRef: openRef, pUp: pUp, sd: sd, rsi: rsi(closes, 14), tRemSec: wEnd - nowS, anImb: mkt.imb, anFlow: mkt.flow, anMtf: mtf, anScore: anScore };
+          return { wStart: wStart, wEnd: wEnd, openRef: openRef, pUp: pUp, sd: sd, rsi: rsi(closes, 14), tRemSec: wEnd - nowS, anImb: mkt.imb, anFlow: mkt.flow, anMtf: mtf, anScore: anScore, refKalshi: refKalshi };
         }
 
         function prevWindows(wStart) {
@@ -722,6 +746,31 @@
             var av = $('btc15AnVerdict');
             av.textContent = conf ? '✅ El análisis CONFIRMA la señal' : contra ? '⚠️ El análisis va CONTRA la señal — cuidado' : '➖ Análisis neutral';
             av.style.color = conf ? '#22c55e' : contra ? '#f5c542' : '#9aa0b4';
+          }
+          $('btc15OpenLbl').textContent = r.refKalshi ? 'Objetivo Kalshi 🎯' : 'Apertura ventana';
+          var act = $('btc15Action');
+          var strong = Math.abs(r.pUp - 0.5) >= 0.12;
+          var aUp = r.anScore > 0.08, aDn = r.anScore < -0.08;
+          if (aUp && r.pUp >= 0.5) { act.textContent = '🟢 COMPRAR SÍ'; act.className = 'btc15-action buy-si'; }
+          else if (aDn && r.pUp < 0.5) { act.textContent = '🔴 COMPRAR NO'; act.className = 'btc15-action buy-no'; }
+          else if ((aUp && r.pUp < 0.5) || (aDn && r.pUp >= 0.5)) { act.textContent = '⏸ ESPERAR — señales cruzadas'; act.className = 'btc15-action wait'; }
+          else if (strong) { act.textContent = r.pUp >= 0.5 ? '🟢 COMPRAR SÍ' : '🔴 COMPRAR NO'; act.className = 'btc15-action ' + (r.pUp >= 0.5 ? 'buy-si' : 'buy-no'); }
+          else { act.textContent = '⏸ ESPERAR — sin ventaja clara'; act.className = 'btc15-action wait'; }
+          var kT = $('btc15KalTarget'), kE = $('btc15KalEdge');
+          if (kalshi.ok) {
+            kT.innerHTML = '🎯 Objetivo de Kalshi: <b>$' + fmt(kalshi.strike) + '</b> — el SÍ gana si el BTC cierra sobre ese precio';
+            $('btc15KalSi').textContent = kalshi.yesAsk ? Math.round(kalshi.yesAsk * 100) + '¢' : '—';
+            $('btc15KalNo').textContent = kalshi.noAsk ? Math.round(kalshi.noAsk * 100) + '¢' : '—';
+            var eSi = Math.round(r.pUp * 100) - Math.round(kalshi.yesAsk * 100);
+            var eNo = Math.round((1 - r.pUp) * 100) - Math.round(kalshi.noAsk * 100);
+            if (kalshi.yesAsk && eSi >= 3 && eSi >= eNo) kE.textContent = '💎 Ventaja en el SÍ: el modelo dice ' + Math.round(r.pUp * 100) + '% y Kalshi lo vende a ' + Math.round(kalshi.yesAsk * 100) + '¢';
+            else if (kalshi.noAsk && eNo >= 3) kE.textContent = '💎 Ventaja en el NO: el modelo dice ' + Math.round((1 - r.pUp) * 100) + '% y Kalshi lo vende a ' + Math.round(kalshi.noAsk * 100) + '¢';
+            else kE.textContent = 'Sin ventaja clara contra Kalshi — el modelo y el mercado van parecidos.';
+          } else {
+            kT.textContent = 'Kalshi en vivo: sin conexión desde el navegador (la señal sigue con Coinbase).';
+            $('btc15KalSi').textContent = '—';
+            $('btc15KalNo').textContent = '—';
+            kE.textContent = '';
           }
           var pv = prevWindows(r.wStart);
           $('btc15Prev').innerHTML = pv.map(function (w) {
@@ -1021,6 +1070,50 @@
         }
         fetchAnalysis();
         setInterval(fetchAnalysis, 10000);
+
+        /* ----- Kalshi en vivo (objetivo y precios reales; varias rutas) ----- */
+        var kalshi = { ok: false, strike: 0, yesAsk: 0, noAsk: 0, last: 0, openT: 0, closeT: 0, at: 0 };
+        function kalshiParse(j) {
+          if (!j || !j.markets || !j.markets.length) return false;
+          var nowS = Math.floor(Date.now() / 1000);
+          var pick = null;
+          j.markets.forEach(function (m) {
+            var o = Date.parse(m.open_time) / 1000, c = Date.parse(m.close_time) / 1000;
+            if (o <= nowS && nowS < c) pick = m;
+          });
+          if (!pick) {
+            var fut = j.markets.filter(function (m) { return Date.parse(m.close_time) / 1000 > nowS; });
+            fut.sort(function (x, y) { return Date.parse(x.close_time) - Date.parse(y.close_time); });
+            pick = fut[0];
+          }
+          if (!pick) return false;
+          kalshi.strike = parseFloat(pick.floor_strike) || 0;
+          kalshi.yesAsk = parseFloat(pick.yes_ask_dollars) || 0;
+          kalshi.noAsk = parseFloat(pick.no_ask_dollars) || 0;
+          kalshi.last = parseFloat(pick.last_price_dollars) || 0;
+          kalshi.openT = Date.parse(pick.open_time) / 1000;
+          kalshi.closeT = Date.parse(pick.close_time) / 1000;
+          kalshi.at = Date.now();
+          kalshi.ok = kalshi.strike > 0;
+          return kalshi.ok;
+        }
+        function fetchKalshi() {
+          var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M&status=open&limit=6';
+          var routes = [direct,
+            'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
+            'https://api.codetabs.com/v1/proxy?quest=' + direct];
+          var i = 0;
+          function next() {
+            if (i >= routes.length) return Promise.resolve(false);
+            var u = routes[i++];
+            return fetch(u).then(function (r) { if (!r.ok) throw new Error('k'); return r.json(); })
+              .then(function (j) { return kalshiParse(j) ? true : next(); })
+              .catch(function () { return next(); });
+          }
+          return next();
+        }
+        fetchKalshi();
+        setInterval(fetchKalshi, 20000);
 
         loadCandles().then(function () { loadPrice().then(render); });
         setInterval(function () {
@@ -1502,7 +1595,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 16;
+  var PANEL_VER = 17;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
