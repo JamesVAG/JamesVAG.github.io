@@ -277,6 +277,7 @@
         <button class="nav-item" data-view="juegos"><span class="ic">🎮</span> <span data-i18n="nav_games">Juegos</span></button>
         <button class="nav-item" data-view="mapa"><span class="ic">🗺️</span> <span data-i18n="nav_mapa">Mapa</span></button>
         <button class="nav-item" data-view="btc"><span class="ic">📈</span> BTC 15</button>
+        <button class="nav-item" data-view="oro"><span class="ic">🥇</span> ORO 15</button>
         <button class="nav-item" data-view="apuestas"><span class="ic">📊</span> Apuestas</button>
         <button class="nav-item" id="navStream"><span class="ic">🎥</span> <span data-i18n="nav_stream">Modo Stream</span></button>
       </nav>
@@ -1061,6 +1062,180 @@
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
       </section>
+
+<section class="view" id="view-oro">
+        <h2 class="view-title">🥇 ORO 15 — Kalshi</h2>
+        <div class="btc15-card">
+          <div class="btc15-verdict" id="gold15Verdict">Cargando…</div>
+          <div class="btc15-prob" id="gold15Prob">--%</div>
+          <div class="btc15-badge" id="gold15Badge"></div>
+          <div class="btc15-yn">
+            <div class="btc15-yn-box" id="gold15YnSi"><span>SÍ · sube</span><b id="gold15PSi">--%</b><em id="gold15BestSi"></em></div>
+            <div class="btc15-yn-box" id="gold15YnNo"><span>NO · baja</span><b id="gold15PNo">--%</b><em id="gold15BestNo"></em></div>
+          </div>
+          <canvas id="gold15Chart"></canvas>
+          <div id="gold15Legend" class="btc15-legend" style="display:none"></div>
+          <div id="gold15ChartPro" style="display:none"></div>
+          <div class="btc15-live-label"><span class="btc15-dot"></span> GRÁFICO EN VIVO</div>
+          <canvas id="gold15Live"></canvas>
+          <div id="gold15LivePro" style="display:none"></div>
+          <div class="btc15-grid">
+            <div><span>Precio</span><b id="gold15Price">—</b></div>
+            <div><span id="gold15OpenLbl">Apertura ventana</span><b id="gold15Open">—</b></div>
+            <div><span>Diferencia</span><b id="gold15Diff">—</b></div>
+            <div><span>Cierra en</span><b id="gold15Timer">—</b></div>
+          </div>
+          <div class="btc15-risk" id="gold15Risk">
+            <div class="btc15-risk-head">⚠️ ¿SE PUEDE VOLTEAR ANTES DEL CIERRE?</div>
+            <div class="btc15-risk-big" id="gold15RiskBig">—</div>
+            <div class="btc15-risk-bar"><i id="gold15RiskBar"></i></div>
+            <div class="btc15-risk-sub" id="gold15RiskSub"></div>
+          </div>
+          <div class="btc15-stats" id="gold15Stats"></div>
+          <div class="btc15-hz" id="gold15Hz">
+            <div class="btc15-hz-head">⏱ PREDICCIÓN POR TIEMPO</div>
+            <div class="btc15-hz-grid">
+              <div class="btc15-hz-cell"><span>+2 MIN</span><b id="gold15Hz2">—</b></div>
+              <div class="btc15-hz-cell"><span>+5 MIN</span><b id="gold15Hz5">—</b></div>
+              <div class="btc15-hz-cell"><span>+10 MIN</span><b id="gold15Hz10">—</b></div>
+              <div class="btc15-hz-cell"><span>+15 MIN</span><b id="gold15Hz15">—</b></div>
+            </div>
+            <div class="btc15-hz-note">Probabilidad de que el ORO esté más arriba que ahora en ese tiempo, con el mismo modelo + análisis en vivo.</div>
+          </div>
+          <div class="btc15-an" id="gold15An">
+            <div class="btc15-an-head">🔎 ANÁLISIS EN TIEMPO REAL</div>
+            <div class="btc15-an-row"><span id="gold15AnBookT">Libro de órdenes: —</span><div class="btc15-bar"><i id="gold15AnBook"></i></div></div>
+            <div class="btc15-an-row"><span id="gold15AnFlowT">Flujo de trades: —</span><div class="btc15-bar"><i id="gold15AnFlow"></i></div></div>
+            <div class="btc15-an-row"><span id="gold15AnMtf">Tendencia 5m/15m: —</span></div>
+            <div class="btc15-an-verdict" id="gold15AnVerdict"></div>
+            <div class="btc15-action wait" id="gold15Action">—</div>
+          </div>
+          <div class="btc15-kal" id="gold15Kal">
+            <div class="btc15-kal-head">🎯 KALSHI — EL MERCADO REAL</div>
+            <div class="btc15-kal-row" id="gold15KalTarget">Cargando Kalshi…</div>
+            <div class="btc15-kal-prices">
+              <div>SÍ en Kalshi <b id="gold15KalSi">—</b></div>
+              <div>NO en Kalshi <b id="gold15KalNo">—</b></div>
+            </div>
+            <div class="btc15-kal-edge" id="gold15KalEdge"></div>
+          </div>
+          <div class="btc15-prev" id="gold15Prev"></div>
+          <div class="btc15-sim">
+            <div class="btc15-sim-head">🎮 SIMULADOR <span class="btc15-sim-bal">Saldo: <b id="gold15Bal">$100,000.00</b></span></div>
+            <div class="btc15-sim-rec" id="gold15Rec">Récord: 0 ganadas · 0 perdidas</div>
+            <div class="btc15-amt-wrap"><span class="btc15-amt-sym">$</span><input type="number" id="gold15Amt" value="100" min="1" step="any" inputmode="decimal" placeholder="Cantidad que quieras"></div>
+            <div class="btc15-sim-row">
+              <button type="button" class="btc15-chip" data-amt="10">$10</button>
+              <button type="button" class="btc15-chip" data-amt="50">$50</button>
+              <button type="button" class="btc15-chip" data-amt="100">$100</button>
+              <button type="button" class="btc15-chip" data-amt="1000">$1,000</button>
+            </div>
+            <div class="btc15-sim-row">
+              <button type="button" class="btc15-bet si" id="gold15BetSi">Apostar al SÍ</button>
+              <button type="button" class="btc15-bet no" id="gold15BetNo">Apostar al NO</button>
+            </div>
+            <div class="btc15-sim-open" id="gold15Open"></div>
+            <div class="btc15-posval" id="gold15PosVal"></div>
+            <div class="btc15-advice" id="gold15Advice" style="display:none"></div>
+            <button type="button" class="btc15-sell" id="gold15Sell" style="display:none">💸 SACAR MI DINERO</button>
+            <div class="btc15-sim-msg" id="gold15Msg"></div>
+            <div class="btc15-sim-hist" id="gold15Hist"></div>
+          </div>
+          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso + análisis en tiempo real del libro de órdenes y del flujo de trades). El simulador califica con la misma regla de la ventana: gana el lado que quede sobre el objetivo en el promedio del último minuto. No es garantía: el oro se puede voltear en segundos. El precio aquí es el del oro spot (PAXG en Coinbase, que sigue el precio del oro) y puede variar por unos dólares. Kalshi liquida el oro por hora (serie KXGOLDH) contra su objetivo; esta predicción es por ventanas de 15 minutos, con la apertura de cada ventana como objetivo.</p>
+        </div>
+        <style>
+#view-btc .btc15-card { background:#14141f; border:1px solid #2c2d3d; border-radius:16px; padding:16px 14px; }
+#view-btc .btc15-verdict { text-align:center; font-size:2rem; font-weight:900; letter-spacing:.02em; }
+#view-btc .btc15-verdict.up { color:#22c55e; }
+#view-btc .btc15-verdict.down { color:#ef4444; }
+#view-btc .btc15-prob { text-align:center; font-size:3.2rem; font-weight:900; color:#f5c542; line-height:1.05; }
+#view-btc .btc15-badge { text-align:center; font-size:1rem; font-weight:800; color:#fff; margin:2px 0 10px; min-height:22px; }
+#view-btc #btc15Chart { width:100%; height:230px; display:block; background:#0d0d16; border-radius:12px; }
+#view-btc .btc15-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+#view-btc .btc15-grid div { background:#1b1c29; border:1px solid #2c2d3d; border-radius:10px; padding:8px 10px; }
+#view-btc .btc15-grid span { display:block; font-size:.72rem; color:#9aa0b4; text-transform:uppercase; letter-spacing:.05em; }
+#view-btc .btc15-grid b { font-size:1.05rem; color:#fff; }
+#view-btc .btc15-stats { margin-top:10px; font-size:.9rem; color:#c9ccda; text-align:center; min-height:20px; }
+#view-btc .btc15-prev { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+#view-btc .btc15-prev .chip { font-size:.8rem; font-weight:700; padding:4px 9px; border-radius:999px; border:1px solid #2c2d3d; background:#1b1c29; color:#fff; }
+#view-btc .btc15-prev .chip.u { color:#22c55e; }
+#view-btc .btc15-prev .chip.d { color:#ef4444; }
+#view-btc .btc15-yn { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:4px 0 12px; }
+#view-btc .btc15-yn-box { background:#1b1c29; border:2px solid #2c2d3d; border-radius:12px; padding:10px; text-align:center; }
+#view-btc .btc15-yn-box span { display:block; font-size:.8rem; font-weight:800; color:#c9ccda; text-transform:uppercase; letter-spacing:.04em; }
+#view-btc .btc15-yn-box b { font-size:1.7rem; color:#fff; }
+#view-btc .btc15-yn-box em { display:block; font-style:normal; font-size:.75rem; font-weight:900; color:#f5c542; min-height:16px; }
+#view-btc .btc15-yn-box.best { border-color:#f5c542; box-shadow:0 0 14px rgba(245,197,66,.35); }
+#view-btc .btc15-sim { margin-top:14px; background:#1b1c29; border:1px solid #2c2d3d; border-radius:12px; padding:12px; }
+#view-btc .btc15-sim-head { font-weight:900; font-size:1rem; color:#fff; display:flex; justify-content:space-between; align-items:center; }
+#view-btc .btc15-sim-bal { font-size:.9rem; color:#c9ccda; }
+#view-btc .btc15-sim-bal b { color:#f5c542; }
+#view-btc .btc15-sim-rec { font-size:.85rem; color:#9aa0b4; margin-top:2px; }
+#view-btc .btc15-sim-row { display:flex; gap:6px; margin-top:10px; }
+#view-btc .btc15-sim-row input { flex:1; min-width:0; background:#0d0d16; border:1px solid #2c2d3d; border-radius:10px; color:#fff; font-size:1rem; font-weight:700; padding:10px; }
+#view-btc .btc15-chip { background:#14141f; border:1px solid #2c2d3d; color:#fff; border-radius:10px; padding:10px 12px; font-weight:800; cursor:pointer; font-family:inherit; }
+#view-btc .btc15-bet { flex:1; border:none; border-radius:10px; padding:13px 8px; font-size:1rem; font-weight:900; cursor:pointer; font-family:inherit; color:#0d0d16; }
+#view-btc .btc15-bet.si { background:#22c55e; }
+#view-btc .btc15-bet.no { background:#ef4444; color:#fff; }
+#view-btc .btc15-sim-open { margin-top:10px; font-size:.92rem; font-weight:700; color:#f5c542; min-height:20px; }
+#view-btc .btc15-sim-msg { font-size:.88rem; color:#c9ccda; min-height:18px; margin-top:2px; }
+#view-btc .btc15-sim-hist { margin-top:8px; font-size:.85rem; color:#c9ccda; line-height:1.5; }
+#view-btc .btc15-reset { margin-top:10px; background:none; border:1px solid #2c2d3d; color:#9aa0b4; border-radius:8px; padding:7px 10px; font-size:.8rem; font-weight:700; cursor:pointer; font-family:inherit; }
+#view-btc .btc15-live-label { margin-top:12px; font-size:.78rem; font-weight:900; letter-spacing:.08em; color:#c9ccda; display:flex; align-items:center; gap:7px; }
+#view-btc .btc15-dot { width:9px; height:9px; border-radius:50%; background:#ef4444; display:inline-block; animation:btc15Blink 1.1s ease-in-out infinite; }
+@keyframes btc15Blink { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+#view-btc #btc15Live { width:100%; height:150px; display:block; background:#0d0d16; border-radius:12px; margin-top:6px; }
+#view-btc .btc15-legend { font-size:.82rem; color:#9aa0b4; margin-top:10px; letter-spacing:.02em; }
+#view-btc .btc15-legend b { color:#fff; }
+#view-btc #btc15ChartPro { width:100%; height:260px; background:#0d0d16; border-radius:12px; overflow:hidden; margin-top:6px; }
+#view-btc #btc15LivePro { width:100%; height:170px; background:#0d0d16; border-radius:12px; overflow:hidden; margin-top:6px; }
+#view-btc .btc15-posval { margin-top:6px; font-size:1rem; font-weight:800; color:#fff; min-height:22px; }
+#view-btc .btc15-sell { width:100%; margin-top:8px; background:#f5c542; color:#0d0d16; border:none; border-radius:10px; padding:13px 8px; font-size:1rem; font-weight:900; cursor:pointer; font-family:inherit; }
+#view-btc .btc15-an { margin-top:12px; background:#1b1c29; border:1px solid #2c2d3d; border-radius:12px; padding:12px; }
+#view-btc .btc15-an-head { font-weight:900; font-size:.95rem; color:#fff; margin-bottom:4px; }
+#view-btc .btc15-an-row { margin-top:8px; font-size:.85rem; color:#c9ccda; }
+#view-btc .btc15-bar { height:9px; border-radius:99px; background:rgba(239,68,68,.4); overflow:hidden; margin-top:4px; }
+#view-btc .btc15-bar i { display:block; height:100%; width:50%; background:#22c55e; border-radius:99px; transition:width .6s; }
+#view-btc .btc15-an-verdict { margin-top:10px; font-size:.95rem; font-weight:900; min-height:20px; }
+#view-btc .btc15-action { margin-top:12px; text-align:center; font-size:1.35rem; font-weight:900; padding:13px 10px; border-radius:12px; border:1px solid #f5c542; color:#f5c542; background:rgba(245,197,66,.12); }
+#view-btc .btc15-action.buy-si { background:rgba(34,197,94,.18); color:#22c55e; border-color:#22c55e; }
+#view-btc .btc15-action.buy-no { background:rgba(239,68,68,.15); color:#ef4444; border-color:#ef4444; }
+#view-btc .btc15-action.wait { background:rgba(245,197,66,.12); color:#f5c542; border-color:#f5c542; }
+#view-btc .btc15-kal { margin-top:12px; background:#1b1c29; border:1px solid #2c2d3d; border-radius:12px; padding:12px; }
+#view-btc .btc15-kal-head { font-weight:900; font-size:.95rem; color:#fff; margin-bottom:6px; }
+#view-btc .btc15-kal-row { font-size:.92rem; color:#c9ccda; line-height:1.45; }
+#view-btc .btc15-kal-row b { color:#f5c542; }
+#view-btc .btc15-kal-prices { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+#view-btc .btc15-kal-prices div { background:#14141f; border:1px solid #2c2d3d; border-radius:10px; padding:8px 10px; font-size:.85rem; color:#9aa0b4; text-align:center; }
+#view-btc .btc15-kal-prices b { display:block; font-size:1.3rem; color:#fff; }
+#view-btc .btc15-kal-edge { margin-top:9px; font-size:.92rem; font-weight:800; color:#f5c542; min-height:20px; }
+#view-btc .btc15-card, #view-btc .btc15-sim, #view-btc .btc15-an, #view-btc .btc15-kal, #view-btc .btc15-hz { background:linear-gradient(180deg,#1e1f2c,#15151e); border:1px solid #34354a; box-shadow:0 8px 22px rgba(0,0,0,.35); }
+#view-btc .btc15-hz { margin-top:12px; border-radius:12px; padding:12px; }
+#view-btc .btc15-hz-head { font-weight:900; font-size:.95rem; color:#fff; letter-spacing:.06em; margin-bottom:8px; }
+#view-btc .btc15-hz-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+#view-btc .btc15-hz-cell { background:#101018; border:1px solid #2c2d3d; border-radius:10px; padding:9px 4px; text-align:center; }
+#view-btc .btc15-hz-cell span { display:block; font-size:.7rem; color:#9aa0b4; font-weight:800; letter-spacing:.06em; }
+#view-btc .btc15-hz-cell b { display:block; font-size:1rem; margin-top:3px; color:#fff; }
+#view-btc .btc15-hz-note { margin-top:8px; font-size:.78rem; color:#9aa0b4; line-height:1.4; }
+#view-btc .btc15-amt-wrap { display:flex; align-items:center; gap:6px; background:#101018; border:1.5px solid #f5c542; border-radius:12px; padding:6px 14px; margin-top:12px; }
+#view-btc .btc15-amt-sym { color:#f5c542; font-size:1.35rem; font-weight:900; }
+#view-btc .btc15-amt-wrap input { flex:1; min-width:0; background:transparent; border:none; outline:none; color:#fff; font-size:1.45rem; font-weight:900; text-align:center; font-family:inherit; padding:6px 0; }
+#view-btc .btc15-bet { box-shadow:0 5px 16px rgba(0,0,0,.4); letter-spacing:.02em; }
+#view-btc .btc15-sell { box-shadow:0 5px 16px rgba(0,0,0,.4); }
+#view-btc .btc15-risk { margin-top:12px; background:linear-gradient(180deg,#1e1f2c,#15151e); border:1px solid #34354a; border-radius:12px; padding:12px; box-shadow:0 8px 22px rgba(0,0,0,.35); }
+#view-btc .btc15-risk-head { font-weight:900; font-size:.95rem; color:#fff; letter-spacing:.05em; }
+#view-btc .btc15-risk-big { margin-top:8px; font-size:1.12rem; font-weight:900; line-height:1.35; color:#fff; }
+#view-btc .btc15-risk-bar { height:9px; border-radius:99px; background:#101018; overflow:hidden; margin-top:8px; }
+#view-btc .btc15-risk-bar i { display:block; height:100%; width:0%; background:#22c55e; border-radius:99px; transition:width .6s; }
+#view-btc .btc15-risk-sub { margin-top:8px; font-size:.85rem; color:#c9ccda; line-height:1.45; }
+#view-btc .btc15-advice { margin-top:10px; text-align:center; font-size:1.08rem; font-weight:900; line-height:1.4; padding:12px 10px; border-radius:12px; border:1px solid #9aa0b4; color:#c9ccda; background:rgba(154,160,180,.10); }
+#view-btc .btc15-advice.good { background:rgba(34,197,94,.18); color:#22c55e; border-color:#22c55e; }
+#view-btc .btc15-advice.warn { background:rgba(245,197,66,.14); color:#f5c542; border-color:#f5c542; }
+#view-btc .btc15-advice.bad { background:rgba(239,68,68,.16); color:#ef4444; border-color:#ef4444; }
+#view-btc .btc15-advice.hold { background:rgba(59,130,246,.13); color:#7db4ff; border-color:#3b82f6; }
+#view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
+        </style>
+      </section>
       <script>
       (function () {
         var $ = function (id) { return document.getElementById(id); };
@@ -1428,7 +1603,7 @@
         $('btc15Sell').addEventListener('click', sellBet);
         $('btc15BetSi').addEventListener('click', function () { placeBet('si'); });
         $('btc15BetNo').addEventListener('click', function () { placeBet('no'); });
-        document.querySelectorAll('.btc15-chip').forEach(function (ch) {
+        document.querySelectorAll('#view-btc .btc15-chip').forEach(function (ch) {
           ch.addEventListener('click', function () { $('btc15Amt').value = ch.getAttribute('data-amt'); });
         });
 
@@ -1663,6 +1838,632 @@
           if (kalshi.busy) return Promise.resolve(false);
           kalshi.busy = true;
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M&status=open&limit=6';
+          var routes = [direct,
+            'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
+            'https://api.codetabs.com/v1/proxy?quest=' + direct];
+          var i = 0;
+          function next() {
+            if (i >= routes.length) return Promise.resolve(false);
+            var u = routes[i++];
+            return fetchTO(u, 9000).then(function (r) { if (!r.ok) throw new Error('k'); return r.json(); })
+              .then(function (j) { return kalshiParse(j) ? true : next(); })
+              .catch(function () { return next(); });
+          }
+          return next().then(function (r) { kalshi.busy = false; return r; });
+        }
+        fetchKalshi();
+        setInterval(fetchKalshi, 20000);
+
+        loadCandles().then(function () { loadPrice().then(render); });
+        setInterval(function () {
+          loadPrice().then(render);
+          if (Date.now() - lastCandleFetch > 15000) loadCandles().then(render);
+        }, 5000);
+        setInterval(render, 1000);
+      })();
+      </script>
+<script>
+      (function () {
+        var $ = function (id) { return document.getElementById(id); };
+        var candles = []; // {t (s), o, h, l, c}
+        var price = null;
+        var lastCandleFetch = 0;
+
+        function erf(x) {
+          var s = x < 0 ? -1 : 1; x = Math.abs(x);
+          var t = 1 / (1 + 0.3275911 * x);
+          var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+          return s * y;
+        }
+        function Phi(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
+        function fmt(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+        function fmtSign(n) { return (n >= 0 ? '+$' : '-$') + fmt(Math.abs(n)); }
+
+        function fetchCoinbase() {
+          var end = new Date(); var start = new Date(end.getTime() - 100 * 60000);
+          var url = 'https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=60&start=' + start.toISOString() + '&end=' + end.toISOString();
+          return fetch(url).then(function (r) { if (!r.ok) throw new Error('cb'); return r.json(); }).then(function (rows) {
+            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            out.sort(function (a, b) { return a.t - b.t; });
+            return out;
+          });
+        }
+        function fetchKraken() {
+          return fetch('https://api.kraken.com/0/public/OHLC?pair=PAXGUSD&interval=1').then(function (r) { return r.json(); }).then(function (j) {
+            var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
+            return j.result[k].map(function (a) { return { t: a[0], o: +a[1], h: +a[2], l: +a[3], c: +a[4] }; });
+          });
+        }
+        function loadCandles() {
+          return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
+            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+          }).catch(function () {});
+        }
+        function loadPrice() {
+          return fetch('https://api.exchange.coinbase.com/products/PAXG-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
+            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+          }).catch(function () {
+            return fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD').then(function (r) { return r.json(); }).then(function (j) {
+              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+            }).catch(function () {});
+          });
+        }
+
+        function candleAt(t) { for (var i = 0; i < candles.length; i++) if (candles[i].t === t) return candles[i]; return null; }
+        function lastCloseBefore(t) { var v = null; for (var i = 0; i < candles.length; i++) { if (candles[i].t < t) v = candles[i].c; else break; } return v; }
+
+        function rsi(closes, n) {
+          if (closes.length < n + 1) return null;
+          var g = 0, l = 0;
+          for (var i = closes.length - n; i < closes.length; i++) { var d = closes[i] - closes[i - 1]; if (d > 0) g += d; else l -= d; }
+          if (l === 0) return 100;
+          return 100 - 100 / (1 + (g / n) / (l / n));
+        }
+
+        function compute() {
+          if (!candles.length || price === null) return null;
+          var nowS = Math.floor(Date.now() / 1000);
+          var wStart = Math.floor(nowS / 900) * 900;
+          var wEnd = wStart + 900;
+          var oc = candleAt(wStart);
+          var openRef = oc ? oc.o : lastCloseBefore(wStart + 1);
+          if (!openRef) return null;
+          var refKalshi = false;
+          if (false && kalshi.ok && kalshi.openT <= wStart && kalshi.closeT >= wEnd && Date.now() - kalshi.at < 90000) { openRef = kalshi.strike; refKalshi = true; }
+          var closes = candles.map(function (c) { return c.c; });
+          var rets = [];
+          for (var i = Math.max(1, closes.length - 31); i < closes.length; i++) rets.push(Math.log(closes[i] / closes[i - 1]));
+          var mean = rets.reduce(function (a, b) { return a + b; }, 0) / rets.length;
+          var sd = Math.sqrt(rets.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / rets.length);
+          if (!sd || !isFinite(sd)) sd = 0.0004;
+          var r10 = [];
+          for (var j = Math.max(1, closes.length - 11); j < closes.length; j++) r10.push(Math.log(closes[j] / closes[j - 1]));
+          var drift = (r10.reduce(function (a, b) { return a + b; }, 0) / Math.max(1, r10.length)) * 0.35;
+          var tRem = Math.max(0.05, (wEnd - nowS) / 60);
+          var c5 = closes.length > 6 ? Math.log(closes[closes.length - 1] / closes[closes.length - 6]) : 0;
+          var c15 = closes.length > 16 ? Math.log(closes[closes.length - 1] / closes[closes.length - 16]) : 0;
+          var mtf = Math.max(-1, Math.min(1, (c5 / (sd * Math.sqrt(5))) * 0.6 + (c15 / (sd * Math.sqrt(15))) * 0.4));
+          var anScore = 0.45 * mkt.imb + 0.30 * mkt.flow + 0.25 * mtf;
+          var z = (Math.log(price / openRef) + drift * tRem) / (sd * Math.sqrt(tRem)) + anScore * 0.35;
+          var pUp = Math.max(0.01, Math.min(0.99, Phi(z)));
+          var dd = Math.log(price / openRef);
+          var sT = sd * Math.sqrt(tRem);
+          var aD = Math.abs(dd);
+          var mD = dd >= 0 ? drift : -drift;
+          var pCross;
+          if (aD < 1e-9) { pCross = 1; }
+          else {
+            var ex = Math.max(-50, Math.min(50, -2 * mD * aD / (sd * sd)));
+            pCross = Phi((-aD - mD * tRem) / sT) + Math.exp(ex) * Phi((-aD + mD * tRem) / sT);
+          }
+          pCross = Math.max(0, Math.min(1, pCross));
+          return { wStart: wStart, wEnd: wEnd, openRef: openRef, pUp: pUp, sd: sd, rsi: rsi(closes, 14), tRemSec: wEnd - nowS, anImb: mkt.imb, anFlow: mkt.flow, anMtf: mtf, anScore: anScore, refKalshi: refKalshi, drift: drift, pCross: pCross, cushion: dd / sT, typMove: price * sT };
+        }
+
+        function prevWindows(wStart) {
+          var out = [];
+          for (var k = 4; k >= 1; k--) {
+            var s = wStart - 900 * k, e = s + 900;
+            var oc = candleAt(s); var cl = lastCloseBefore(e);
+            if (oc && cl) out.push({ s: s, up: cl > oc.o });
+          }
+          return out;
+        }
+
+        function draw(r) {
+          var cv = $('gold15Chart'); if (!cv || proOn) return;
+          var dpr = window.devicePixelRatio || 1;
+          var W = cv.clientWidth, H = 230;
+          if (cv.width !== W * dpr) { cv.width = W * dpr; cv.height = H * dpr; }
+          var ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, W, H);
+          var data = candles.slice(-60);
+          if (data.length < 2) return;
+          var min = Infinity, max = -Infinity;
+          data.forEach(function (c) { min = Math.min(min, c.l); max = Math.max(max, c.h); });
+          min = Math.min(min, r.openRef); max = Math.max(max, r.openRef);
+          var pad = (max - min) * 0.08 || 10; min -= pad; max += pad;
+          var X = function (i) { return (i + 0.5) * (W / data.length); };
+          var Y = function (p) { return H - (p - min) / (max - min) * H; };
+          // sombra de la ventana actual
+          var wi = data.findIndex(function (c) { return c.t >= r.wStart; });
+          if (wi >= 0) { ctx.fillStyle = 'rgba(245,197,66,0.08)'; ctx.fillRect(wi * (W / data.length), 0, W - wi * (W / data.length), H); }
+          // grid + etiquetas
+          ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.fillStyle = '#8a8fa3'; ctx.font = '10px sans-serif'; ctx.lineWidth = 1;
+          for (var g = 1; g <= 3; g++) { var gy = H * g / 4; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); var gp = max - (max - min) * g / 4; ctx.fillText('$' + fmt(gp), 4, gy - 3); }
+          // linea de apertura
+          ctx.strokeStyle = '#f5c542'; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(0, Y(r.openRef)); ctx.lineTo(W, Y(r.openRef)); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillStyle = '#f5c542'; ctx.fillText('apertura $' + fmt(r.openRef), 4, Y(r.openRef) - 4);
+          // velas
+          var bw = Math.max(2, (W / data.length) * 0.62);
+          data.forEach(function (c, i) {
+            ctx.strokeStyle = c.c >= c.o ? '#22c55e' : '#ef4444';
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath(); ctx.moveTo(X(i), Y(c.h)); ctx.lineTo(X(i), Y(c.l)); ctx.stroke();
+            var y1 = Y(Math.max(c.o, c.c)), y2 = Y(Math.min(c.o, c.c));
+            ctx.fillRect(X(i) - bw / 2, y1, bw, Math.max(1, y2 - y1));
+          });
+          // ultimo precio
+          if (price !== null) { ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(0, Y(price)); ctx.lineTo(W, Y(price)); ctx.stroke(); ctx.setLineDash([]); }
+        }
+
+        function render() {
+          if (document.hidden) return;
+          var secB = $('view-btc');
+          if (secB && secB.offsetParent === null) return;
+          var r = compute();
+          gradeBets(); renderSim(r);
+          var vEl = $('gold15Verdict'), pEl = $('gold15Prob'), bEl = $('gold15Badge');
+          if (!r) { vEl.textContent = 'Conectando…'; vEl.className = 'btc15-verdict'; return; }
+          var up = r.pUp >= 0.5;
+          var prob = Math.round((up ? r.pUp : 1 - r.pUp) * 100);
+          vEl.textContent = up ? 'SUBE \uD83D\uDFE2' : 'BAJA \uD83D\uDD34';
+          vEl.className = 'btc15-verdict ' + (up ? 'up' : 'down');
+          pEl.textContent = prob + '%';
+          var badge = prob >= 70 ? 'SEÑAL ÉLITE \uD83D\uDD25' : prob >= 60 ? 'SEÑAL FUERTE \uD83D\uDCAA' : prob >= 55 ? 'SEÑAL LEVE' : 'MONEDA AL AIRE \uD83E\uDE99';
+          if (r.tRemSec < 30) badge += ' · CASI CERRADO ⏱';
+          bEl.textContent = badge;
+          $('gold15Price').textContent = '$' + fmt(price);
+          $('gold15Open').textContent = '$' + fmt(r.openRef);
+          var diff = price - r.openRef;
+          var dEl = $('gold15Diff');
+          dEl.textContent = fmtSign(diff) + ' (' + (diff / r.openRef * 100).toFixed(2) + '%)';
+          dEl.style.color = diff >= 0 ? '#22c55e' : '#ef4444';
+          var mm = Math.floor(r.tRemSec / 60), ss = r.tRemSec % 60;
+          $('gold15Timer').textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
+          $('gold15Stats').textContent = 'RSI 1m: ' + (r.rsi === null ? '—' : Math.round(r.rsi)) + ' · Volatilidad: $' + fmt(price * r.sd) + '/min · Ventana ' + new Date(r.wStart * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '–' + new Date(r.wEnd * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          if (typeof r.anScore !== 'undefined') {
+            var bidPct = Math.round((r.anImb + 1) / 2 * 100);
+            var buyPct = Math.round((r.anFlow + 1) / 2 * 100);
+            $('gold15AnBook').style.width = bidPct + '%';
+            $('gold15AnBookT').textContent = 'Libro de órdenes: ' + bidPct + '% compras / ' + (100 - bidPct) + '% ventas';
+            $('gold15AnFlow').style.width = buyPct + '%';
+            $('gold15AnFlowT').textContent = 'Flujo de trades: ' + buyPct + '% comprando';
+            $('gold15AnMtf').textContent = 'Tendencia 5m/15m: ' + (r.anMtf > 0.25 ? 'Alcista 📈' : r.anMtf < -0.25 ? 'Bajista 📉' : 'Lateral ↔️');
+            var dirUp = r.pUp >= 0.5;
+            var conf = (r.anScore > 0.08 && dirUp) || (r.anScore < -0.08 && !dirUp);
+            var contra = (r.anScore > 0.08 && !dirUp) || (r.anScore < -0.08 && dirUp);
+            var av = $('gold15AnVerdict');
+            av.textContent = conf ? '✅ El análisis CONFIRMA la señal' : contra ? '⚠️ El análisis va CONTRA la señal — cuidado' : '➖ Análisis neutral';
+            av.style.color = conf ? '#22c55e' : contra ? '#f5c542' : '#9aa0b4';
+          }
+          $('gold15OpenLbl').textContent = r.refKalshi ? 'Objetivo Kalshi 🎯' : 'Apertura ventana';
+          var act = $('gold15Action');
+          var strong = Math.abs(r.pUp - 0.5) >= 0.12;
+          var aUp = r.anScore > 0.08, aDn = r.anScore < -0.08;
+          if (aUp && r.pUp >= 0.5) { act.textContent = '🟢 COMPRAR SÍ'; act.className = 'btc15-action buy-si'; }
+          else if (aDn && r.pUp < 0.5) { act.textContent = '🔴 COMPRAR NO'; act.className = 'btc15-action buy-no'; }
+          else if ((aUp && r.pUp < 0.5) || (aDn && r.pUp >= 0.5)) { act.textContent = '⏸ ESPERAR — señales cruzadas'; act.className = 'btc15-action wait'; }
+          else if (strong) { act.textContent = r.pUp >= 0.5 ? '🟢 COMPRAR SÍ' : '🔴 COMPRAR NO'; act.className = 'btc15-action ' + (r.pUp >= 0.5 ? 'buy-si' : 'buy-no'); }
+          else { act.textContent = '⏸ ESPERAR — sin ventaja clara'; act.className = 'btc15-action wait'; }
+          var kT = $('gold15KalTarget'), kE = $('gold15KalEdge');
+          if (kalshi.ok) {
+            kT.innerHTML = '🎯 Objetivo de Kalshi: <b>$' + fmt(kalshi.strike) + '</b> — es el objetivo del mercado POR HORA de Kalshi (el SÍ de la hora gana si el oro cierra sobre ese precio); la predicción de 15 min usa la apertura de la ventana';
+            $('gold15KalSi').textContent = kalshi.yesAsk ? Math.round(kalshi.yesAsk * 100) + '¢' : '—';
+            $('gold15KalNo').textContent = kalshi.noAsk ? Math.round(kalshi.noAsk * 100) + '¢' : '—';
+            var eSi = Math.round(r.pUp * 100) - Math.round(kalshi.yesAsk * 100);
+            var eNo = Math.round((1 - r.pUp) * 100) - Math.round(kalshi.noAsk * 100);
+            if (kalshi.yesAsk && eSi >= 3 && eSi >= eNo) kE.textContent = '💎 Ventaja en el SÍ: el modelo dice ' + Math.round(r.pUp * 100) + '% y Kalshi lo vende a ' + Math.round(kalshi.yesAsk * 100) + '¢';
+            else if (kalshi.noAsk && eNo >= 3) kE.textContent = '💎 Ventaja en el NO: el modelo dice ' + Math.round((1 - r.pUp) * 100) + '% y Kalshi lo vende a ' + Math.round(kalshi.noAsk * 100) + '¢';
+            else kE.textContent = 'Sin ventaja clara contra Kalshi — el modelo y el mercado van parecidos.';
+          } else {
+            kT.textContent = 'Kalshi en vivo: sin conexión desde el navegador (la señal sigue con Coinbase).';
+            $('gold15KalSi').textContent = '—';
+            $('gold15KalNo').textContent = '—';
+            kE.textContent = '';
+          }
+          [2, 5, 10, 15].forEach(function (h) {
+            var zh = (r.drift / r.sd) * Math.sqrt(h) + r.anScore * 0.35 / Math.sqrt(h / 2);
+            var ph = Math.max(0.01, Math.min(0.99, Phi(zh)));
+            var up = ph >= 0.5;
+            var el = $('gold15Hz' + h);
+            el.textContent = (up ? 'SUBE ' : 'BAJA ') + Math.round((up ? ph : 1 - ph) * 100) + '%';
+            el.style.color = up ? '#22c55e' : '#ef4444';
+          });
+          var above = price >= r.openRef;
+          var distUsd = price - r.openRef;
+          var pc = Math.round(r.pCross * 100);
+          var lvl = r.pCross < 0.10 ? 0 : r.pCross <= 0.35 ? 1 : 2;
+          var big = $('gold15RiskBig');
+          big.textContent = lvl === 2 ? (above ? '🔴 MUY PEGADO — un bajón normal te lo voltea' : '🔴 MUY PEGADO — un subidón normal te lo voltea') : lvl === 1 ? '🟡 PEGADO — está cerca del objetivo, cuidado' : '🟢 LEJOS — a salvo de un movimiento normal';
+          big.style.color = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
+          var bar = $('gold15RiskBar');
+          bar.style.width = Math.min(100, Math.abs(r.cushion) / 2.5 * 100) + '%';
+          bar.style.background = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
+          $('gold15RiskSub').textContent = 'El oro está ' + (above ? 'ARRIBA' : 'ABAJO') + ' del objetivo por $' + fmt(Math.abs(distUsd)) + ', y en lo que queda se mueve como ±$' + fmt(r.typMove) + '. En una situación así, el precio se pasa para el otro lado ' + pc + ' de cada 100 veces. Esto no es el % de ganar: es si se voltea en el camino.';
+          var pv = prevWindows(r.wStart);
+          $('gold15Prev').innerHTML = pv.map(function (w) {
+            var lbl = new Date(w.s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return '<span class="chip ' + (w.up ? 'u' : 'd') + '">' + lbl + ' ' + (w.up ? '↑ subió' : '↓ bajó') + '</span>';
+          }).join('');
+          var pSi = Math.round(r.pUp * 100), pNo = 100 - pSi;
+          $('gold15PSi').textContent = pSi + '%';
+          $('gold15PNo').textContent = pNo + '%';
+          $('gold15YnSi').classList.toggle('best', pSi >= pNo);
+          $('gold15YnNo').classList.toggle('best', pNo > pSi);
+          $('gold15BestSi').textContent = pSi >= pNo ? '\u2B50 MEJOR OPCIÓN' : '';
+          $('gold15BestNo').textContent = pNo > pSi ? '\u2B50 MEJOR OPCIÓN' : '';
+          draw(r);
+        }
+
+        /* ----- Simulador (saldo falso, se guarda en el teléfono) ----- */
+        var sim = { bal: 100000, bets: [], w: 0, l: 0 };
+        try { var sv = JSON.parse(localStorage.getItem('gold15_sim2') || 'null'); if (sv && typeof sv.bal === 'number') sim = sv; } catch (e) {}
+        function simSave() { try { localStorage.setItem('gold15_sim2', JSON.stringify(sim)); } catch (e) {} }
+        function money(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function openBet() { for (var i = 0; i < sim.bets.length; i++) if (sim.bets[i].st === 'open') return sim.bets[i]; return null; }
+        function finalAvg(wEnd) {
+          var perSec = {}, s, k;
+          for (var i = 0; i < ticks.length; i++) {
+            s = Math.floor(ticks[i].t / 1000);
+            if (s >= wEnd - 60 && s < wEnd) perSec[s] = ticks[i].p;
+          }
+          var sum = 0, n = 0;
+          for (k in perSec) { sum += perSec[k]; n++; }
+          if (n >= 20) return sum / n;
+          for (var j = 0; j < candles.length; j++) {
+            if (candles[j].t === wEnd - 60) return (candles[j].o + candles[j].h + candles[j].l + candles[j].c) / 4;
+          }
+          return lastCloseBefore(wEnd);
+        }
+        function gradeBets() {
+          if (!candles.length) return;
+          var nowS = Math.floor(Date.now() / 1000);
+          var changed = false;
+          sim.bets.forEach(function (b) {
+            if (b.st !== 'open') return;
+            var end = b.w + 900;
+            if (nowS < end + 30) return;
+            var closeRef = finalAvg(end);
+            if (closeRef === null) {
+              if (candles[0].t > b.w) { b.st = 'void'; b.pnl = 0; sim.bal += b.amt; changed = true; }
+              return;
+            }
+            var up = closeRef >= b.open;
+            var won = (b.side === 'si') === up;
+            b.st = won ? 'won' : 'lost';
+            b.pnl = won ? (b.amt / b.price - b.amt) : -b.amt;
+            if (won) { sim.bal += b.amt / b.price; sim.w++; } else { sim.l++; }
+            changed = true;
+          });
+          if (changed) simSave();
+        }
+        function placeBet(side) {
+          var r = compute();
+          var msg = $('gold15Msg');
+          if (!r || price === null) { msg.textContent = 'Espera a que cargue el precio…'; return; }
+          if (openBet()) { msg.textContent = 'Ya tienes una apuesta abierta en esta ventana.'; return; }
+          var amt = parseFloat($('gold15Amt').value);
+          if (!amt || amt <= 0) { msg.textContent = 'Pon un monto válido.'; return; }
+          if (amt > sim.bal) { msg.textContent = 'Saldo insuficiente (simulado).'; return; }
+          var pr = side === 'si' ? r.pUp : 1 - r.pUp;
+          pr = Math.max(0.02, Math.min(0.98, pr));
+          sim.bal -= amt;
+          sim.bets.push({ w: r.wStart, side: side, amt: amt, price: pr, open: r.openRef, st: 'open', pnl: 0 });
+          simSave();
+          msg.textContent = 'Apuesta simulada: ' + (side === 'si' ? 'SÍ' : 'NO') + ' ' + money(amt) + ' a ' + Math.round(pr * 100) + '¢. Se resuelve al cerrar la ventana.';
+          renderSim(r);
+        }
+        function renderSim(r) {
+          $('gold15Bal').textContent = money(sim.bal);
+          $('gold15Rec').textContent = 'Récord: ' + sim.w + ' ganadas · ' + sim.l + ' perdidas';
+          var ob = openBet();
+          var oEl = $('gold15Open');
+          var pvEl = $('gold15PosVal');
+          var sellBtn = $('gold15Sell');
+          if (ob) {
+            var lbl = new Date(ob.w * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            oEl.textContent = '⏳ En juego — ventana ' + lbl + ': ' + (ob.side === 'si' ? 'SÍ (sube)' : 'NO (baja)') + ' · ' + money(ob.amt) + ' a ' + Math.round(ob.price * 100) + '¢ → paga ' + money(ob.amt / ob.price) + ' si aciertas';
+            if (r) {
+              var sp = ob.side === 'si' ? r.pUp : 1 - r.pUp;
+              sp = Math.max(0.01, Math.min(0.99, sp));
+              var val = (ob.amt / ob.price) * sp;
+              var pnlN = val - ob.amt;
+              pvEl.textContent = '💰 Tu dinero vale ahora: ' + money(val) + ' (' + (pnlN >= 0 ? '+' : '') + money(pnlN).replace('$-', '-$') + ')';
+              pvEl.style.color = pnlN >= 0 ? '#22c55e' : '#ef4444';
+              sellBtn.style.display = 'block';
+              var adv = $('gold15Advice');
+              var pnlPct = pnlN / ob.amt * 100;
+              var winning = (ob.side === 'si') === (price >= r.openRef);
+              var pFlip = winning ? r.pCross : 1 - r.pCross;
+              var aCls, aTxt;
+              if (pnlN > 0 && pnlPct >= 60) { aCls = 'good'; aTxt = '💰 COBRA AHORA — ya vas +' + pnlPct.toFixed(0) + '% arriba; asegura esa ganancia'; }
+              else if (pFlip >= 0.5 && pnlN > -ob.amt * 0.10) {
+                if (pnlN >= 0) { aCls = 'warn'; aTxt = '💰 COBRA AHORA — vas ganando, pero la probabilidad de que se voltee es ' + Math.round(pFlip * 100) + '%'; }
+                else { aCls = 'bad'; aTxt = '⚠️ CORTA AHORA — la probabilidad de que se voltee en tu contra es ' + Math.round(pFlip * 100) + '%'; }
+              }
+              else if (sp < 0.35) { aCls = 'bad'; aTxt = '🔴 SALVA LO QUE QUEDA — tu lado cayó a ' + Math.round(sp * 100) + '% de probabilidad; aguantando vas camino a perderlo todo'; }
+              else if (pnlN > 0 && pnlPct >= 25 && pFlip >= 0.25) { aCls = 'warn'; aTxt = '💰 COBRA AHORA — vas +' + pnlPct.toFixed(0) + '% y el riesgo de volteo subió a ' + Math.round(pFlip * 100) + '%'; }
+              else if (sp >= 0.72 && pFlip < 0.18) { aCls = 'hold'; aTxt = '✊ AGUANTA — tu lado está fuerte (' + Math.round(sp * 100) + '%) y el colchón es seguro'; }
+              else if (r.tRemSec <= 60 && winning) { aCls = 'hold'; aTxt = '⏱ AGUANTA — queda menos de 1 minuto y vas arriba'; }
+              else { aCls = 'hold'; aTxt = '👀 AGUANTA POR AHORA — sin señal clara de salida'; }
+              adv.style.display = 'block';
+              adv.className = 'btc15-advice ' + aCls;
+              adv.textContent = aTxt;
+              sellBtn.textContent = '💸 SACAR ' + money(val);
+            } else { pvEl.textContent = ''; sellBtn.style.display = 'none'; $('gold15Advice').style.display = 'none'; }
+          } else { oEl.textContent = ''; pvEl.textContent = ''; sellBtn.style.display = 'none'; $('gold15Advice').style.display = 'none'; }
+          var done = sim.bets.filter(function (b) { return b.st === 'won' || b.st === 'lost' || b.st === 'sold'; }).slice(-5).reverse();
+          $('gold15Hist').innerHTML = done.map(function (b) {
+            var lbl = new Date(b.w * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return (b.st === 'won' ? '✅' : b.st === 'sold' ? '💸' : '❌') + ' ' + lbl + ' ' + (b.side === 'si' ? 'SÍ' : 'NO') + ' ' + money(b.amt) + ' → ' + (b.pnl >= 0 ? '+' : '') + money(b.pnl).replace('$-', '-$');
+          }).join('<br>');
+        }
+        function sellBet() {
+          var ob = openBet();
+          var msg = $('gold15Msg');
+          if (!ob) return;
+          var r = compute();
+          if (!r) { msg.textContent = 'Espera a que cargue el precio…'; return; }
+          var sp = ob.side === 'si' ? r.pUp : 1 - r.pUp;
+          sp = Math.max(0.01, Math.min(0.99, sp));
+          var proceeds = (ob.amt / ob.price) * sp;
+          sim.bal += proceeds;
+          ob.pnl = proceeds - ob.amt;
+          ob.st = 'sold';
+          if (ob.pnl >= 0) sim.w++; else sim.l++;
+          simSave();
+          msg.textContent = '💸 Vendiste tu posición por ' + money(proceeds) + ' (' + (ob.pnl >= 0 ? 'ganaste ' : 'perdiste ') + money(Math.abs(ob.pnl)) + ').';
+          renderSim(r);
+        }
+        $('gold15Sell').addEventListener('click', sellBet);
+        $('gold15BetSi').addEventListener('click', function () { placeBet('si'); });
+        $('gold15BetNo').addEventListener('click', function () { placeBet('no'); });
+        document.querySelectorAll('#view-oro .btc15-chip').forEach(function (ch) {
+          ch.addEventListener('click', function () { $('gold15Amt').value = ch.getAttribute('data-amt'); });
+        });
+
+        /* ----- Gráfico en vivo (tick a tick, WebSocket Coinbase) ----- */
+        var ticks = []; // {t (ms), p}
+        function pushTick(p) {
+          if (!p || !isFinite(p)) return;
+          var now = Date.now();
+          ticks.push({ t: now, p: p });
+          var cut = now - 16 * 60000;
+          var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
+          if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
+          price = p;
+        }
+        function connectWS() {
+          var ws;
+          try { ws = new WebSocket('wss://ws-feed.exchange.coinbase.com'); } catch (e) { setTimeout(connectWS, 4000); return; }
+          ws.onopen = function () {
+            try { ws.send(JSON.stringify({ type: 'subscribe', product_ids: ['PAXG-USD'], channels: ['ticker'] })); } catch (e) {}
+          };
+          ws.onmessage = function (ev) {
+            try {
+              var m = JSON.parse(ev.data);
+              if (m && m.type === 'ticker' && m.product_id === 'PAXG-USD' && m.price) pushTick(parseFloat(m.price));
+            } catch (e) {}
+          };
+          ws.onclose = function () { setTimeout(connectWS, 3000); };
+          ws.onerror = function () { try { ws.close(); } catch (e) {} };
+        }
+        function drawLive() {
+          if (document.hidden) return;
+          var cv = $('gold15Live'); if (!cv || proOn) return;
+          var dpr = window.devicePixelRatio || 1;
+          var W = cv.clientWidth, H = 150;
+          if (!W) return;
+          if (cv.width !== Math.round(W * dpr)) { cv.width = W * dpr; cv.height = H * dpr; }
+          var ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, W, H);
+          var now = Date.now(), tMin = now - 15 * 60000;
+          var r = compute();
+          var openRef = r ? r.openRef : null;
+          var data = ticks.filter(function (x) { return x.t >= tMin; });
+          ctx.font = '10px sans-serif';
+          if (data.length < 2) {
+            ctx.fillStyle = '#8a8fa3'; ctx.fillText('Conectando en vivo…', 8, 20);
+            return;
+          }
+          var min = Infinity, max = -Infinity;
+          data.forEach(function (x) { min = Math.min(min, x.p); max = Math.max(max, x.p); });
+          if (openRef) { min = Math.min(min, openRef); max = Math.max(max, openRef); }
+          var pad = (max - min) * 0.15 || 5; min -= pad; max += pad;
+          var X = function (t) { return (t - tMin) / (15 * 60000) * W; };
+          var Y = function (p) { return H - (p - min) / (max - min) * H; };
+          ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.fillStyle = '#8a8fa3'; ctx.lineWidth = 1;
+          for (var g = 1; g <= 2; g++) { var gy = H * g / 3; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); var gp = max - (max - min) * g / 3; ctx.fillText('$' + fmt(gp), 4, gy - 3); }
+          if (openRef) {
+            ctx.strokeStyle = '#f5c542'; ctx.setLineDash([6, 4]);
+            ctx.beginPath(); ctx.moveTo(0, Y(openRef)); ctx.lineTo(W, Y(openRef)); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = '#f5c542'; ctx.fillText('apertura $' + fmt(openRef), 4, Y(openRef) - 4);
+          }
+          var last = data[data.length - 1].p;
+          var col = (openRef && last < openRef) ? '#ef4444' : '#22c55e';
+          // relleno bajo la linea
+          ctx.beginPath();
+          data.forEach(function (x, i) { if (i === 0) ctx.moveTo(X(x.t), Y(x.p)); else ctx.lineTo(X(x.t), Y(x.p)); });
+          ctx.lineTo(X(data[data.length - 1].t), H); ctx.lineTo(X(data[0].t), H); ctx.closePath();
+          ctx.fillStyle = col === '#22c55e' ? 'rgba(34,197,94,0.13)' : 'rgba(239,68,68,0.13)';
+          ctx.fill();
+          // linea
+          ctx.beginPath();
+          data.forEach(function (x, i) { if (i === 0) ctx.moveTo(X(x.t), Y(x.p)); else ctx.lineTo(X(x.t), Y(x.p)); });
+          ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1;
+          // punto final
+          var lx = X(data[data.length - 1].t), ly = Y(last);
+          ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+          ctx.beginPath(); ctx.arc(lx, ly, 8, 0, Math.PI * 2); ctx.strokeStyle = col; ctx.stroke();
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
+          ctx.fillText('$' + fmt(last), Math.max(4, lx - 64), Math.max(14, ly - 12));
+        }
+        connectWS();
+        setInterval(drawLive, 700);
+
+        /* ----- Gráficos PRO (Lightweight Charts, estilo TradingView) ----- */
+        var proOn = false, proChartC = null, proChartL = null, proCandleSeries = null, proAreaSeries = null;
+        var proLineC = null, proLineL = null, proWStart = 0, proLastSet = 0, proLastFull = 0;
+        function proOpts(h) {
+          return {
+            width: 340, height: h,
+            layout: { background: { color: '#0d0d16' }, textColor: '#9aa0b4', fontSize: 11 },
+            grid: { vertLines: { color: 'rgba(255,255,255,0.06)' }, horzLines: { color: 'rgba(255,255,255,0.06)' } },
+            rightPriceScale: { borderColor: 'rgba(255,255,255,0.15)' },
+            timeScale: { borderColor: 'rgba(255,255,255,0.15)', timeVisible: true, secondsVisible: false,
+              tickMarkFormatter: function (t) { return new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
+            localization: { timeFormatter: function (t) { return new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
+            crosshair: { vertLine: { labelBackgroundColor: '#2c2d3d' }, horzLine: { labelBackgroundColor: '#2c2d3d' } }
+          };
+        }
+        function proResize() {
+          if (!proOn) return;
+          var w = $('gold15ChartPro').clientWidth;
+          if (w > 0) { proChartC.resize(w, 260); proChartL.resize(w, 170); }
+        }
+        function proSetCandles() {
+          if (!proOn || !candles.length) return;
+          proCandleSeries.setData(candles.slice(-90).map(function (c) { return { time: c.t, open: c.o, high: c.h, low: c.l, close: c.c }; }));
+          proLastFull = Date.now();
+        }
+        function proTick() {
+          if (document.hidden) return;
+          var secP = $('view-btc');
+          if (secP && secP.offsetParent === null) return;
+          if (!proOn) return;
+          proResize();
+          var r = compute(); if (!r) return;
+          if (Date.now() - proLastFull > 20000) proSetCandles();
+          if (candles.length) {
+            var lc = candles[candles.length - 1];
+            var cc = price !== null ? price : lc.c;
+            try { proCandleSeries.update({ time: lc.t, open: lc.o, high: Math.max(lc.h, cc), low: Math.min(lc.l, cc), close: cc }); } catch (e) {}
+            $('gold15Legend').innerHTML = 'O <b>' + fmt(lc.o) + '</b> · H <b>' + fmt(Math.max(lc.h, cc)) + '</b> · L <b>' + fmt(Math.min(lc.l, cc)) + '</b> · C <b>' + fmt(cc) + '</b>';
+          }
+          if (r.wStart !== proWStart) {
+            proWStart = r.wStart;
+            if (proLineC) { try { proCandleSeries.removePriceLine(proLineC); } catch (e) {} proLineC = null; }
+            if (proLineL) { try { proAreaSeries.removePriceLine(proLineL); } catch (e) {} proLineL = null; }
+            var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'apertura' };
+            proLineC = proCandleSeries.createPriceLine(lo);
+            proLineL = proAreaSeries.createPriceLine(lo);
+          }
+          var now = Date.now();
+          if (now - proLastSet > 2900 && ticks.length > 1) {
+            proLastSet = now;
+            var bySec = {};
+            ticks.forEach(function (x) { bySec[Math.floor(x.t / 1000)] = x.p; });
+            var pts = Object.keys(bySec).map(function (k) { return { time: +k, value: bySec[k] }; }).sort(function (a, b) { return a.time - b.time; });
+            if (pts.length > 600) pts = pts.filter(function (x, ix) { return ix % 2 === 0; });
+            if (pts.length > 1) {
+              var upNow = pts[pts.length - 1].value >= r.openRef;
+              proAreaSeries.applyOptions({ lineColor: upNow ? '#22c55e' : '#ef4444', topColor: upNow ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)', bottomColor: upNow ? 'rgba(34,197,94,0.02)' : 'rgba(239,68,68,0.02)' });
+              proAreaSeries.setData(pts);
+            }
+          }
+        }
+        function initPro() {
+          if (!window.LightweightCharts || proOn) return;
+          var elC = $('gold15ChartPro'), elL = $('gold15LivePro');
+          if (!elC || !elL) return;
+          proChartC = LightweightCharts.createChart(elC, proOpts(260));
+          proCandleSeries = proChartC.addCandlestickSeries({ upColor: '#22c55e', downColor: '#ef4444', wickUpColor: '#22c55e', wickDownColor: '#ef4444', borderVisible: false, priceFormat: { type: 'price', precision: 0, minMove: 1 } });
+          proChartL = LightweightCharts.createChart(elL, proOpts(170));
+          proAreaSeries = proChartL.addAreaSeries({ lineColor: '#22c55e', topColor: 'rgba(34,197,94,0.35)', bottomColor: 'rgba(34,197,94,0.02)', lineWidth: 2, priceFormat: { type: 'price', precision: 0, minMove: 1 } });
+          $('gold15Chart').style.display = 'none';
+          $('gold15Live').style.display = 'none';
+          elC.style.display = 'block'; elL.style.display = 'block';
+          $('gold15Legend').style.display = 'block';
+          proOn = true;
+          proSetCandles();
+          proResize();
+          window.addEventListener('resize', proResize);
+          setInterval(proTick, 1000);
+        }
+        function loadLW(srcs) {
+          if (!srcs.length) return;
+          var s = document.createElement('script');
+          s.src = srcs[0];
+          s.onload = function () { initPro(); };
+          s.onerror = function () { loadLW(srcs.slice(1)); };
+          document.head.appendChild(s);
+        }
+        loadLW(['https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js', 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js']);
+
+        function fetchTO(url, ms) {
+          var c = new AbortController();
+          var id = setTimeout(function () { c.abort(); }, ms || 8000);
+          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+        }
+        /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
+        var mkt = { imb: 0, flow: 0, ok: false };
+        function fetchAnalysis() {
+          if (mkt.busy) return Promise.resolve();
+          mkt.busy = true;
+          var book = fetchTO('https://api.exchange.coinbase.com/products/PAXG-USD/book?level=2', 6000).then(function (r) { return r.json(); }).then(function (j) {
+            if (!j || !j.bids || !j.asks) return;
+            var bv = 0, av = 0;
+            j.bids.slice(0, 25).forEach(function (b) { bv += parseFloat(b[1]); });
+            j.asks.slice(0, 25).forEach(function (x) { av += parseFloat(x[1]); });
+            if (bv + av > 0) { mkt.imb = (bv - av) / (bv + av); mkt.ok = true; }
+          }).catch(function () {});
+          var tr = fetchTO('https://api.exchange.coinbase.com/products/PAXG-USD/trades', 6000).then(function (r) { return r.json(); }).then(function (rows) {
+            if (!rows || !rows.length) return;
+            var buy = 0, tot = 0;
+            rows.slice(0, 100).forEach(function (t) {
+              var s = parseFloat(t.size);
+              if (!isFinite(s)) return;
+              tot += s;
+              if (t.side === 'sell') buy += s; // maker vendiendo = taker comprando
+            });
+            if (tot > 0) mkt.flow = (buy / tot - 0.5) * 2;
+          }).catch(function () {});
+          return Promise.all([book, tr]).then(function () { mkt.busy = false; });
+        }
+        fetchAnalysis();
+        setInterval(fetchAnalysis, 10000);
+
+        /* ----- Kalshi en vivo (objetivo y precios reales; varias rutas) ----- */
+        var kalshi = { ok: false, strike: 0, yesAsk: 0, noAsk: 0, last: 0, openT: 0, closeT: 0, at: 0 };
+        function kalshiParse(j) {
+          if (!j || !j.markets || !j.markets.length) return false;
+          var nowS = Math.floor(Date.now() / 1000);
+          var pick = null;
+          j.markets.forEach(function (m) {
+            var o = Date.parse(m.open_time) / 1000, c = Date.parse(m.close_time) / 1000;
+            if (o <= nowS && nowS < c) pick = m;
+          });
+          if (!pick) {
+            var fut = j.markets.filter(function (m) { return Date.parse(m.close_time) / 1000 > nowS; });
+            fut.sort(function (x, y) { return Date.parse(x.close_time) - Date.parse(y.close_time); });
+            pick = fut[0];
+          }
+          if (!pick) return false;
+          kalshi.strike = parseFloat(pick.floor_strike) || 0;
+          kalshi.yesAsk = parseFloat(pick.yes_ask_dollars) || 0;
+          kalshi.noAsk = parseFloat(pick.no_ask_dollars) || 0;
+          kalshi.last = parseFloat(pick.last_price_dollars) || 0;
+          kalshi.openT = Date.parse(pick.open_time) / 1000;
+          kalshi.closeT = Date.parse(pick.close_time) / 1000;
+          kalshi.at = Date.now();
+          kalshi.ok = kalshi.strike > 0;
+          return kalshi.ok;
+        }
+        function fetchKalshi() {
+          if (kalshi.busy) return Promise.resolve(false);
+          kalshi.busy = true;
+          var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXGOLDH&status=open&limit=10';
           var routes = [direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
@@ -2159,7 +2960,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 31;
+  var PANEL_VER = 32;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
