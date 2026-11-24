@@ -797,7 +797,7 @@
                 title: '🎲 Generada (' + style + ') — ' + lastGen.length + ' patas',
                 date: d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2),
                 stake: null, payout: null,
-                legs: lastGen.map(function (l) { return { game: l.game, league: l.league, pick: l.pick, ticker: l.ticker, entry: l.market }; })
+                legs: lastGen.map(function (l) { return { game: l.game, league: l.league, pick: l.pick, ticker: l.ticker, entry: l.market, when: l.when || null }; })
               });
               saveLocal(); render(); refreshMarkets();
               $('gnOut').innerHTML = '<div class="gn-res">✅ Guardada. La ves arriba en tu lista, siguiéndose en vivo.</div>';
@@ -2149,7 +2149,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 29;
+  var PANEL_VER = 30;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
