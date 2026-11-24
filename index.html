@@ -505,6 +505,7 @@
               <button class="bf-tab on" id="bfTabK">🎯 Elegir partido</button>
               <button class="bf-tab" id="bfTabM">✍️ Escribir a mano</button>
             </div>
+            <div class="gn-res" style="margin:2px 0 8px">Los partidos salen del catálogo en vivo de Kalshi. PrizePicks no tiene catálogo público de jugadores: esas patas se escriben a mano y las marcas tú mismo ✅/❌.</div>
             <div id="bfPanelK">
               <label style="color:#9aa0b4;font-size:12.5px">Liga / mercado de Kalshi</label>
               <select class="bf-inp" id="bfSeries"></select>
@@ -2111,7 +2112,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 26;
+  var PANEL_VER = 27;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
