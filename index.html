@@ -521,7 +521,7 @@
             <div class="btc15-sim-msg" id="btc15Msg"></div>
             <div class="btc15-sim-hist" id="btc15Hist"></div>
           </div>
-          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso + análisis en tiempo real del libro de órdenes y del flujo de trades). No es garantía: el BTC se puede voltear en segundos. Kalshi liquida con el promedio de los 60 precios del índice BRTI en el último minuto, contra su objetivo; el precio aquí es de Coinbase y puede variar por unos dólares.</p>
+          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso + análisis en tiempo real del libro de órdenes y del flujo de trades). El simulador califica igual que Kalshi: gana el lado que quede sobre el objetivo en el promedio del último minuto. No es garantía: el BTC se puede voltear en segundos. Kalshi liquida con el promedio de los 60 precios del índice BRTI en el último minuto, contra su objetivo; el precio aquí es de Coinbase y puede variar por unos dólares.</p>
         </div>
         <style>
 #view-btc .btc15-card { background:#14141f; border:1px solid #2c2d3d; border-radius:16px; padding:16px 14px; }
@@ -858,6 +858,20 @@
         function simSave() { try { localStorage.setItem('btc15_sim2', JSON.stringify(sim)); } catch (e) {} }
         function money(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         function openBet() { for (var i = 0; i < sim.bets.length; i++) if (sim.bets[i].st === 'open') return sim.bets[i]; return null; }
+        function finalAvg(wEnd) {
+          var perSec = {}, s, k;
+          for (var i = 0; i < ticks.length; i++) {
+            s = Math.floor(ticks[i].t / 1000);
+            if (s >= wEnd - 60 && s < wEnd) perSec[s] = ticks[i].p;
+          }
+          var sum = 0, n = 0;
+          for (k in perSec) { sum += perSec[k]; n++; }
+          if (n >= 20) return sum / n;
+          for (var j = 0; j < candles.length; j++) {
+            if (candles[j].t === wEnd - 60) return (candles[j].o + candles[j].h + candles[j].l + candles[j].c) / 4;
+          }
+          return lastCloseBefore(wEnd);
+        }
         function gradeBets() {
           if (!candles.length) return;
           var nowS = Math.floor(Date.now() / 1000);
@@ -866,12 +880,12 @@
             if (b.st !== 'open') return;
             var end = b.w + 900;
             if (nowS < end + 30) return;
-            var closeRef = lastCloseBefore(end);
+            var closeRef = finalAvg(end);
             if (closeRef === null) {
               if (candles[0].t > b.w) { b.st = 'void'; b.pnl = 0; sim.bal += b.amt; changed = true; }
               return;
             }
-            var up = closeRef > b.open;
+            var up = closeRef >= b.open;
             var won = (b.side === 'si') === up;
             b.st = won ? 'won' : 'lost';
             b.pnl = won ? (b.amt / b.price - b.amt) : -b.amt;
@@ -1660,7 +1674,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 19;
+  var PANEL_VER = 20;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
