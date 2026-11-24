@@ -763,6 +763,9 @@
         }
 
         function render() {
+          if (document.hidden) return;
+          var secB = $('view-btc');
+          if (secB && secB.offsetParent === null) return;
           var r = compute();
           gradeBets(); renderSim(r);
           var vEl = $('btc15Verdict'), pEl = $('btc15Prob'), bEl = $('btc15Badge');
@@ -992,8 +995,8 @@
           var now = Date.now();
           ticks.push({ t: now, p: p });
           var cut = now - 16 * 60000;
-          while (ticks.length && ticks[0].t < cut) ticks.shift();
-          if (ticks.length > 4000) ticks.splice(0, ticks.length - 4000);
+          var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
+          if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
           price = p;
         }
         function connectWS() {
@@ -1012,6 +1015,7 @@
           ws.onerror = function () { try { ws.close(); } catch (e) {} };
         }
         function drawLive() {
+          if (document.hidden) return;
           var cv = $('btc15Live'); if (!cv || proOn) return;
           var dpr = window.devicePixelRatio || 1;
           var W = cv.clientWidth, H = 150;
@@ -1089,6 +1093,9 @@
           proLastFull = Date.now();
         }
         function proTick() {
+          if (document.hidden) return;
+          var secP = $('view-btc');
+          if (secP && secP.offsetParent === null) return;
           if (!proOn) return;
           proResize();
           var r = compute(); if (!r) return;
@@ -1108,11 +1115,12 @@
             proLineL = proAreaSeries.createPriceLine(lo);
           }
           var now = Date.now();
-          if (now - proLastSet > 1900 && ticks.length > 1) {
+          if (now - proLastSet > 2900 && ticks.length > 1) {
             proLastSet = now;
             var bySec = {};
             ticks.forEach(function (x) { bySec[Math.floor(x.t / 1000)] = x.p; });
             var pts = Object.keys(bySec).map(function (k) { return { time: +k, value: bySec[k] }; }).sort(function (a, b) { return a.time - b.time; });
+            if (pts.length > 600) pts = pts.filter(function (x, ix) { return ix % 2 === 0; });
             if (pts.length > 1) {
               var upNow = pts[pts.length - 1].value >= r.openRef;
               proAreaSeries.applyOptions({ lineColor: upNow ? '#22c55e' : '#ef4444', topColor: upNow ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)', bottomColor: upNow ? 'rgba(34,197,94,0.02)' : 'rgba(239,68,68,0.02)' });
@@ -1148,17 +1156,24 @@
         }
         loadLW(['https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js', 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js']);
 
+        function fetchTO(url, ms) {
+          var c = new AbortController();
+          var id = setTimeout(function () { c.abort(); }, ms || 8000);
+          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+        }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
         function fetchAnalysis() {
-          var book = fetch('https://api.exchange.coinbase.com/products/BTC-USD/book?level=2').then(function (r) { return r.json(); }).then(function (j) {
+          if (mkt.busy) return Promise.resolve();
+          mkt.busy = true;
+          var book = fetchTO('https://api.exchange.coinbase.com/products/BTC-USD/book?level=2', 6000).then(function (r) { return r.json(); }).then(function (j) {
             if (!j || !j.bids || !j.asks) return;
             var bv = 0, av = 0;
             j.bids.slice(0, 25).forEach(function (b) { bv += parseFloat(b[1]); });
             j.asks.slice(0, 25).forEach(function (x) { av += parseFloat(x[1]); });
             if (bv + av > 0) { mkt.imb = (bv - av) / (bv + av); mkt.ok = true; }
           }).catch(function () {});
-          var tr = fetch('https://api.exchange.coinbase.com/products/BTC-USD/trades').then(function (r) { return r.json(); }).then(function (rows) {
+          var tr = fetchTO('https://api.exchange.coinbase.com/products/BTC-USD/trades', 6000).then(function (r) { return r.json(); }).then(function (rows) {
             if (!rows || !rows.length) return;
             var buy = 0, tot = 0;
             rows.slice(0, 100).forEach(function (t) {
@@ -1169,7 +1184,7 @@
             });
             if (tot > 0) mkt.flow = (buy / tot - 0.5) * 2;
           }).catch(function () {});
-          return Promise.all([book, tr]);
+          return Promise.all([book, tr]).then(function () { mkt.busy = false; });
         }
         fetchAnalysis();
         setInterval(fetchAnalysis, 10000);
@@ -1201,6 +1216,8 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
+          if (kalshi.busy) return Promise.resolve(false);
+          kalshi.busy = true;
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M&status=open&limit=6';
           var routes = [direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
@@ -1209,11 +1226,11 @@
           function next() {
             if (i >= routes.length) return Promise.resolve(false);
             var u = routes[i++];
-            return fetch(u).then(function (r) { if (!r.ok) throw new Error('k'); return r.json(); })
+            return fetchTO(u, 9000).then(function (r) { if (!r.ok) throw new Error('k'); return r.json(); })
               .then(function (j) { return kalshiParse(j) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next();
+          return next().then(function (r) { kalshi.busy = false; return r; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -1698,7 +1715,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 23;
+  var PANEL_VER = 24;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
