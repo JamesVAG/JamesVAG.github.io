@@ -703,7 +703,7 @@
           if (aD < 1e-9) { pCross = 1; }
           else {
             var ex = Math.max(-50, Math.min(50, -2 * mD * aD / (sd * sd)));
-            pCross = normCdf((-aD - mD * tRem) / sT) + Math.exp(ex) * normCdf((-aD + mD * tRem) / sT);
+            pCross = Phi((-aD - mD * tRem) / sT) + Math.exp(ex) * Phi((-aD + mD * tRem) / sT);
           }
           pCross = Math.max(0, Math.min(1, pCross));
           return { wStart: wStart, wEnd: wEnd, openRef: openRef, pUp: pUp, sd: sd, rsi: rsi(closes, 14), tRemSec: wEnd - nowS, anImb: mkt.imb, anFlow: mkt.flow, anMtf: mtf, anScore: anScore, refKalshi: refKalshi, drift: drift, pCross: pCross, cushion: dd / sT, typMove: price * sT };
@@ -820,7 +820,7 @@
           }
           [2, 5, 10, 15].forEach(function (h) {
             var zh = (r.drift / r.sd) * Math.sqrt(h) + r.anScore * 0.35 / Math.sqrt(h / 2);
-            var ph = Math.max(0.01, Math.min(0.99, normCdf(zh)));
+            var ph = Math.max(0.01, Math.min(0.99, Phi(zh)));
             var up = ph >= 0.5;
             var el = $('btc15Hz' + h);
             el.textContent = (up ? 'SUBE ' : 'BAJA ') + Math.round((up ? ph : 1 - ph) * 100) + '%';
@@ -1674,7 +1674,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 20;
+  var PANEL_VER = 21;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
