@@ -455,8 +455,11 @@
             <div class="btc15-yn-box" id="btc15YnNo"><span>NO · baja</span><b id="btc15PNo">--%</b><em id="btc15BestNo"></em></div>
           </div>
           <canvas id="btc15Chart"></canvas>
+          <div id="btc15Legend" class="btc15-legend" style="display:none"></div>
+          <div id="btc15ChartPro" style="display:none"></div>
           <div class="btc15-live-label"><span class="btc15-dot"></span> GRÁFICO EN VIVO</div>
           <canvas id="btc15Live"></canvas>
+          <div id="btc15LivePro" style="display:none"></div>
           <div class="btc15-grid">
             <div><span>Precio</span><b id="btc15Price">—</b></div>
             <div><span>Apertura ventana</span><b id="btc15Open">—</b></div>
@@ -528,6 +531,10 @@
 #view-btc .btc15-dot { width:9px; height:9px; border-radius:50%; background:#ef4444; display:inline-block; animation:btc15Blink 1.1s ease-in-out infinite; }
 @keyframes btc15Blink { 0%,100% { opacity:1; } 50% { opacity:.25; } }
 #view-btc #btc15Live { width:100%; height:150px; display:block; background:#0d0d16; border-radius:12px; margin-top:6px; }
+#view-btc .btc15-legend { font-size:.82rem; color:#9aa0b4; margin-top:10px; letter-spacing:.02em; }
+#view-btc .btc15-legend b { color:#fff; }
+#view-btc #btc15ChartPro { width:100%; height:260px; background:#0d0d16; border-radius:12px; overflow:hidden; margin-top:6px; }
+#view-btc #btc15LivePro { width:100%; height:170px; background:#0d0d16; border-radius:12px; overflow:hidden; margin-top:6px; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
       </section>
@@ -623,7 +630,7 @@
         }
 
         function draw(r) {
-          var cv = $('btc15Chart'); if (!cv) return;
+          var cv = $('btc15Chart'); if (!cv || proOn) return;
           var dpr = window.devicePixelRatio || 1;
           var W = cv.clientWidth, H = 230;
           if (cv.width !== W * dpr) { cv.width = W * dpr; cv.height = H * dpr; }
@@ -793,7 +800,7 @@
           ws.onerror = function () { try { ws.close(); } catch (e) {} };
         }
         function drawLive() {
-          var cv = $('btc15Live'); if (!cv) return;
+          var cv = $('btc15Live'); if (!cv || proOn) return;
           var dpr = window.devicePixelRatio || 1;
           var W = cv.clientWidth, H = 150;
           if (!W) return;
@@ -843,6 +850,91 @@
         }
         connectWS();
         setInterval(drawLive, 700);
+
+        /* ----- Gráficos PRO (Lightweight Charts, estilo TradingView) ----- */
+        var proOn = false, proChartC = null, proChartL = null, proCandleSeries = null, proAreaSeries = null;
+        var proLineC = null, proLineL = null, proWStart = 0, proLastSet = 0, proLastFull = 0;
+        function proOpts(h) {
+          return {
+            width: 340, height: h,
+            layout: { background: { color: '#0d0d16' }, textColor: '#9aa0b4', fontSize: 11 },
+            grid: { vertLines: { color: 'rgba(255,255,255,0.06)' }, horzLines: { color: 'rgba(255,255,255,0.06)' } },
+            rightPriceScale: { borderColor: 'rgba(255,255,255,0.15)' },
+            timeScale: { borderColor: 'rgba(255,255,255,0.15)', timeVisible: true, secondsVisible: false,
+              tickMarkFormatter: function (t) { return new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
+            localization: { timeFormatter: function (t) { return new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
+            crosshair: { vertLine: { labelBackgroundColor: '#2c2d3d' }, horzLine: { labelBackgroundColor: '#2c2d3d' } }
+          };
+        }
+        function proResize() {
+          if (!proOn) return;
+          var w = $('btc15ChartPro').clientWidth;
+          if (w > 0) { proChartC.resize(w, 260); proChartL.resize(w, 170); }
+        }
+        function proSetCandles() {
+          if (!proOn || !candles.length) return;
+          proCandleSeries.setData(candles.slice(-90).map(function (c) { return { time: c.t, open: c.o, high: c.h, low: c.l, close: c.c }; }));
+          proLastFull = Date.now();
+        }
+        function proTick() {
+          if (!proOn) return;
+          proResize();
+          var r = compute(); if (!r) return;
+          if (Date.now() - proLastFull > 20000) proSetCandles();
+          if (candles.length) {
+            var lc = candles[candles.length - 1];
+            var cc = price !== null ? price : lc.c;
+            try { proCandleSeries.update({ time: lc.t, open: lc.o, high: Math.max(lc.h, cc), low: Math.min(lc.l, cc), close: cc }); } catch (e) {}
+            $('btc15Legend').innerHTML = 'O <b>' + fmt(lc.o) + '</b> · H <b>' + fmt(Math.max(lc.h, cc)) + '</b> · L <b>' + fmt(Math.min(lc.l, cc)) + '</b> · C <b>' + fmt(cc) + '</b>';
+          }
+          if (r.wStart !== proWStart) {
+            proWStart = r.wStart;
+            if (proLineC) { try { proCandleSeries.removePriceLine(proLineC); } catch (e) {} proLineC = null; }
+            if (proLineL) { try { proAreaSeries.removePriceLine(proLineL); } catch (e) {} proLineL = null; }
+            var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'apertura' };
+            proLineC = proCandleSeries.createPriceLine(lo);
+            proLineL = proAreaSeries.createPriceLine(lo);
+          }
+          var now = Date.now();
+          if (now - proLastSet > 1900 && ticks.length > 1) {
+            proLastSet = now;
+            var bySec = {};
+            ticks.forEach(function (x) { bySec[Math.floor(x.t / 1000)] = x.p; });
+            var pts = Object.keys(bySec).map(function (k) { return { time: +k, value: bySec[k] }; }).sort(function (a, b) { return a.time - b.time; });
+            if (pts.length > 1) {
+              var upNow = pts[pts.length - 1].value >= r.openRef;
+              proAreaSeries.applyOptions({ lineColor: upNow ? '#22c55e' : '#ef4444', topColor: upNow ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)', bottomColor: upNow ? 'rgba(34,197,94,0.02)' : 'rgba(239,68,68,0.02)' });
+              proAreaSeries.setData(pts);
+            }
+          }
+        }
+        function initPro() {
+          if (!window.LightweightCharts || proOn) return;
+          var elC = $('btc15ChartPro'), elL = $('btc15LivePro');
+          if (!elC || !elL) return;
+          proChartC = LightweightCharts.createChart(elC, proOpts(260));
+          proCandleSeries = proChartC.addCandlestickSeries({ upColor: '#22c55e', downColor: '#ef4444', wickUpColor: '#22c55e', wickDownColor: '#ef4444', borderVisible: false, priceFormat: { type: 'price', precision: 0, minMove: 1 } });
+          proChartL = LightweightCharts.createChart(elL, proOpts(170));
+          proAreaSeries = proChartL.addAreaSeries({ lineColor: '#22c55e', topColor: 'rgba(34,197,94,0.35)', bottomColor: 'rgba(34,197,94,0.02)', lineWidth: 2, priceFormat: { type: 'price', precision: 0, minMove: 1 } });
+          $('btc15Chart').style.display = 'none';
+          $('btc15Live').style.display = 'none';
+          elC.style.display = 'block'; elL.style.display = 'block';
+          $('btc15Legend').style.display = 'block';
+          proOn = true;
+          proSetCandles();
+          proResize();
+          window.addEventListener('resize', proResize);
+          setInterval(proTick, 1000);
+        }
+        function loadLW(srcs) {
+          if (!srcs.length) return;
+          var s = document.createElement('script');
+          s.src = srcs[0];
+          s.onload = function () { initPro(); };
+          s.onerror = function () { loadLW(srcs.slice(1)); };
+          document.head.appendChild(s);
+        }
+        loadLW(['https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js', 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js']);
 
         loadCandles().then(function () { loadPrice().then(render); });
         setInterval(function () {
@@ -1324,7 +1416,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 12;
+  var PANEL_VER = 13;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
