@@ -276,6 +276,7 @@
         <button class="nav-item" data-view="boveda"><span class="ic">🔒</span> <span data-i18n="nav_vault">Bóveda protegida</span></button>
         <button class="nav-item" data-view="juegos"><span class="ic">🎮</span> <span data-i18n="nav_games">Juegos</span></button>
         <button class="nav-item" data-view="mapa"><span class="ic">🗺️</span> <span data-i18n="nav_mapa">Mapa</span></button>
+        <button class="nav-item" data-view="btc"><span class="ic">📈</span> BTC 15</button>
         <button class="nav-item" id="navStream"><span class="ic">🎥</span> <span data-i18n="nav_stream">Modo Stream</span></button>
       </nav>
       <div class="foot" style="margin-top:12px">
@@ -442,6 +443,210 @@
           <div id="geoHost"></div>
         </div>
       </section>
+
+      <section class="view" id="view-btc">
+        <h2 class="view-title">&#128200; BTC 15 — Kalshi</h2>
+        <div class="btc15-card">
+          <div class="btc15-verdict" id="btc15Verdict">Cargando…</div>
+          <div class="btc15-prob" id="btc15Prob">--%</div>
+          <div class="btc15-badge" id="btc15Badge"></div>
+          <canvas id="btc15Chart"></canvas>
+          <div class="btc15-grid">
+            <div><span>Precio</span><b id="btc15Price">—</b></div>
+            <div><span>Apertura ventana</span><b id="btc15Open">—</b></div>
+            <div><span>Diferencia</span><b id="btc15Diff">—</b></div>
+            <div><span>Cierra en</span><b id="btc15Timer">—</b></div>
+          </div>
+          <div class="btc15-stats" id="btc15Stats"></div>
+          <div class="btc15-prev" id="btc15Prev"></div>
+          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso de las últimas velas). No es garantía: el BTC se puede voltear en segundos. Kalshi liquida con su índice oficial (CF Benchmarks); el precio aquí es de Coinbase y puede variar por unos dólares.</p>
+        </div>
+        <style>
+#view-btc .btc15-card { background:#14141f; border:1px solid #2c2d3d; border-radius:16px; padding:16px 14px; }
+#view-btc .btc15-verdict { text-align:center; font-size:2rem; font-weight:900; letter-spacing:.02em; }
+#view-btc .btc15-verdict.up { color:#22c55e; }
+#view-btc .btc15-verdict.down { color:#ef4444; }
+#view-btc .btc15-prob { text-align:center; font-size:3.2rem; font-weight:900; color:#f5c542; line-height:1.05; }
+#view-btc .btc15-badge { text-align:center; font-size:1rem; font-weight:800; color:#fff; margin:2px 0 10px; min-height:22px; }
+#view-btc #btc15Chart { width:100%; height:230px; display:block; background:#0d0d16; border-radius:12px; }
+#view-btc .btc15-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+#view-btc .btc15-grid div { background:#1b1c29; border:1px solid #2c2d3d; border-radius:10px; padding:8px 10px; }
+#view-btc .btc15-grid span { display:block; font-size:.72rem; color:#9aa0b4; text-transform:uppercase; letter-spacing:.05em; }
+#view-btc .btc15-grid b { font-size:1.05rem; color:#fff; }
+#view-btc .btc15-stats { margin-top:10px; font-size:.9rem; color:#c9ccda; text-align:center; min-height:20px; }
+#view-btc .btc15-prev { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+#view-btc .btc15-prev .chip { font-size:.8rem; font-weight:700; padding:4px 9px; border-radius:999px; border:1px solid #2c2d3d; background:#1b1c29; color:#fff; }
+#view-btc .btc15-prev .chip.u { color:#22c55e; }
+#view-btc .btc15-prev .chip.d { color:#ef4444; }
+#view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
+        </style>
+      </section>
+      <script>
+      (function () {
+        var $ = function (id) { return document.getElementById(id); };
+        var candles = []; // {t (s), o, h, l, c}
+        var price = null;
+        var lastCandleFetch = 0;
+
+        function erf(x) {
+          var s = x < 0 ? -1 : 1; x = Math.abs(x);
+          var t = 1 / (1 + 0.3275911 * x);
+          var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+          return s * y;
+        }
+        function Phi(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
+        function fmt(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+        function fmtSign(n) { return (n >= 0 ? '+$' : '-$') + fmt(Math.abs(n)); }
+
+        function fetchCoinbase() {
+          var end = new Date(); var start = new Date(end.getTime() - 100 * 60000);
+          var url = 'https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=60&start=' + start.toISOString() + '&end=' + end.toISOString();
+          return fetch(url).then(function (r) { if (!r.ok) throw new Error('cb'); return r.json(); }).then(function (rows) {
+            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            out.sort(function (a, b) { return a.t - b.t; });
+            return out;
+          });
+        }
+        function fetchKraken() {
+          return fetch('https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1').then(function (r) { return r.json(); }).then(function (j) {
+            var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
+            return j.result[k].map(function (a) { return { t: a[0], o: +a[1], h: +a[2], l: +a[3], c: +a[4] }; });
+          });
+        }
+        function loadCandles() {
+          return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
+            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+          }).catch(function () {});
+        }
+        function loadPrice() {
+          return fetch('https://api.exchange.coinbase.com/products/BTC-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
+            if (j && j.price) price = parseFloat(j.price);
+          }).catch(function () {
+            return fetch('https://api.kraken.com/0/public/Ticker?pair=XBTUSD').then(function (r) { return r.json(); }).then(function (j) {
+              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+            }).catch(function () {});
+          });
+        }
+
+        function candleAt(t) { for (var i = 0; i < candles.length; i++) if (candles[i].t === t) return candles[i]; return null; }
+        function lastCloseBefore(t) { var v = null; for (var i = 0; i < candles.length; i++) { if (candles[i].t < t) v = candles[i].c; else break; } return v; }
+
+        function rsi(closes, n) {
+          if (closes.length < n + 1) return null;
+          var g = 0, l = 0;
+          for (var i = closes.length - n; i < closes.length; i++) { var d = closes[i] - closes[i - 1]; if (d > 0) g += d; else l -= d; }
+          if (l === 0) return 100;
+          return 100 - 100 / (1 + (g / n) / (l / n));
+        }
+
+        function compute() {
+          if (!candles.length || price === null) return null;
+          var nowS = Math.floor(Date.now() / 1000);
+          var wStart = Math.floor(nowS / 900) * 900;
+          var wEnd = wStart + 900;
+          var oc = candleAt(wStart);
+          var openRef = oc ? oc.o : lastCloseBefore(wStart + 1);
+          if (!openRef) return null;
+          var closes = candles.map(function (c) { return c.c; });
+          var rets = [];
+          for (var i = Math.max(1, closes.length - 31); i < closes.length; i++) rets.push(Math.log(closes[i] / closes[i - 1]));
+          var mean = rets.reduce(function (a, b) { return a + b; }, 0) / rets.length;
+          var sd = Math.sqrt(rets.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / rets.length);
+          if (!sd || !isFinite(sd)) sd = 0.0004;
+          var r10 = [];
+          for (var j = Math.max(1, closes.length - 11); j < closes.length; j++) r10.push(Math.log(closes[j] / closes[j - 1]));
+          var drift = (r10.reduce(function (a, b) { return a + b; }, 0) / Math.max(1, r10.length)) * 0.35;
+          var tRem = Math.max(0.05, (wEnd - nowS) / 60);
+          var z = (Math.log(price / openRef) + drift * tRem) / (sd * Math.sqrt(tRem));
+          var pUp = Math.max(0.01, Math.min(0.99, Phi(z)));
+          return { wStart: wStart, wEnd: wEnd, openRef: openRef, pUp: pUp, sd: sd, rsi: rsi(closes, 14), tRemSec: wEnd - nowS };
+        }
+
+        function prevWindows(wStart) {
+          var out = [];
+          for (var k = 4; k >= 1; k--) {
+            var s = wStart - 900 * k, e = s + 900;
+            var oc = candleAt(s); var cl = lastCloseBefore(e + 1);
+            if (oc && cl) out.push({ s: s, up: cl > oc.o });
+          }
+          return out;
+        }
+
+        function draw(r) {
+          var cv = $('btc15Chart'); if (!cv) return;
+          var dpr = window.devicePixelRatio || 1;
+          var W = cv.clientWidth, H = 230;
+          if (cv.width !== W * dpr) { cv.width = W * dpr; cv.height = H * dpr; }
+          var ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, W, H);
+          var data = candles.slice(-60);
+          if (data.length < 2) return;
+          var min = Infinity, max = -Infinity;
+          data.forEach(function (c) { min = Math.min(min, c.l); max = Math.max(max, c.h); });
+          min = Math.min(min, r.openRef); max = Math.max(max, r.openRef);
+          var pad = (max - min) * 0.08 || 10; min -= pad; max += pad;
+          var X = function (i) { return (i + 0.5) * (W / data.length); };
+          var Y = function (p) { return H - (p - min) / (max - min) * H; };
+          // sombra de la ventana actual
+          var wi = data.findIndex(function (c) { return c.t >= r.wStart; });
+          if (wi >= 0) { ctx.fillStyle = 'rgba(245,197,66,0.08)'; ctx.fillRect(wi * (W / data.length), 0, W - wi * (W / data.length), H); }
+          // grid + etiquetas
+          ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.fillStyle = '#8a8fa3'; ctx.font = '10px sans-serif'; ctx.lineWidth = 1;
+          for (var g = 1; g <= 3; g++) { var gy = H * g / 4; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); var gp = max - (max - min) * g / 4; ctx.fillText('$' + fmt(gp), 4, gy - 3); }
+          // linea de apertura
+          ctx.strokeStyle = '#f5c542'; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(0, Y(r.openRef)); ctx.lineTo(W, Y(r.openRef)); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillStyle = '#f5c542'; ctx.fillText('apertura $' + fmt(r.openRef), 4, Y(r.openRef) - 4);
+          // velas
+          var bw = Math.max(2, (W / data.length) * 0.62);
+          data.forEach(function (c, i) {
+            ctx.strokeStyle = c.c >= c.o ? '#22c55e' : '#ef4444';
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath(); ctx.moveTo(X(i), Y(c.h)); ctx.lineTo(X(i), Y(c.l)); ctx.stroke();
+            var y1 = Y(Math.max(c.o, c.c)), y2 = Y(Math.min(c.o, c.c));
+            ctx.fillRect(X(i) - bw / 2, y1, bw, Math.max(1, y2 - y1));
+          });
+          // ultimo precio
+          if (price !== null) { ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(0, Y(price)); ctx.lineTo(W, Y(price)); ctx.stroke(); ctx.setLineDash([]); }
+        }
+
+        function render() {
+          var r = compute();
+          var vEl = $('btc15Verdict'), pEl = $('btc15Prob'), bEl = $('btc15Badge');
+          if (!r) { vEl.textContent = 'Conectando…'; vEl.className = 'btc15-verdict'; return; }
+          var up = r.pUp >= 0.5;
+          var prob = Math.round((up ? r.pUp : 1 - r.pUp) * 100);
+          vEl.textContent = up ? 'SUBE \uD83D\uDFE2' : 'BAJA \uD83D\uDD34';
+          vEl.className = 'btc15-verdict ' + (up ? 'up' : 'down');
+          pEl.textContent = prob + '%';
+          var badge = prob >= 70 ? 'SEÑAL ÉLITE \uD83D\uDD25' : prob >= 60 ? 'SEÑAL FUERTE \uD83D\uDCAA' : prob >= 55 ? 'SEÑAL LEVE' : 'MONEDA AL AIRE \uD83E\uDE99';
+          if (r.tRemSec < 30) badge += ' · CASI CERRADO ⏱';
+          bEl.textContent = badge;
+          $('btc15Price').textContent = '$' + fmt(price);
+          $('btc15Open').textContent = '$' + fmt(r.openRef);
+          var diff = price - r.openRef;
+          var dEl = $('btc15Diff');
+          dEl.textContent = fmtSign(diff) + ' (' + (diff / r.openRef * 100).toFixed(2) + '%)';
+          dEl.style.color = diff >= 0 ? '#22c55e' : '#ef4444';
+          var mm = Math.floor(r.tRemSec / 60), ss = r.tRemSec % 60;
+          $('btc15Timer').textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
+          $('btc15Stats').textContent = 'RSI 1m: ' + (r.rsi === null ? '—' : Math.round(r.rsi)) + ' · Volatilidad: $' + fmt(price * r.sd) + '/min · Ventana ' + new Date(r.wStart * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '–' + new Date(r.wEnd * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          var pv = prevWindows(r.wStart);
+          $('btc15Prev').innerHTML = pv.map(function (w) {
+            var lbl = new Date(w.s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return '<span class="chip ' + (w.up ? 'u' : 'd') + '">' + lbl + ' ' + (w.up ? '↑ subió' : '↓ bajó') + '</span>';
+          }).join('');
+          draw(r);
+        }
+
+        loadCandles().then(function () { loadPrice().then(render); });
+        setInterval(function () {
+          loadPrice().then(render);
+          if (Date.now() - lastCandleFetch > 15000) loadCandles().then(render);
+        }, 5000);
+        setInterval(render, 1000);
+      })();
+      </script>
+
       <style>
 .game-card { text-align: left; font: inherit; cursor: pointer; width: 100%; }
 #gameHost .g-score, #geoHost .g-score { font-weight: 800; font-size: 16px; margin: 8px 0; color: #f5c542; }
@@ -913,7 +1118,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 9;
+  var PANEL_VER = 10;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
