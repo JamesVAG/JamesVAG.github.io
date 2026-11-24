@@ -455,6 +455,8 @@
             <div class="btc15-yn-box" id="btc15YnNo"><span>NO · baja</span><b id="btc15PNo">--%</b><em id="btc15BestNo"></em></div>
           </div>
           <canvas id="btc15Chart"></canvas>
+          <div class="btc15-live-label"><span class="btc15-dot"></span> GRÁFICO EN VIVO</div>
+          <canvas id="btc15Live"></canvas>
           <div class="btc15-grid">
             <div><span>Precio</span><b id="btc15Price">—</b></div>
             <div><span>Apertura ventana</span><b id="btc15Open">—</b></div>
@@ -522,6 +524,10 @@
 #view-btc .btc15-sim-msg { font-size:.88rem; color:#c9ccda; min-height:18px; margin-top:2px; }
 #view-btc .btc15-sim-hist { margin-top:8px; font-size:.85rem; color:#c9ccda; line-height:1.5; }
 #view-btc .btc15-reset { margin-top:10px; background:none; border:1px solid #2c2d3d; color:#9aa0b4; border-radius:8px; padding:7px 10px; font-size:.8rem; font-weight:700; cursor:pointer; font-family:inherit; }
+#view-btc .btc15-live-label { margin-top:12px; font-size:.78rem; font-weight:900; letter-spacing:.08em; color:#c9ccda; display:flex; align-items:center; gap:7px; }
+#view-btc .btc15-dot { width:9px; height:9px; border-radius:50%; background:#ef4444; display:inline-block; animation:btc15Blink 1.1s ease-in-out infinite; }
+@keyframes btc15Blink { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+#view-btc #btc15Live { width:100%; height:150px; display:block; background:#0d0d16; border-radius:12px; margin-top:6px; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
       </section>
@@ -564,7 +570,7 @@
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/BTC-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) price = parseFloat(j.price);
+            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=XBTUSD').then(function (r) { return r.json(); }).then(function (j) {
               var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
@@ -759,6 +765,84 @@
           $('btc15Msg').textContent = 'Saldo reiniciado a $100.';
           renderSim(null);
         });
+
+        /* ----- Gráfico en vivo (tick a tick, WebSocket Coinbase) ----- */
+        var ticks = []; // {t (ms), p}
+        function pushTick(p) {
+          if (!p || !isFinite(p)) return;
+          var now = Date.now();
+          ticks.push({ t: now, p: p });
+          var cut = now - 16 * 60000;
+          while (ticks.length && ticks[0].t < cut) ticks.shift();
+          if (ticks.length > 4000) ticks.splice(0, ticks.length - 4000);
+          price = p;
+        }
+        function connectWS() {
+          var ws;
+          try { ws = new WebSocket('wss://ws-feed.exchange.coinbase.com'); } catch (e) { setTimeout(connectWS, 4000); return; }
+          ws.onopen = function () {
+            try { ws.send(JSON.stringify({ type: 'subscribe', product_ids: ['BTC-USD'], channels: ['ticker'] })); } catch (e) {}
+          };
+          ws.onmessage = function (ev) {
+            try {
+              var m = JSON.parse(ev.data);
+              if (m && m.type === 'ticker' && m.product_id === 'BTC-USD' && m.price) pushTick(parseFloat(m.price));
+            } catch (e) {}
+          };
+          ws.onclose = function () { setTimeout(connectWS, 3000); };
+          ws.onerror = function () { try { ws.close(); } catch (e) {} };
+        }
+        function drawLive() {
+          var cv = $('btc15Live'); if (!cv) return;
+          var dpr = window.devicePixelRatio || 1;
+          var W = cv.clientWidth, H = 150;
+          if (!W) return;
+          if (cv.width !== Math.round(W * dpr)) { cv.width = W * dpr; cv.height = H * dpr; }
+          var ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, W, H);
+          var now = Date.now(), tMin = now - 15 * 60000;
+          var r = compute();
+          var openRef = r ? r.openRef : null;
+          var data = ticks.filter(function (x) { return x.t >= tMin; });
+          ctx.font = '10px sans-serif';
+          if (data.length < 2) {
+            ctx.fillStyle = '#8a8fa3'; ctx.fillText('Conectando en vivo…', 8, 20);
+            return;
+          }
+          var min = Infinity, max = -Infinity;
+          data.forEach(function (x) { min = Math.min(min, x.p); max = Math.max(max, x.p); });
+          if (openRef) { min = Math.min(min, openRef); max = Math.max(max, openRef); }
+          var pad = (max - min) * 0.15 || 5; min -= pad; max += pad;
+          var X = function (t) { return (t - tMin) / (15 * 60000) * W; };
+          var Y = function (p) { return H - (p - min) / (max - min) * H; };
+          ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.fillStyle = '#8a8fa3'; ctx.lineWidth = 1;
+          for (var g = 1; g <= 2; g++) { var gy = H * g / 3; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); var gp = max - (max - min) * g / 3; ctx.fillText('$' + fmt(gp), 4, gy - 3); }
+          if (openRef) {
+            ctx.strokeStyle = '#f5c542'; ctx.setLineDash([6, 4]);
+            ctx.beginPath(); ctx.moveTo(0, Y(openRef)); ctx.lineTo(W, Y(openRef)); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = '#f5c542'; ctx.fillText('apertura $' + fmt(openRef), 4, Y(openRef) - 4);
+          }
+          var last = data[data.length - 1].p;
+          var col = (openRef && last < openRef) ? '#ef4444' : '#22c55e';
+          // relleno bajo la linea
+          ctx.beginPath();
+          data.forEach(function (x, i) { if (i === 0) ctx.moveTo(X(x.t), Y(x.p)); else ctx.lineTo(X(x.t), Y(x.p)); });
+          ctx.lineTo(X(data[data.length - 1].t), H); ctx.lineTo(X(data[0].t), H); ctx.closePath();
+          ctx.fillStyle = col === '#22c55e' ? 'rgba(34,197,94,0.13)' : 'rgba(239,68,68,0.13)';
+          ctx.fill();
+          // linea
+          ctx.beginPath();
+          data.forEach(function (x, i) { if (i === 0) ctx.moveTo(X(x.t), Y(x.p)); else ctx.lineTo(X(x.t), Y(x.p)); });
+          ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1;
+          // punto final
+          var lx = X(data[data.length - 1].t), ly = Y(last);
+          ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+          ctx.beginPath(); ctx.arc(lx, ly, 8, 0, Math.PI * 2); ctx.strokeStyle = col; ctx.stroke();
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
+          ctx.fillText('$' + fmt(last), Math.max(4, lx - 64), Math.max(14, ly - 12));
+        }
+        connectWS();
+        setInterval(drawLive, 700);
 
         loadCandles().then(function () { loadPrice().then(render); });
         setInterval(function () {
@@ -1240,7 +1324,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 11;
+  var PANEL_VER = 12;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
