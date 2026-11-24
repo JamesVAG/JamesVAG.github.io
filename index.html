@@ -487,7 +487,6 @@
             <button type="button" class="btc15-sell" id="btc15Sell" style="display:none">💸 SACAR MI DINERO</button>
             <div class="btc15-sim-msg" id="btc15Msg"></div>
             <div class="btc15-sim-hist" id="btc15Hist"></div>
-            <button type="button" class="btc15-reset" id="btc15Reset">Reiniciar saldo a $100,000</button>
           </div>
           <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso de las últimas velas). No es garantía: el BTC se puede voltear en segundos. Kalshi liquida con su índice oficial (CF Benchmarks); el precio aquí es de Coinbase y puede variar por unos dólares.</p>
         </div>
@@ -800,11 +799,6 @@
         $('btc15BetNo').addEventListener('click', function () { placeBet('no'); });
         document.querySelectorAll('.btc15-chip').forEach(function (ch) {
           ch.addEventListener('click', function () { $('btc15Amt').value = ch.getAttribute('data-amt'); });
-        });
-        $('btc15Reset').addEventListener('click', function () {
-          sim = { bal: 100000, bets: [], w: 0, l: 0 }; simSave();
-          $('btc15Msg').textContent = 'Saldo reiniciado a $100,000.';
-          renderSim(null);
         });
 
         /* ----- Gráfico en vivo (tick a tick, WebSocket Coinbase) ----- */
@@ -1450,7 +1444,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 14;
+  var PANEL_VER = 15;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
