@@ -517,6 +517,7 @@
             </div>
             <div class="btc15-sim-open" id="btc15Open"></div>
             <div class="btc15-posval" id="btc15PosVal"></div>
+            <div class="btc15-advice" id="btc15Advice" style="display:none"></div>
             <button type="button" class="btc15-sell" id="btc15Sell" style="display:none">💸 SACAR MI DINERO</button>
             <div class="btc15-sim-msg" id="btc15Msg"></div>
             <div class="btc15-sim-hist" id="btc15Hist"></div>
@@ -608,6 +609,11 @@
 #view-btc .btc15-risk-bar { height:9px; border-radius:99px; background:#101018; overflow:hidden; margin-top:8px; }
 #view-btc .btc15-risk-bar i { display:block; height:100%; width:0%; background:#22c55e; border-radius:99px; transition:width .6s; }
 #view-btc .btc15-risk-sub { margin-top:8px; font-size:.85rem; color:#c9ccda; line-height:1.45; }
+#view-btc .btc15-advice { margin-top:10px; text-align:center; font-size:1.08rem; font-weight:900; line-height:1.4; padding:12px 10px; border-radius:12px; border:1px solid #9aa0b4; color:#c9ccda; background:rgba(154,160,180,.10); }
+#view-btc .btc15-advice.good { background:rgba(34,197,94,.18); color:#22c55e; border-color:#22c55e; }
+#view-btc .btc15-advice.warn { background:rgba(245,197,66,.14); color:#f5c542; border-color:#f5c542; }
+#view-btc .btc15-advice.bad { background:rgba(239,68,68,.16); color:#ef4444; border-color:#ef4444; }
+#view-btc .btc15-advice.hold { background:rgba(59,130,246,.13); color:#7db4ff; border-color:#3b82f6; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
       </section>
@@ -928,9 +934,27 @@
               pvEl.textContent = '💰 Tu dinero vale ahora: ' + money(val) + ' (' + (pnlN >= 0 ? '+' : '') + money(pnlN).replace('$-', '-$') + ')';
               pvEl.style.color = pnlN >= 0 ? '#22c55e' : '#ef4444';
               sellBtn.style.display = 'block';
+              var adv = $('btc15Advice');
+              var pnlPct = pnlN / ob.amt * 100;
+              var winning = (ob.side === 'si') === (price >= r.openRef);
+              var pFlip = winning ? r.pCross : 1 - r.pCross;
+              var aCls, aTxt;
+              if (pnlN > 0 && pnlPct >= 60) { aCls = 'good'; aTxt = '💰 COBRA AHORA — ya vas +' + pnlPct.toFixed(0) + '% arriba; asegura esa ganancia'; }
+              else if (pFlip >= 0.5 && pnlN > -ob.amt * 0.10) {
+                if (pnlN >= 0) { aCls = 'warn'; aTxt = '💰 COBRA AHORA — vas ganando, pero la probabilidad de que se voltee es ' + Math.round(pFlip * 100) + '%'; }
+                else { aCls = 'bad'; aTxt = '⚠️ CORTA AHORA — la probabilidad de que se voltee en tu contra es ' + Math.round(pFlip * 100) + '%'; }
+              }
+              else if (sp < 0.35) { aCls = 'bad'; aTxt = '🔴 SALVA LO QUE QUEDA — tu lado cayó a ' + Math.round(sp * 100) + '% de probabilidad; aguantando vas camino a perderlo todo'; }
+              else if (pnlN > 0 && pnlPct >= 25 && pFlip >= 0.25) { aCls = 'warn'; aTxt = '💰 COBRA AHORA — vas +' + pnlPct.toFixed(0) + '% y el riesgo de volteo subió a ' + Math.round(pFlip * 100) + '%'; }
+              else if (sp >= 0.72 && pFlip < 0.18) { aCls = 'hold'; aTxt = '✊ AGUANTA — tu lado está fuerte (' + Math.round(sp * 100) + '%) y el colchón es seguro'; }
+              else if (r.tRemSec <= 60 && winning) { aCls = 'hold'; aTxt = '⏱ AGUANTA — queda menos de 1 minuto y vas arriba'; }
+              else { aCls = 'hold'; aTxt = '👀 AGUANTA POR AHORA — sin señal clara de salida'; }
+              adv.style.display = 'block';
+              adv.className = 'btc15-advice ' + aCls;
+              adv.textContent = aTxt;
               sellBtn.textContent = '💸 SACAR ' + money(val);
-            } else { pvEl.textContent = ''; sellBtn.style.display = 'none'; }
-          } else { oEl.textContent = ''; pvEl.textContent = ''; sellBtn.style.display = 'none'; }
+            } else { pvEl.textContent = ''; sellBtn.style.display = 'none'; $('btc15Advice').style.display = 'none'; }
+          } else { oEl.textContent = ''; pvEl.textContent = ''; sellBtn.style.display = 'none'; $('btc15Advice').style.display = 'none'; }
           var done = sim.bets.filter(function (b) { return b.st === 'won' || b.st === 'lost' || b.st === 'sold'; }).slice(-5).reverse();
           $('btc15Hist').innerHTML = done.map(function (b) {
             var lbl = new Date(b.w * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1674,7 +1698,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 21;
+  var PANEL_VER = 22;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
