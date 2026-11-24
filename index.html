@@ -467,7 +467,7 @@
             <div><span>Cierra en</span><b id="btc15Timer">—</b></div>
           </div>
           <div class="btc15-risk" id="btc15Risk">
-            <div class="btc15-risk-head">⚠️ RIESGO DE CRUCE DEL OBJETIVO</div>
+            <div class="btc15-risk-head">⚠️ ¿SE PUEDE VOLTEAR ANTES DEL CIERRE?</div>
             <div class="btc15-risk-big" id="btc15RiskBig">—</div>
             <div class="btc15-risk-bar"><i id="btc15RiskBar"></i></div>
             <div class="btc15-risk-sub" id="btc15RiskSub"></div>
@@ -837,12 +837,12 @@
           var pc = Math.round(r.pCross * 100);
           var lvl = r.pCross < 0.10 ? 0 : r.pCross <= 0.35 ? 1 : 2;
           var big = $('btc15RiskBig');
-          big.textContent = (above ? '📉 Probabilidad de que BAJE del objetivo antes del cierre: ' : '📈 Probabilidad de que SUBA sobre el objetivo antes del cierre: ') + pc + '% — ' + (lvl === 0 ? '🟢 SEGURO' : lvl === 1 ? '🟡 CUIDADO' : '🔴 PELIGRO');
+          big.textContent = lvl === 2 ? (above ? '🔴 MUY PEGADO — un bajón normal te lo voltea' : '🔴 MUY PEGADO — un subidón normal te lo voltea') : lvl === 1 ? '🟡 PEGADO — está cerca del objetivo, cuidado' : '🟢 LEJOS — a salvo de un movimiento normal';
           big.style.color = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
           var bar = $('btc15RiskBar');
           bar.style.width = Math.min(100, Math.abs(r.cushion) / 2.5 * 100) + '%';
           bar.style.background = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
-          $('btc15RiskSub').textContent = 'Distancia al objetivo: ' + (distUsd >= 0 ? '+' : '−') + '$' + fmt(Math.abs(distUsd)) + ' · En lo que queda, el BTC se mueve típicamente ±$' + fmt(r.typMove) + ' · Colchón: ' + Math.abs(r.cushion).toFixed(1) + 'σ' + (lvl === 2 ? ' — está a un movimiento normal de cruzar, aunque el % diga sube.' : '');
+          $('btc15RiskSub').textContent = 'El BTC está ' + (above ? 'ARRIBA' : 'ABAJO') + ' del objetivo por $' + fmt(Math.abs(distUsd)) + ', y en lo que queda se mueve como ±$' + fmt(r.typMove) + '. En una situación así, el precio se pasa para el otro lado ' + pc + ' de cada 100 veces. Esto no es el % de ganar: es si se voltea en el camino.';
           var pv = prevWindows(r.wStart);
           $('btc15Prev').innerHTML = pv.map(function (w) {
             var lbl = new Date(w.s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1698,7 +1698,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 22;
+  var PANEL_VER = 23;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
