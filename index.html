@@ -469,23 +469,25 @@
           <div class="btc15-stats" id="btc15Stats"></div>
           <div class="btc15-prev" id="btc15Prev"></div>
           <div class="btc15-sim">
-            <div class="btc15-sim-head">🎮 SIMULADOR <span class="btc15-sim-bal">Saldo: <b id="btc15Bal">$100.00</b></span></div>
+            <div class="btc15-sim-head">🎮 SIMULADOR <span class="btc15-sim-bal">Saldo: <b id="btc15Bal">$100,000.00</b></span></div>
             <div class="btc15-sim-rec" id="btc15Rec">Récord: 0 ganadas · 0 perdidas</div>
             <div class="btc15-sim-row">
-              <input type="number" id="btc15Amt" value="10" min="1" step="1" inputmode="decimal">
-              <button type="button" class="btc15-chip" data-amt="1">$1</button>
-              <button type="button" class="btc15-chip" data-amt="5">$5</button>
+              <input type="number" id="btc15Amt" value="100" min="1" step="1" inputmode="decimal">
               <button type="button" class="btc15-chip" data-amt="10">$10</button>
-              <button type="button" class="btc15-chip" data-amt="25">$25</button>
+              <button type="button" class="btc15-chip" data-amt="50">$50</button>
+              <button type="button" class="btc15-chip" data-amt="100">$100</button>
+              <button type="button" class="btc15-chip" data-amt="1000">$1,000</button>
             </div>
             <div class="btc15-sim-row">
               <button type="button" class="btc15-bet si" id="btc15BetSi">Apostar al SÍ</button>
               <button type="button" class="btc15-bet no" id="btc15BetNo">Apostar al NO</button>
             </div>
             <div class="btc15-sim-open" id="btc15Open"></div>
+            <div class="btc15-posval" id="btc15PosVal"></div>
+            <button type="button" class="btc15-sell" id="btc15Sell" style="display:none">💸 SACAR MI DINERO</button>
             <div class="btc15-sim-msg" id="btc15Msg"></div>
             <div class="btc15-sim-hist" id="btc15Hist"></div>
-            <button type="button" class="btc15-reset" id="btc15Reset">Reiniciar saldo a $100</button>
+            <button type="button" class="btc15-reset" id="btc15Reset">Reiniciar saldo a $100,000</button>
           </div>
           <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso de las últimas velas). No es garantía: el BTC se puede voltear en segundos. Kalshi liquida con su índice oficial (CF Benchmarks); el precio aquí es de Coinbase y puede variar por unos dólares.</p>
         </div>
@@ -535,6 +537,8 @@
 #view-btc .btc15-legend b { color:#fff; }
 #view-btc #btc15ChartPro { width:100%; height:260px; background:#0d0d16; border-radius:12px; overflow:hidden; margin-top:6px; }
 #view-btc #btc15LivePro { width:100%; height:170px; background:#0d0d16; border-radius:12px; overflow:hidden; margin-top:6px; }
+#view-btc .btc15-posval { margin-top:6px; font-size:1rem; font-weight:800; color:#fff; min-height:22px; }
+#view-btc .btc15-sell { width:100%; margin-top:8px; background:#f5c542; color:#0d0d16; border:none; border-radius:10px; padding:13px 8px; font-size:1rem; font-weight:900; cursor:pointer; font-family:inherit; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
       </section>
@@ -704,9 +708,9 @@
         }
 
         /* ----- Simulador (saldo falso, se guarda en el teléfono) ----- */
-        var sim = { bal: 100, bets: [], w: 0, l: 0 };
-        try { var sv = JSON.parse(localStorage.getItem('btc15_sim') || 'null'); if (sv && typeof sv.bal === 'number') sim = sv; } catch (e) {}
-        function simSave() { try { localStorage.setItem('btc15_sim', JSON.stringify(sim)); } catch (e) {} }
+        var sim = { bal: 100000, bets: [], w: 0, l: 0 };
+        try { var sv = JSON.parse(localStorage.getItem('btc15_sim2') || 'null'); if (sv && typeof sv.bal === 'number') sim = sv; } catch (e) {}
+        function simSave() { try { localStorage.setItem('btc15_sim2', JSON.stringify(sim)); } catch (e) {} }
         function money(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         function openBet() { for (var i = 0; i < sim.bets.length; i++) if (sim.bets[i].st === 'open') return sim.bets[i]; return null; }
         function gradeBets() {
@@ -752,24 +756,54 @@
           $('btc15Rec').textContent = 'Récord: ' + sim.w + ' ganadas · ' + sim.l + ' perdidas';
           var ob = openBet();
           var oEl = $('btc15Open');
+          var pvEl = $('btc15PosVal');
+          var sellBtn = $('btc15Sell');
           if (ob) {
             var lbl = new Date(ob.w * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             oEl.textContent = '⏳ En juego — ventana ' + lbl + ': ' + (ob.side === 'si' ? 'SÍ (sube)' : 'NO (baja)') + ' · ' + money(ob.amt) + ' a ' + Math.round(ob.price * 100) + '¢ → paga ' + money(ob.amt / ob.price) + ' si aciertas';
-          } else { oEl.textContent = ''; }
-          var done = sim.bets.filter(function (b) { return b.st === 'won' || b.st === 'lost'; }).slice(-5).reverse();
+            if (r) {
+              var sp = ob.side === 'si' ? r.pUp : 1 - r.pUp;
+              sp = Math.max(0.01, Math.min(0.99, sp));
+              var val = (ob.amt / ob.price) * sp;
+              var pnlN = val - ob.amt;
+              pvEl.textContent = '💰 Tu dinero vale ahora: ' + money(val) + ' (' + (pnlN >= 0 ? '+' : '') + money(pnlN).replace('$-', '-$') + ')';
+              pvEl.style.color = pnlN >= 0 ? '#22c55e' : '#ef4444';
+              sellBtn.style.display = 'block';
+              sellBtn.textContent = '💸 SACAR ' + money(val);
+            } else { pvEl.textContent = ''; sellBtn.style.display = 'none'; }
+          } else { oEl.textContent = ''; pvEl.textContent = ''; sellBtn.style.display = 'none'; }
+          var done = sim.bets.filter(function (b) { return b.st === 'won' || b.st === 'lost' || b.st === 'sold'; }).slice(-5).reverse();
           $('btc15Hist').innerHTML = done.map(function (b) {
             var lbl = new Date(b.w * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return (b.st === 'won' ? '✅' : '❌') + ' ' + lbl + ' ' + (b.side === 'si' ? 'SÍ' : 'NO') + ' ' + money(b.amt) + ' → ' + (b.pnl >= 0 ? '+' : '') + money(b.pnl).replace('$-', '-$');
+            return (b.st === 'won' ? '✅' : b.st === 'sold' ? '💸' : '❌') + ' ' + lbl + ' ' + (b.side === 'si' ? 'SÍ' : 'NO') + ' ' + money(b.amt) + ' → ' + (b.pnl >= 0 ? '+' : '') + money(b.pnl).replace('$-', '-$');
           }).join('<br>');
         }
+        function sellBet() {
+          var ob = openBet();
+          var msg = $('btc15Msg');
+          if (!ob) return;
+          var r = compute();
+          if (!r) { msg.textContent = 'Espera a que cargue el precio…'; return; }
+          var sp = ob.side === 'si' ? r.pUp : 1 - r.pUp;
+          sp = Math.max(0.01, Math.min(0.99, sp));
+          var proceeds = (ob.amt / ob.price) * sp;
+          sim.bal += proceeds;
+          ob.pnl = proceeds - ob.amt;
+          ob.st = 'sold';
+          if (ob.pnl >= 0) sim.w++; else sim.l++;
+          simSave();
+          msg.textContent = '\U0001F4B8 Vendiste tu posición por ' + money(proceeds) + ' (' + (ob.pnl >= 0 ? 'ganaste ' : 'perdiste ') + money(Math.abs(ob.pnl)) + ').';
+          renderSim(r);
+        }
+        $('btc15Sell').addEventListener('click', sellBet);
         $('btc15BetSi').addEventListener('click', function () { placeBet('si'); });
         $('btc15BetNo').addEventListener('click', function () { placeBet('no'); });
         document.querySelectorAll('.btc15-chip').forEach(function (ch) {
           ch.addEventListener('click', function () { $('btc15Amt').value = ch.getAttribute('data-amt'); });
         });
         $('btc15Reset').addEventListener('click', function () {
-          sim = { bal: 100, bets: [], w: 0, l: 0 }; simSave();
-          $('btc15Msg').textContent = 'Saldo reiniciado a $100.';
+          sim = { bal: 100000, bets: [], w: 0, l: 0 }; simSave();
+          $('btc15Msg').textContent = 'Saldo reiniciado a $100,000.';
           renderSim(null);
         });
 
@@ -1416,7 +1450,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 13;
+  var PANEL_VER = 14;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
