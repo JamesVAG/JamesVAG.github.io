@@ -538,7 +538,7 @@
             <div class="gn-res">Se genera desde el análisis de Bro: forma, contexto y emparejamiento primero. El % de la app NO manda — se muestra solo como referencia, junto a la probabilidad real que le da Bro a cada pata.</div>
             <div style="display:flex;gap:8px;margin-top:10px">
               <div style="flex:1"><label style="color:#9aa0b4;font-size:12.5px">Deporte</label>
-              <select class="bf-inp" id="gnSport"><option value="">Todos</option><option value="futbol">⚽ Fútbol</option><option value="nba">🏀 NBA</option><option value="nfl">🏈 NFL</option></select></div>
+              <select class="bf-inp" id="gnSport"><option value="">Todos</option><option value="futbol">⚽ Fútbol</option><option value="nba">🏀 NBA</option><option value="nfl">🏈 NFL</option><option value="tenis">🎾 Tenis</option></select></div>
               <div style="flex:1"><label style="color:#9aa0b4;font-size:12.5px">Estilo</label>
               <select class="bf-inp" id="gnStyle"><option value="segura">🛡️ Segura</option><option value="valor">💎 Valor</option><option value="loteria">🎰 Lotería</option></select></div>
               <div style="flex:1"><label style="color:#9aa0b4;font-size:12.5px">Patas</label>
@@ -552,7 +552,7 @@
         </div>
         <script>
         (function () {
-          var remoteBets = [], localBets = [], mkt = {}, started = false, pool = null, lastGen = null;
+          var remoteBets = [], localBets = [], mkt = {}, started = false, pool = null, lastGen = null, lastSig = '';
           var LS = 'mis_apuestas_v1';
           var SERIES = [
             ['Champions League — Ganador', 'KXUCLGAME', 'game', 'Champions League'],
@@ -567,7 +567,14 @@
             ['NBA — Pts+Reb+Ast de jugador', 'KXNBAPRA', 'props', 'NBA'],
             ['NFL — Ganador', 'KXNFLGAME', 'game', 'NFL'],
             ['NHL — Ganador', 'KXNHLGAME', 'game', 'NHL'],
-            ['MLB — Ganador', 'KXMLBGAME', 'game', 'MLB']
+            ['MLB — Ganador', 'KXMLBGAME', 'game', 'MLB'],
+            ['NBA — Rebotes de jugador', 'KXNBAREB', 'props', 'NBA'],
+            ['NBA — Asistencias de jugador', 'KXNBAAST', 'props', 'NBA'],
+            ['Tenis ATP — Ganador', 'KXATPMATCH', 'game', 'Tenis'],
+            ['Tenis WTA — Ganador', 'KXWTAMATCH', 'game', 'Tenis'],
+            ['Tenis Challenger ATP — Ganador', 'KXATPCHALLENGERMATCH', 'game', 'Tenis'],
+            ['Tenis Challenger WTA — Ganador', 'KXWTACHALLENGERMATCH', 'game', 'Tenis'],
+            ['Tenis ATP — Total de games', 'KXATPGAMETOTAL', 'total', 'Tenis']
           ];
           var draft = [];
           function $(i) { return document.getElementById(i); }
@@ -578,9 +585,22 @@
             var routes = [u, 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u), 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)];
             function next(i) {
               if (i >= routes.length) return Promise.reject(new Error('sin ruta'));
-              return fetch(routes[i]).then(function (r) { if (!r.ok) throw new Error('bad'); return r.json(); }).catch(function () { return next(i + 1); });
+              var ctl = ('AbortController' in window) ? new AbortController() : null;
+              var to = ctl ? setTimeout(function () { ctl.abort(); }, 10000) : null;
+              return fetch(routes[i], ctl ? { signal: ctl.signal } : undefined).then(function (r) { if (to) clearTimeout(to); if (!r.ok) throw new Error('bad'); return r.json(); }).catch(function () { if (to) clearTimeout(to); return next(i + 1); });
             }
             return next(0);
+          }
+          function askOf(m) {
+            if (!m) return null;
+            var v = m.yes_ask_dollars;
+            if (v == null) v = m.yes_bid_dollars;
+            if (v == null) v = m.last_price_dollars;
+            if (v != null) return parseFloat(v);
+            if (m.yes_ask != null) return m.yes_ask / 100;
+            if (m.yes_bid != null) return m.yes_bid / 100;
+            if (m.last_price != null) return m.last_price / 100;
+            return null;
           }
           function allBets() { return localBets.concat(remoteBets); }
           function legState(leg) {
@@ -607,6 +627,13 @@
             return { st: 'live', prob: hasProb ? prob : null };
           }
           function render() {
+            var sig = '';
+            allBets().forEach(function (b) {
+              sig += b.id + '|' + (b.stake || '') + '|' + (b.payout || '') + ';';
+              b.legs.forEach(function (l) { var mm = l.ticker ? mkt[l.ticker] : null; sig += (l.ticker || '') + ':' + (l.status || '') + ':' + (mm ? (mm.result || '') + Math.round((mm.price || 0) * 100) : '') + ','; });
+            });
+            if (sig === lastSig) return;
+            lastSig = sig;
             var bets = allBets();
             var nW = 0, nL = 0, staked = 0, returned = 0, settledMoney = 0;
             bets.forEach(function (b) {
@@ -644,16 +671,16 @@
           function refreshMarkets() {
             var tickers = {};
             allBets().forEach(function (b) { b.legs.forEach(function (l) { if (l.ticker) tickers[l.ticker] = 1; }); });
-            Object.keys(tickers).forEach(function (tk) {
-              if (mkt[tk] && (mkt[tk].result === 'yes' || mkt[tk].result === 'no')) return;
-              kFetch('https://api.elections.kalshi.com/trade-api/v2/markets/' + tk).then(function (j) {
+            var keys = Object.keys(tickers).filter(function (tk) { return !(mkt[tk] && (mkt[tk].result === 'yes' || mkt[tk].result === 'no')); });
+            if (!keys.length) return;
+            var ps = keys.map(function (tk) {
+              return kFetch('https://api.elections.kalshi.com/trade-api/v2/markets/' + tk).then(function (j) {
                 var m = j && j.market;
                 if (!m) return;
-                var ask = m.yes_ask_dollars != null ? parseFloat(m.yes_ask_dollars) : (m.yes_ask != null ? m.yes_ask / 100 : null);
-                mkt[tk] = { price: ask, result: m.result || '' };
-                render();
+                mkt[tk] = { price: askOf(m), result: m.result || '' };
               }).catch(function () {});
             });
+            Promise.all(ps).then(function () { render(); });
           }
           function loadRemote() {
             fetch('bets.json?x=' + Date.now()).then(function (r) { return r.json(); }).then(function (j) {
@@ -683,7 +710,7 @@
             var si = parseInt($('bfSeries').value, 10);
             curSeries = SERIES[si];
             $('bfKMsg').textContent = 'Cargando partidos…';
-            kFetch('https://api.elections.kalshi.com/trade-api/v2/events?series_ticker=' + curSeries[1] + '&status=open&limit=100').then(function (j) {
+            kFetch('https://api.elections.kalshi.com/trade-api/v2/events?series_ticker=' + curSeries[1] + '&status=open&limit=200&with_nested_markets=false').then(function (j) {
               curEvents = (j && j.events) || [];
               if (!curEvents.length) { $('bfKMsg').textContent = 'No hay partidos abiertos en este mercado ahora mismo.'; $('bfEventsWrap').style.display = 'none'; return; }
               $('bfEvents').innerHTML = curEvents.map(function (e, i) { return '<option value="' + i + '">' + esc(e.title) + '</option>'; }).join('');
@@ -700,7 +727,7 @@
               curMarkets = ((j && j.markets) || []).filter(function (m) { return m.status === 'active' || m.status === 'open'; });
               if (!curMarkets.length) { $('bfMarkets').innerHTML = '<div class="gn-res">Este partido no tiene opciones abiertas.</div>'; return; }
               $('bfMarkets').innerHTML = curMarkets.map(function (m, i) {
-                var ask = m.yes_ask_dollars != null ? parseFloat(m.yes_ask_dollars) : null;
+                var ask = askOf(m);
                 return '<button class="bf-mkt" data-mi="' + i + '">' + esc(pickLabel(m, curSeries[2])) + '<b>' + pct(ask) + '</b></button>';
               }).join('');
             }).catch(function () { $('bfMarkets').innerHTML = '<div class="gn-res">No se pudieron cargar las opciones.</div>'; });
@@ -779,7 +806,7 @@
               var m = curMarkets[parseInt(b.getAttribute('data-mi'), 10)];
               var ev = curEvents[parseInt($('bfEvents').value, 10)];
               if (!m || !ev) return;
-              var ask = m.yes_ask_dollars != null ? parseFloat(m.yes_ask_dollars) : null;
+              var ask = askOf(m);
               draft.push({ game: String(ev.title).split(':')[0], league: curSeries[3], pick: pickLabel(m, curSeries[2]), ticker: m.ticker, entry: ask });
               renderDraft();
             });
@@ -2112,7 +2139,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 27;
+  var PANEL_VER = 28;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
