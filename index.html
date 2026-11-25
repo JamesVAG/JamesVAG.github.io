@@ -1760,7 +1760,7 @@
 
         /* ----- Gráficos PRO (Lightweight Charts, estilo TradingView) ----- */
         var proOn = false, proChartC = null, proChartL = null, proCandleSeries = null, proAreaSeries = null;
-        var proLineC = null, proLineL = null, proWStart = 0, proLastSet = 0, proLastFull = 0;
+        var proLineC = null, proLineL = null, proWStart = 0, proLastSet = 0, proLastFull = 0, proLinePx = 0;
         function proOpts(h) {
           return {
             width: 340, height: h,
@@ -1798,8 +1798,9 @@
             try { proCandleSeries.update({ time: lc.t, open: lc.o, high: Math.max(lc.h, cc), low: Math.min(lc.l, cc), close: cc }); } catch (e) {}
             $('btc15Legend').innerHTML = 'O <b>' + fmt(lc.o) + '</b> · H <b>' + fmt(Math.max(lc.h, cc)) + '</b> · L <b>' + fmt(Math.min(lc.l, cc)) + '</b> · C <b>' + fmt(cc) + '</b>';
           }
-          if (r.wStart !== proWStart) {
+          if (r.wStart !== proWStart || r.openRef !== proLinePx) {
             proWStart = r.wStart;
+            proLinePx = r.openRef;
             if (proLineC) { try { proCandleSeries.removePriceLine(proLineC); } catch (e) {} proLineC = null; }
             if (proLineL) { try { proAreaSeries.removePriceLine(proLineL); } catch (e) {} proLineL = null; }
             var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'objetivo' };
@@ -1970,12 +1971,13 @@
           if (!r || typeof price !== 'number' || !price) { cEl.textContent = '--:--'; return; }
           var t = Math.max(0, Math.floor(r.tRemSec || 0));
           cEl.textContent = Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
-          $('btc15KObj').textContent = '$' + fmtK(r.openRef);
+          var kCov = kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd;
+          $('btc15KObj').textContent = kCov ? '$' + fmtK(r.openRef) : '···';
           var wEnd = (Math.floor(Date.now() / 900000) + 1) * 900000;
           $('btc15KObjLbl').textContent = 'Objetivo ' + new Date(wEnd).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) + ' ET';
           var d = price - r.openRef;
           var dEl = $('btc15KDiff');
-          dEl.textContent = (d >= 0 ? '▲ $' : '▼ $') + fmtK(Math.abs(d));
+          dEl.textContent = kCov ? (d >= 0 ? '▲ $' : '▼ $') + fmtK(Math.abs(d)) : '';
           dEl.style.color = d >= 0 ? '#22c55e' : '#ef4444';
           $('btc15KNow').textContent = '$' + fmtK(price);
           var kOk = kalshi.ok && kalshi.yesAsk > 0 && kalshi.noAsk > 0 && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd;
@@ -2480,7 +2482,7 @@
 
         /* ----- Gráficos PRO (Lightweight Charts, estilo TradingView) ----- */
         var proOn = false, proChartC = null, proChartL = null, proCandleSeries = null, proAreaSeries = null;
-        var proLineC = null, proLineL = null, proWStart = 0, proLastSet = 0, proLastFull = 0;
+        var proLineC = null, proLineL = null, proWStart = 0, proLastSet = 0, proLastFull = 0, proLinePx = 0;
         function proOpts(h) {
           return {
             width: 340, height: h,
@@ -2518,8 +2520,9 @@
             try { proCandleSeries.update({ time: lc.t, open: lc.o, high: Math.max(lc.h, cc), low: Math.min(lc.l, cc), close: cc }); } catch (e) {}
             $('gold15Legend').innerHTML = 'O <b>' + fmt(lc.o) + '</b> · H <b>' + fmt(Math.max(lc.h, cc)) + '</b> · L <b>' + fmt(Math.min(lc.l, cc)) + '</b> · C <b>' + fmt(cc) + '</b>';
           }
-          if (r.wStart !== proWStart) {
+          if (r.wStart !== proWStart || r.openRef !== proLinePx) {
             proWStart = r.wStart;
+            proLinePx = r.openRef;
             if (proLineC) { try { proCandleSeries.removePriceLine(proLineC); } catch (e) {} proLineC = null; }
             if (proLineL) { try { proAreaSeries.removePriceLine(proLineL); } catch (e) {} proLineL = null; }
             var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'objetivo' };
@@ -2690,12 +2693,13 @@
           if (!r || typeof price !== 'number' || !price) { cEl.textContent = '--:--'; return; }
           var t = Math.max(0, Math.floor(r.tRemSec || 0));
           cEl.textContent = Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
-          $('gold15KObj').textContent = '$' + fmtK(r.openRef);
+          var kCov = kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd;
+          $('gold15KObj').textContent = kCov ? '$' + fmtK(r.openRef) : '···';
           var wEnd = (Math.floor(Date.now() / 900000) + 1) * 900000;
           $('gold15KObjLbl').textContent = 'Objetivo ' + new Date(wEnd).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) + ' ET';
           var d = price - r.openRef;
           var dEl = $('gold15KDiff');
-          dEl.textContent = (d >= 0 ? '▲ $' : '▼ $') + fmtK(Math.abs(d));
+          dEl.textContent = kCov ? (d >= 0 ? '▲ $' : '▼ $') + fmtK(Math.abs(d)) : '';
           dEl.style.color = d >= 0 ? '#22c55e' : '#ef4444';
           $('gold15KNow').textContent = '$' + fmtK(price);
           var kOk = kalshi.ok && kalshi.yesAsk > 0 && kalshi.noAsk > 0 && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd;
@@ -3224,7 +3228,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 47;
+  var PANEL_VER = 48;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
