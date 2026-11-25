@@ -904,6 +904,7 @@
           <canvas id="btc15Chart"></canvas>
           <div id="btc15Legend" class="btc15-legend" style="display:none"></div>
           <div id="btc15ChartPro" style="display:none"></div>
+          <div class="k15-tf" id="btc15Tf"><button type="button" data-tf="0" class="on">EN VIVO</button><button type="button" data-tf="60">1m</button><button type="button" data-tf="300">5m</button><button type="button" data-tf="900">15m</button><button type="button" data-tf="1800">30m</button><button type="button" data-tf="3600">1H</button><button type="button" data-tf="14400">4H</button><button type="button" data-tf="86400">1D</button><button type="button" data-tf="604800">1S</button></div>
           <div class="btc15-live-label"><span class="btc15-dot"></span> GRÁFICO EN VIVO</div>
           <canvas id="btc15Live"></canvas>
           <div id="btc15LivePro" style="display:none"></div>
@@ -1090,6 +1091,12 @@
 <style>
 #view-btc #btc15ChartPro, #view-btc #btc15LivePro { order:2; }
 </style>
+
+<style>
+#view-btc .k15-tf { order:2; display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+#view-btc .k15-tf button { background:#1b1c29; border:1px solid #2c2d3d; color:#9aa0b4; border-radius:999px; padding:7px 12px; font-size:.85rem; font-weight:800; cursor:pointer; }
+#view-btc .k15-tf button.on { background:#f5c542; border-color:#f5c542; color:#111; }
+</style>
 </section>
 
 <section class="view" id="view-oro">
@@ -1107,6 +1114,7 @@
           <canvas id="gold15Chart"></canvas>
           <div id="gold15Legend" class="btc15-legend" style="display:none"></div>
           <div id="gold15ChartPro" style="display:none"></div>
+          <div class="k15-tf" id="gold15Tf"><button type="button" data-tf="0" class="on">EN VIVO</button><button type="button" data-tf="60">1m</button><button type="button" data-tf="300">5m</button><button type="button" data-tf="900">15m</button><button type="button" data-tf="1800">30m</button><button type="button" data-tf="3600">1H</button><button type="button" data-tf="14400">4H</button><button type="button" data-tf="86400">1D</button><button type="button" data-tf="604800">1S</button></div>
           <div class="btc15-live-label"><span class="btc15-dot"></span> GRÁFICO EN VIVO</div>
           <canvas id="gold15Live"></canvas>
           <div id="gold15LivePro" style="display:none"></div>
@@ -1292,6 +1300,12 @@
 
 <style>
 #view-oro #gold15ChartPro, #view-oro #gold15LivePro { order:2; }
+</style>
+
+<style>
+#view-oro .k15-tf { order:2; display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+#view-oro .k15-tf button { background:#1b1c29; border:1px solid #2c2d3d; color:#9aa0b4; border-radius:999px; padding:7px 12px; font-size:.85rem; font-weight:800; cursor:pointer; }
+#view-oro .k15-tf button.on { background:#f5c542; border-color:#f5c542; color:#111; }
 </style>
 </section>
       <script>
@@ -1582,6 +1596,7 @@
           if (!amt || amt <= 0) { msg.textContent = 'Pon un monto válido.'; return; }
           if (amt > sim.bal) { msg.textContent = 'Saldo insuficiente (simulado).'; return; }
           var pr = side === 'si' ? r.pUp : 1 - r.pUp;
+          if (kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd) { var kp = side === 'si' ? kalshi.yesAsk : kalshi.noAsk; if (kp > 0.01 && kp < 0.99) pr = kp; }
           pr = Math.max(0.02, Math.min(0.98, pr));
           sim.bal -= amt;
           sim.bets.push({ w: r.wStart, side: side, amt: amt, price: pr, open: r.openRef, st: 'open', pnl: 0 });
@@ -1771,10 +1786,11 @@
           var secP = $('view-btc');
           if (secP && secP.offsetParent === null) return;
           if (!proOn) return;
+          if (tfSec > 0 && Date.now() - tfLast > 20000) tfLoad();
           proResize();
           var r = compute(); if (!r) return;
-          if (Date.now() - proLastFull > 20000) proSetCandles();
-          if (candles.length) {
+          if (tfSec === 0 && Date.now() - proLastFull > 20000) proSetCandles();
+          if (tfSec === 0 && candles.length) {
             var lc = candles[candles.length - 1];
             var cc = price !== null ? price : lc.c;
             try { proCandleSeries.update({ time: lc.t, open: lc.o, high: Math.max(lc.h, cc), low: Math.min(lc.l, cc), close: cc }); } catch (e) {}
@@ -1939,13 +1955,51 @@
           dEl.textContent = (d >= 0 ? '▲ $' : '▼ $') + fmtK(Math.abs(d));
           dEl.style.color = d >= 0 ? '#22c55e' : '#ef4444';
           $('btc15KNow').textContent = '$' + fmtK(price);
-          var pSi = Math.round(r.pUp * 100);
-          $('btc15BetSi').textContent = 'Sube · ' + pSi + '%';
-          $('btc15BetNo').textContent = 'Baja · ' + (100 - pSi) + '%';
-          $('btc15KMultSi').textContent = r.pUp > 0.02 ? (1 / r.pUp).toFixed(2) + 'x' : '—';
-          $('btc15KMultNo').textContent = r.pUp < 0.98 ? (1 / (1 - r.pUp)).toFixed(2) + 'x' : '—';
+          var kOk = kalshi.ok && kalshi.yesAsk > 0 && kalshi.noAsk > 0 && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd;
+          var prSi = kOk ? kalshi.yesAsk : r.pUp;
+          var prNo = kOk ? kalshi.noAsk : 1 - r.pUp;
+          $('btc15BetSi').textContent = 'Sube · ' + Math.round(prSi * 100) + '%';
+          $('btc15BetNo').textContent = 'Baja · ' + Math.round(prNo * 100) + '%';
+          $('btc15KMultSi').textContent = prSi > 0.02 && prSi < 1 ? (1 / prSi).toFixed(2) + 'x' : '—';
+          $('btc15KMultNo').textContent = prNo > 0.02 && prNo < 1 ? (1 / prNo).toFixed(2) + 'x' : '—';
         }
         setInterval(paintK, 500);
+
+        var tfSec = 0, tfLast = 0;
+        function tfLoad() {
+          if (!proOn || !proCandleSeries || !tfSec) return;
+          tfLast = Date.now();
+          var sec = tfSec, g = sec, agg = 1;
+          if (sec === 1800) { g = 900; agg = 2; } else if (sec === 14400) { g = 3600; agg = 4; } else if (sec === 604800) { g = 86400; agg = 7; }
+          var end = Math.floor(Date.now() / 1000), start = end - g * 290;
+          fetch('https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=' + g + '&start=' + new Date(start * 1000).toISOString() + '&end=' + new Date(end * 1000).toISOString())
+            .then(function (r) { return r.json(); })
+            .then(function (rows) {
+              if (!rows || !rows.length || tfSec !== sec) return;
+              var buckets = {};
+              rows.forEach(function (x) { var t = Math.floor(x[0] / sec) * sec; (buckets[t] = buckets[t] || []).push(x); });
+              var out = Object.keys(buckets).map(function (k) {
+                var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
+                var hi = -Infinity, lo = Infinity;
+                arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
+                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+              }).sort(function (a, b) { return a.time - b.time; });
+              if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
+            }).catch(function () {});
+        }
+        (function () {
+          var box = $('btc15Tf');
+          if (!box) return;
+          box.addEventListener('click', function (e) {
+            var b = e.target && e.target.closest ? e.target.closest('button') : null;
+            if (!b) return;
+            tfSec = parseInt(b.getAttribute('data-tf'), 10) || 0;
+            var bs = box.querySelectorAll('button');
+            for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i] === b);
+            if (tfSec === 0) { proSetCandles(); if (proChartC) proChartC.timeScale().fitContent(); }
+            else tfLoad();
+          });
+        })();
         loadCandles().then(function () { loadPrice().then(render); });
         setInterval(function () {
           loadPrice().then(render);
@@ -2239,6 +2293,7 @@
           if (!amt || amt <= 0) { msg.textContent = 'Pon un monto válido.'; return; }
           if (amt > sim.bal) { msg.textContent = 'Saldo insuficiente (simulado).'; return; }
           var pr = side === 'si' ? r.pUp : 1 - r.pUp;
+          if (kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd) { var kp = side === 'si' ? kalshi.yesAsk : kalshi.noAsk; if (kp > 0.01 && kp < 0.99) pr = kp; }
           pr = Math.max(0.02, Math.min(0.98, pr));
           sim.bal -= amt;
           sim.bets.push({ w: r.wStart, side: side, amt: amt, price: pr, open: r.openRef, st: 'open', pnl: 0 });
@@ -2428,10 +2483,11 @@
           var secP = $('view-oro');
           if (secP && secP.offsetParent === null) return;
           if (!proOn) return;
+          if (tfSec > 0 && Date.now() - tfLast > 20000) tfLoad();
           proResize();
           var r = compute(); if (!r) return;
-          if (Date.now() - proLastFull > 20000) proSetCandles();
-          if (candles.length) {
+          if (tfSec === 0 && Date.now() - proLastFull > 20000) proSetCandles();
+          if (tfSec === 0 && candles.length) {
             var lc = candles[candles.length - 1];
             var cc = price !== null ? price : lc.c;
             try { proCandleSeries.update({ time: lc.t, open: lc.o, high: Math.max(lc.h, cc), low: Math.min(lc.l, cc), close: cc }); } catch (e) {}
@@ -2596,13 +2652,51 @@
           dEl.textContent = (d >= 0 ? '▲ $' : '▼ $') + fmtK(Math.abs(d));
           dEl.style.color = d >= 0 ? '#22c55e' : '#ef4444';
           $('gold15KNow').textContent = '$' + fmtK(price);
-          var pSi = Math.round(r.pUp * 100);
-          $('gold15BetSi').textContent = 'Sube · ' + pSi + '%';
-          $('gold15BetNo').textContent = 'Baja · ' + (100 - pSi) + '%';
-          $('gold15KMultSi').textContent = r.pUp > 0.02 ? (1 / r.pUp).toFixed(2) + 'x' : '—';
-          $('gold15KMultNo').textContent = r.pUp < 0.98 ? (1 / (1 - r.pUp)).toFixed(2) + 'x' : '—';
+          var kOk = kalshi.ok && kalshi.yesAsk > 0 && kalshi.noAsk > 0 && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd;
+          var prSi = kOk ? kalshi.yesAsk : r.pUp;
+          var prNo = kOk ? kalshi.noAsk : 1 - r.pUp;
+          $('gold15BetSi').textContent = 'Sube · ' + Math.round(prSi * 100) + '%';
+          $('gold15BetNo').textContent = 'Baja · ' + Math.round(prNo * 100) + '%';
+          $('gold15KMultSi').textContent = prSi > 0.02 && prSi < 1 ? (1 / prSi).toFixed(2) + 'x' : '—';
+          $('gold15KMultNo').textContent = prNo > 0.02 && prNo < 1 ? (1 / prNo).toFixed(2) + 'x' : '—';
         }
         setInterval(paintK, 500);
+
+        var tfSec = 0, tfLast = 0;
+        function tfLoad() {
+          if (!proOn || !proCandleSeries || !tfSec) return;
+          tfLast = Date.now();
+          var sec = tfSec, g = sec, agg = 1;
+          if (sec === 1800) { g = 900; agg = 2; } else if (sec === 14400) { g = 3600; agg = 4; } else if (sec === 604800) { g = 86400; agg = 7; }
+          var end = Math.floor(Date.now() / 1000), start = end - g * 290;
+          fetch('https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=' + g + '&start=' + new Date(start * 1000).toISOString() + '&end=' + new Date(end * 1000).toISOString())
+            .then(function (r) { return r.json(); })
+            .then(function (rows) {
+              if (!rows || !rows.length || tfSec !== sec) return;
+              var buckets = {};
+              rows.forEach(function (x) { var t = Math.floor(x[0] / sec) * sec; (buckets[t] = buckets[t] || []).push(x); });
+              var out = Object.keys(buckets).map(function (k) {
+                var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
+                var hi = -Infinity, lo = Infinity;
+                arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
+                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+              }).sort(function (a, b) { return a.time - b.time; });
+              if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
+            }).catch(function () {});
+        }
+        (function () {
+          var box = $('gold15Tf');
+          if (!box) return;
+          box.addEventListener('click', function (e) {
+            var b = e.target && e.target.closest ? e.target.closest('button') : null;
+            if (!b) return;
+            tfSec = parseInt(b.getAttribute('data-tf'), 10) || 0;
+            var bs = box.querySelectorAll('button');
+            for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i] === b);
+            if (tfSec === 0) { proSetCandles(); if (proChartC) proChartC.timeScale().fitContent(); }
+            else tfLoad();
+          });
+        })();
         loadCandles().then(function () { loadPrice().then(render); });
         setInterval(function () {
           loadPrice().then(render);
@@ -3084,7 +3178,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 42;
+  var PANEL_VER = 43;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
