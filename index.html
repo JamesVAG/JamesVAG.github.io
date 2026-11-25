@@ -1812,7 +1812,7 @@
           proAreaSeries = proChartL.addAreaSeries({ lineColor: '#22c55e', topColor: 'rgba(34,197,94,0.35)', bottomColor: 'rgba(34,197,94,0.02)', lineWidth: 2, priceFormat: { type: 'price', precision: 0, minMove: 1 } });
           $('btc15Chart').style.display = 'none';
           $('btc15Live').style.display = 'none';
-          elC.style.display = 'block'; elL.style.display = 'block';
+          elC.style.display = 'block'; elL.style.display = 'none';
           $('btc15Legend').style.display = 'block';
           proOn = true;
           proSetCandles();
@@ -2469,7 +2469,7 @@
           proAreaSeries = proChartL.addAreaSeries({ lineColor: '#22c55e', topColor: 'rgba(34,197,94,0.35)', bottomColor: 'rgba(34,197,94,0.02)', lineWidth: 2, priceFormat: { type: 'price', precision: 0, minMove: 1 } });
           $('gold15Chart').style.display = 'none';
           $('gold15Live').style.display = 'none';
-          elC.style.display = 'block'; elL.style.display = 'block';
+          elC.style.display = 'block'; elL.style.display = 'none';
           $('gold15Legend').style.display = 'block';
           proOn = true;
           proSetCandles();
@@ -3084,7 +3084,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 41;
+  var PANEL_VER = 42;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
