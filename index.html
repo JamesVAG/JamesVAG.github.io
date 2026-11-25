@@ -1924,7 +1924,7 @@
           if (kalshi.busy) return Promise.resolve(false);
           kalshi.busy = true;
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M&status=open&limit=6';
-          var routes = ['strikes.json?t=' + Date.now(), direct,
+          var routes = [direct, 'strikes.json?t=' + Date.now(),
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -1949,9 +1949,15 @@
               if (y > 0) kalshi.yesAsk = y;
               if (n > 0) kalshi.noAsk = n;
               if (y > 0 || n > 0) kalshi.at = Date.now();
+              if (m.close_time && Date.parse(m.close_time) / 1000 <= Math.floor(Date.now() / 1000)) fetchKalshi();
             }).catch(function () {});
         }
         setInterval(fetchAsks, 8000);
+        var lastWin = Math.floor(Date.now() / 900000);
+        setInterval(function () {
+          var w = Math.floor(Date.now() / 900000);
+          if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
+        }, 5000);
 
 
         function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -2636,7 +2642,7 @@
           if (kalshi.busy) return Promise.resolve(false);
           kalshi.busy = true;
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXGOLD15M&status=open&limit=10';
-          var routes = ['strikes.json?t=' + Date.now(), direct,
+          var routes = [direct, 'strikes.json?t=' + Date.now(),
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -2661,9 +2667,15 @@
               if (y > 0) kalshi.yesAsk = y;
               if (n > 0) kalshi.noAsk = n;
               if (y > 0 || n > 0) kalshi.at = Date.now();
+              if (m.close_time && Date.parse(m.close_time) / 1000 <= Math.floor(Date.now() / 1000)) fetchKalshi();
             }).catch(function () {});
         }
         setInterval(fetchAsks, 8000);
+        var lastWin = Math.floor(Date.now() / 900000);
+        setInterval(function () {
+          var w = Math.floor(Date.now() / 900000);
+          if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
+        }, 5000);
 
 
         function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -3208,7 +3220,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 45;
+  var PANEL_VER = 46;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
