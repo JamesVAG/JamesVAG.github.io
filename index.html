@@ -2285,7 +2285,7 @@
           if (openRef) {
             ctx.strokeStyle = '#f5c542'; ctx.setLineDash([6, 4]);
             ctx.beginPath(); ctx.moveTo(0, Y(openRef)); ctx.lineTo(W, Y(openRef)); ctx.stroke(); ctx.setLineDash([]);
-            ctx.fillStyle = '#f5c542'; ctx.fillText('apertura $' + fmt(openRef), 4, Y(openRef) - 4);
+            ctx.fillStyle = '#f5c542'; ctx.fillText('objetivo $' + fmt(openRef), 4, Y(openRef) - 4);
           }
           var last = data[data.length - 1].p;
           var col = (openRef && last < openRef) ? '#ef4444' : '#22c55e';
@@ -2352,7 +2352,7 @@
             proWStart = r.wStart;
             if (proLineC) { try { proCandleSeries.removePriceLine(proLineC); } catch (e) {} proLineC = null; }
             if (proLineL) { try { proAreaSeries.removePriceLine(proLineL); } catch (e) {} proLineL = null; }
-            var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'apertura' };
+            var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'objetivo' };
             proLineC = proCandleSeries.createPriceLine(lo);
             proLineL = proAreaSeries.createPriceLine(lo);
           }
@@ -2958,7 +2958,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 36;
+  var PANEL_VER = 37;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
