@@ -1803,9 +1803,11 @@
             proLinePx = r.openRef;
             if (proLineC) { try { proCandleSeries.removePriceLine(proLineC); } catch (e) {} proLineC = null; }
             if (proLineL) { try { proAreaSeries.removePriceLine(proLineL); } catch (e) {} proLineL = null; }
-            var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'objetivo' };
-            proLineC = proCandleSeries.createPriceLine(lo);
-            proLineL = proAreaSeries.createPriceLine(lo);
+            if (kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd) {
+              var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'objetivo' };
+              proLineC = proCandleSeries.createPriceLine(lo);
+              proLineL = proAreaSeries.createPriceLine(lo);
+            }
           }
           var now = Date.now();
           if (now - proLastSet > 2900 && ticks.length > 1) {
@@ -2525,9 +2527,11 @@
             proLinePx = r.openRef;
             if (proLineC) { try { proCandleSeries.removePriceLine(proLineC); } catch (e) {} proLineC = null; }
             if (proLineL) { try { proAreaSeries.removePriceLine(proLineL); } catch (e) {} proLineL = null; }
-            var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'objetivo' };
-            proLineC = proCandleSeries.createPriceLine(lo);
-            proLineL = proAreaSeries.createPriceLine(lo);
+            if (kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd) {
+              var lo = { price: r.openRef, color: '#f5c542', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'objetivo' };
+              proLineC = proCandleSeries.createPriceLine(lo);
+              proLineL = proAreaSeries.createPriceLine(lo);
+            }
           }
           var now = Date.now();
           if (now - proLastSet > 2900 && ticks.length > 1) {
@@ -3228,7 +3232,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 48;
+  var PANEL_VER = 49;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
