@@ -1766,7 +1766,7 @@
             grid: { vertLines: { color: 'rgba(255,255,255,0.06)' }, horzLines: { color: 'rgba(255,255,255,0.06)' } },
             rightPriceScale: { borderColor: 'rgba(255,255,255,0.15)' },
             timeScale: { borderColor: 'rgba(255,255,255,0.15)', timeVisible: true, secondsVisible: false,
-              tickMarkFormatter: function (t) { return new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
+              tickMarkFormatter: function (t, type) { var d = new Date(t * 1000); return (type !== undefined && type <= 2) ? d.toLocaleDateString([], { day: 'numeric', month: 'short' }) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
             localization: { timeFormatter: function (t) { return new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
             crosshair: { vertLine: { labelBackgroundColor: '#2c2d3d' }, horzLine: { labelBackgroundColor: '#2c2d3d' } }
           };
@@ -2463,7 +2463,7 @@
             grid: { vertLines: { color: 'rgba(255,255,255,0.06)' }, horzLines: { color: 'rgba(255,255,255,0.06)' } },
             rightPriceScale: { borderColor: 'rgba(255,255,255,0.15)' },
             timeScale: { borderColor: 'rgba(255,255,255,0.15)', timeVisible: true, secondsVisible: false,
-              tickMarkFormatter: function (t) { return new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
+              tickMarkFormatter: function (t, type) { var d = new Date(t * 1000); return (type !== undefined && type <= 2) ? d.toLocaleDateString([], { day: 'numeric', month: 'short' }) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
             localization: { timeFormatter: function (t) { return new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } },
             crosshair: { vertLine: { labelBackgroundColor: '#2c2d3d' }, horzLine: { labelBackgroundColor: '#2c2d3d' } }
           };
@@ -3178,7 +3178,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 43;
+  var PANEL_VER = 44;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
