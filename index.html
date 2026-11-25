@@ -1880,7 +1880,7 @@
         setInterval(fetchAnalysis, 10000);
 
         /* ----- Kalshi en vivo (objetivo y precios reales; varias rutas) ----- */
-        var kalshi = { ok: false, strike: 0, yesAsk: 0, noAsk: 0, last: 0, openT: 0, closeT: 0, at: 0 };
+        var kalshi = { ok: false, strike: 0, yesAsk: 0, noAsk: 0, last: 0, openT: 0, closeT: 0, at: 0, ticker: '' };
         function kalshiParse(j) {
           if (!j || !j.markets || !j.markets.length) return false;
           var nowS = Math.floor(Date.now() / 1000);
@@ -1899,6 +1899,7 @@
           kalshi.yesAsk = parseFloat(pick.yes_ask_dollars) || 0;
           kalshi.noAsk = parseFloat(pick.no_ask_dollars) || 0;
           kalshi.last = parseFloat(pick.last_price_dollars) || 0;
+          kalshi.ticker = pick.ticker || '';
           kalshi.openT = Date.parse(pick.open_time) / 1000;
           kalshi.closeT = Date.parse(pick.close_time) / 1000;
           kalshi.at = Date.now();
@@ -1911,6 +1912,7 @@
           kalshi.strike = parseFloat(m.strike) || 0;
           kalshi.yesAsk = parseFloat(m.yes) || 0;
           kalshi.noAsk = parseFloat(m.no) || 0;
+          kalshi.ticker = m.ticker || '';
           kalshi.last = kalshi.yesAsk;
           kalshi.openT = Date.parse(m.open) / 1000;
           kalshi.closeT = Date.parse(m.close) / 1000;
@@ -1937,6 +1939,19 @@
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
+        function fetchAsks() {
+          if (!kalshi.ticker) return;
+          fetchTO('https://api.elections.kalshi.com/trade-api/v2/markets/' + kalshi.ticker, 6000)
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+              var m = j && j.market; if (!m) return;
+              var y = parseFloat(m.yes_ask_dollars), n = parseFloat(m.no_ask_dollars);
+              if (y > 0) kalshi.yesAsk = y;
+              if (n > 0) kalshi.noAsk = n;
+              if (y > 0 || n > 0) kalshi.at = Date.now();
+            }).catch(function () {});
+        }
+        setInterval(fetchAsks, 8000);
 
 
         function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -2577,7 +2592,7 @@
         setInterval(fetchAnalysis, 10000);
 
         /* ----- Kalshi en vivo (objetivo y precios reales; varias rutas) ----- */
-        var kalshi = { ok: false, strike: 0, yesAsk: 0, noAsk: 0, last: 0, openT: 0, closeT: 0, at: 0 };
+        var kalshi = { ok: false, strike: 0, yesAsk: 0, noAsk: 0, last: 0, openT: 0, closeT: 0, at: 0, ticker: '' };
         function kalshiParse(j) {
           if (!j || !j.markets || !j.markets.length) return false;
           var nowS = Math.floor(Date.now() / 1000);
@@ -2596,6 +2611,7 @@
           kalshi.yesAsk = parseFloat(pick.yes_ask_dollars) || 0;
           kalshi.noAsk = parseFloat(pick.no_ask_dollars) || 0;
           kalshi.last = parseFloat(pick.last_price_dollars) || 0;
+          kalshi.ticker = pick.ticker || '';
           kalshi.openT = Date.parse(pick.open_time) / 1000;
           kalshi.closeT = Date.parse(pick.close_time) / 1000;
           kalshi.at = Date.now();
@@ -2608,6 +2624,7 @@
           kalshi.strike = parseFloat(m.strike) || 0;
           kalshi.yesAsk = parseFloat(m.yes) || 0;
           kalshi.noAsk = parseFloat(m.no) || 0;
+          kalshi.ticker = m.ticker || '';
           kalshi.last = kalshi.yesAsk;
           kalshi.openT = Date.parse(m.open) / 1000;
           kalshi.closeT = Date.parse(m.close) / 1000;
@@ -2634,6 +2651,19 @@
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
+        function fetchAsks() {
+          if (!kalshi.ticker) return;
+          fetchTO('https://api.elections.kalshi.com/trade-api/v2/markets/' + kalshi.ticker, 6000)
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+              var m = j && j.market; if (!m) return;
+              var y = parseFloat(m.yes_ask_dollars), n = parseFloat(m.no_ask_dollars);
+              if (y > 0) kalshi.yesAsk = y;
+              if (n > 0) kalshi.noAsk = n;
+              if (y > 0 || n > 0) kalshi.at = Date.now();
+            }).catch(function () {});
+        }
+        setInterval(fetchAsks, 8000);
 
 
         function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -3178,7 +3208,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 44;
+  var PANEL_VER = 45;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
