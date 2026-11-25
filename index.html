@@ -1081,7 +1081,7 @@
           <div id="gold15LivePro" style="display:none"></div>
           <div class="btc15-grid">
             <div><span>Precio</span><b id="gold15Price">—</b></div>
-            <div><span id="gold15OpenLbl">Apertura ventana</span><b id="gold15Open">—</b></div>
+            <div><span id="gold15OpenLbl">Objetivo 🎯</span><b id="gold15Open">—</b></div>
             <div><span>Diferencia</span><b id="gold15Diff">—</b></div>
             <div><span>Cierra en</span><b id="gold15Timer">—</b></div>
           </div>
@@ -1100,7 +1100,7 @@
               <div class="btc15-hz-cell"><span>+10 MIN</span><b id="gold15Hz10">—</b></div>
               <div class="btc15-hz-cell"><span>+15 MIN</span><b id="gold15Hz15">—</b></div>
             </div>
-            <div class="btc15-hz-note">Probabilidad de que el ORO esté más arriba que ahora en ese tiempo, con el mismo modelo + análisis en vivo.</div>
+            <div class="btc15-hz-note">Probabilidad de estar más arriba que ahora en ese tiempo.</div>
           </div>
           <div class="btc15-an" id="gold15An">
             <div class="btc15-an-head">🔎 ANÁLISIS EN TIEMPO REAL</div>
@@ -1111,11 +1111,11 @@
             <div class="btc15-action wait" id="gold15Action">—</div>
           </div>
           <div class="btc15-kal" id="gold15Kal">
-            <div class="btc15-kal-head">🎯 KALSHI — EL MERCADO REAL</div>
+            <div class="btc15-kal-head">🎯 KALSHI · MERCADO DE LA HORA</div>
             <div class="btc15-kal-row" id="gold15KalTarget">Cargando Kalshi…</div>
             <div class="btc15-kal-prices">
-              <div>SÍ en Kalshi <b id="gold15KalSi">—</b></div>
-              <div>NO en Kalshi <b id="gold15KalNo">—</b></div>
+              <div>SÍ (hora) <b id="gold15KalSi">—</b></div>
+              <div>NO (hora) <b id="gold15KalNo">—</b></div>
             </div>
             <div class="btc15-kal-edge" id="gold15KalEdge"></div>
           </div>
@@ -1141,7 +1141,7 @@
             <div class="btc15-sim-msg" id="gold15Msg"></div>
             <div class="btc15-sim-hist" id="gold15Hist"></div>
           </div>
-          <p class="btc15-note">Probabilidad de un modelo estadístico (distancia a la apertura + volatilidad + impulso + análisis en tiempo real del libro de órdenes y del flujo de trades), igual que el de BTC 15. No es garantía: el oro se puede voltear en segundos. Kalshi liquida el oro POR HORA (serie KXGOLDH), así que su objetivo se muestra como referencia; la predicción de 15 min usa la apertura de la ventana. El precio es el del oro spot (PAXG en Coinbase, que sigue el precio del oro) y puede variar por unos dólares.</p>
+          <p class="btc15-note">Modelo estadístico sobre el oro spot (PAXG · Coinbase). Sin garantía: el oro se voltea en segundos.</p>
         </div>
         <style>
 #view-btc .btc15-card { background:#14141f; border:1px solid #2c2d3d; border-radius:16px; padding:16px 14px; }
@@ -1994,7 +1994,7 @@
           for (var g = 1; g <= 3; g++) { var gy = H * g / 4; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); var gp = max - (max - min) * g / 4; ctx.fillText('$' + fmt(gp), 4, gy - 3); }
           // linea de apertura
           ctx.strokeStyle = '#f5c542'; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(0, Y(r.openRef)); ctx.lineTo(W, Y(r.openRef)); ctx.stroke(); ctx.setLineDash([]);
-          ctx.fillStyle = '#f5c542'; ctx.fillText('apertura $' + fmt(r.openRef), 4, Y(r.openRef) - 4);
+          ctx.fillStyle = '#f5c542'; ctx.fillText('objetivo $' + fmt(r.openRef), 4, Y(r.openRef) - 4);
           // velas
           var bw = Math.max(2, (W / data.length) * 0.62);
           data.forEach(function (c, i) {
@@ -2048,7 +2048,7 @@
             av.textContent = conf ? '✅ El análisis CONFIRMA la señal' : contra ? '⚠️ El análisis va CONTRA la señal — cuidado' : '➖ Análisis neutral';
             av.style.color = conf ? '#22c55e' : contra ? '#f5c542' : '#9aa0b4';
           }
-          $('gold15OpenLbl').textContent = r.refKalshi ? 'Objetivo Kalshi 🎯' : 'Apertura ventana';
+          $('gold15OpenLbl').textContent = 'Objetivo 🎯';
           var act = $('gold15Action');
           var strong = Math.abs(r.pUp - 0.5) >= 0.12;
           var aUp = r.anScore > 0.08, aDn = r.anScore < -0.08;
@@ -2059,16 +2059,12 @@
           else { act.textContent = '⏸ ESPERAR — sin ventaja clara'; act.className = 'btc15-action wait'; }
           var kT = $('gold15KalTarget'), kE = $('gold15KalEdge');
           if (kalshi.ok) {
-            kT.innerHTML = '🎯 Objetivo de Kalshi: <b>$' + fmt(kalshi.strike) + '</b> — es el objetivo del mercado POR HORA de Kalshi (el SÍ de la hora gana si el oro cierra sobre ese precio); la predicción de 15 min usa la apertura de la ventana';
+            kT.innerHTML = '🎯 Objetivo de la hora: <b>$' + fmt(kalshi.strike) + '</b>';
             $('gold15KalSi').textContent = kalshi.yesAsk ? Math.round(kalshi.yesAsk * 100) + '¢' : '—';
             $('gold15KalNo').textContent = kalshi.noAsk ? Math.round(kalshi.noAsk * 100) + '¢' : '—';
-            var eSi = Math.round(r.pUp * 100) - Math.round(kalshi.yesAsk * 100);
-            var eNo = Math.round((1 - r.pUp) * 100) - Math.round(kalshi.noAsk * 100);
-            if (kalshi.yesAsk && eSi >= 3 && eSi >= eNo) kE.textContent = '💎 Ventaja en el SÍ: el modelo dice ' + Math.round(r.pUp * 100) + '% y Kalshi lo vende a ' + Math.round(kalshi.yesAsk * 100) + '¢';
-            else if (kalshi.noAsk && eNo >= 3) kE.textContent = '💎 Ventaja en el NO: el modelo dice ' + Math.round((1 - r.pUp) * 100) + '% y Kalshi lo vende a ' + Math.round(kalshi.noAsk * 100) + '¢';
-            else kE.textContent = 'Sin ventaja clara contra Kalshi — el modelo y el mercado van parecidos.';
+            kE.textContent = 'Referencia: Kalshi liquida el oro por hora, no cada 15 min.';
           } else {
-            kT.textContent = 'Kalshi en vivo: sin conexión desde el navegador (la señal sigue con Coinbase).';
+            kT.textContent = 'Sin conexión con Kalshi — la señal sigue con Coinbase.';
             $('gold15KalSi').textContent = '—';
             $('gold15KalNo').textContent = '—';
             kE.textContent = '';
@@ -2091,7 +2087,7 @@
           var bar = $('gold15RiskBar');
           bar.style.width = Math.min(100, Math.abs(r.cushion) / 2.5 * 100) + '%';
           bar.style.background = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
-          $('gold15RiskSub').textContent = 'El oro está ' + (above ? 'ARRIBA' : 'ABAJO') + ' del objetivo por $' + fmt(Math.abs(distUsd)) + ', y en lo que queda se mueve como ±$' + fmt(r.typMove) + '. En una situación así, el precio se pasa para el otro lado ' + pc + ' de cada 100 veces. Esto no es el % de ganar: es si se voltea en el camino.';
+          $('gold15RiskSub').textContent = 'Está ' + (above ? 'ARRIBA' : 'ABAJO') + ' del objetivo por $' + fmt(Math.abs(distUsd)) + ' · movimiento típico ±$' + fmt(r.typMove) + ' · se voltea ' + pc + ' de cada 100 veces.';
           var pv = prevWindows(r.wStart);
           $('gold15Prev').innerHTML = pv.map(function (w) {
             var lbl = new Date(w.s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -2962,7 +2958,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 35;
+  var PANEL_VER = 36;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
