@@ -890,8 +890,10 @@
 </script>
       </section>
       <section class="view" id="view-btc">
-        <h2 class="view-title">&#128200; BTC 15 — Kalshi</h2>
+        <h2 class="view-title">&#128200; BTC 15</h2>
         <div class="btc15-card">
+          <div class="k15-top"><div class="k15-title">BTC 15 min</div><div class="k15-count" id="btc15KCount">--:--</div></div>
+          <div class="k15-nums"><div class="k15-num"><span id="btc15KObjLbl">Objetivo</span><b id="btc15KObj">—</b></div><div class="k15-num"><span>Ahora <em id="btc15KDiff"></em></span><b id="btc15KNow">—</b></div></div>
           <div class="btc15-verdict" id="btc15Verdict">Cargando…</div>
           <div class="btc15-prob" id="btc15Prob">--%</div>
           <div class="btc15-badge" id="btc15Badge"></div>
@@ -960,6 +962,7 @@
               <button type="button" class="btc15-bet si" id="btc15BetSi">Apostar al SÍ</button>
               <button type="button" class="btc15-bet no" id="btc15BetNo">Apostar al NO</button>
             </div>
+            <div class="k15-mults"><span id="btc15KMultSi">—</span><span id="btc15KMultNo">—</span></div>
             <div class="btc15-sim-open" id="btc15Open"></div>
             <div class="btc15-posval" id="btc15PosVal"></div>
             <div class="btc15-advice" id="btc15Advice" style="display:none"></div>
@@ -1061,11 +1064,35 @@
 #view-btc .btc15-advice.hold { background:rgba(59,130,246,.13); color:#7db4ff; border-color:#3b82f6; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
-      </section>
+      
+<style>
+#view-btc .btc15-card { display:flex; flex-direction:column; }
+#view-btc .k15-top { order:0; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+#view-btc .k15-title { font-size:1.7rem; font-weight:900; color:#fff; }
+#view-btc .k15-count { font-size:1.7rem; font-weight:900; color:#f5c542; font-variant-numeric:tabular-nums; }
+#view-btc .k15-nums { order:1; display:flex; gap:12px; margin-bottom:6px; }
+#view-btc .k15-num { flex:1; }
+#view-btc .k15-num span { display:block; font-size:.85rem; color:#9aa0b4; margin-bottom:2px; }
+#view-btc .k15-num span em { font-style:normal; font-weight:700; }
+#view-btc .k15-num b { font-size:1.6rem; font-weight:900; color:#fff; font-variant-numeric:tabular-nums; }
+#view-btc #btc15Live { order:2; }
+#view-btc .btc15-prev { order:3; display:flex; align-items:center; gap:7px; margin:10px 0 2px; }
+#view-btc .btc15-prev .k15-antes { color:#9aa0b4; font-size:.9rem; }
+#view-btc .btc15-prev .k15-arr { font-size:1rem; font-weight:900; }
+#view-btc .btc15-prev .k15-vivo { margin-left:auto; color:#fff; font-weight:800; font-size:.85rem; letter-spacing:.08em; }
+#view-btc .btc15-sim { order:4; }
+#view-btc .btc15-verdict, #view-btc .btc15-prob, #view-btc .btc15-badge, #view-btc .btc15-yn, #view-btc #btc15Chart, #view-btc #btc15Legend, #view-btc .btc15-live-label, #view-btc .btc15-grid, #view-btc .btc15-risk, #view-btc .btc15-stats, #view-btc .btc15-hz, #view-btc .btc15-an, #view-btc .btc15-kal { display:none !important; }
+#view-btc .btc15-bet { border-radius:999px !important; font-size:1.15rem !important; padding:16px 10px !important; }
+#view-btc .k15-mults { display:flex; gap:8px; margin-top:5px; }
+#view-btc .k15-mults span { flex:1; text-align:center; color:#9aa0b4; font-weight:700; font-size:.95rem; }
+</style>
+</section>
 
 <section class="view" id="view-oro">
-        <h2 class="view-title">🥇 ORO 15 — Kalshi</h2>
+        <h2 class="view-title">🥇 ORO 15</h2>
         <div class="btc15-card">
+          <div class="k15-top"><div class="k15-title">ORO 15 min</div><div class="k15-count" id="gold15KCount">--:--</div></div>
+          <div class="k15-nums"><div class="k15-num"><span id="gold15KObjLbl">Objetivo</span><b id="gold15KObj">—</b></div><div class="k15-num"><span>Ahora <em id="gold15KDiff"></em></span><b id="gold15KNow">—</b></div></div>
           <div class="btc15-verdict" id="gold15Verdict">Cargando…</div>
           <div class="btc15-prob" id="gold15Prob">--%</div>
           <div class="btc15-badge" id="gold15Badge"></div>
@@ -1134,6 +1161,7 @@
               <button type="button" class="btc15-bet si" id="gold15BetSi">Apostar al SÍ</button>
               <button type="button" class="btc15-bet no" id="gold15BetNo">Apostar al NO</button>
             </div>
+            <div class="k15-mults"><span id="gold15KMultSi">—</span><span id="gold15KMultNo">—</span></div>
             <div class="btc15-sim-open" id="gold15Open"></div>
             <div class="btc15-posval" id="gold15PosVal"></div>
             <div class="btc15-advice" id="gold15Advice" style="display:none"></div>
@@ -1235,7 +1263,29 @@
 #view-btc .btc15-advice.hold { background:rgba(59,130,246,.13); color:#7db4ff; border-color:#3b82f6; }
 #view-btc .btc15-note { margin-top:12px; font-size:.75rem; color:#8a8fa3; line-height:1.45; }
         </style>
-      </section>
+      
+<style>
+#view-oro .btc15-card { display:flex; flex-direction:column; }
+#view-oro .k15-top { order:0; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+#view-oro .k15-title { font-size:1.7rem; font-weight:900; color:#fff; }
+#view-oro .k15-count { font-size:1.7rem; font-weight:900; color:#f5c542; font-variant-numeric:tabular-nums; }
+#view-oro .k15-nums { order:1; display:flex; gap:12px; margin-bottom:6px; }
+#view-oro .k15-num { flex:1; }
+#view-oro .k15-num span { display:block; font-size:.85rem; color:#9aa0b4; margin-bottom:2px; }
+#view-oro .k15-num span em { font-style:normal; font-weight:700; }
+#view-oro .k15-num b { font-size:1.6rem; font-weight:900; color:#fff; font-variant-numeric:tabular-nums; }
+#view-oro #gold15Live { order:2; }
+#view-oro .btc15-prev { order:3; display:flex; align-items:center; gap:7px; margin:10px 0 2px; }
+#view-oro .btc15-prev .k15-antes { color:#9aa0b4; font-size:.9rem; }
+#view-oro .btc15-prev .k15-arr { font-size:1rem; font-weight:900; }
+#view-oro .btc15-prev .k15-vivo { margin-left:auto; color:#fff; font-weight:800; font-size:.85rem; letter-spacing:.08em; }
+#view-oro .btc15-sim { order:4; }
+#view-oro .btc15-verdict, #view-oro .btc15-prob, #view-oro .btc15-badge, #view-oro .btc15-yn, #view-oro #gold15Chart, #view-oro #gold15Legend, #view-oro .btc15-live-label, #view-oro .btc15-grid, #view-oro .btc15-risk, #view-oro .btc15-stats, #view-oro .btc15-hz, #view-oro .btc15-an, #view-oro .btc15-kal { display:none !important; }
+#view-oro .btc15-bet { border-radius:999px !important; font-size:1.15rem !important; padding:16px 10px !important; }
+#view-oro .k15-mults { display:flex; gap:8px; margin-top:5px; }
+#view-oro .k15-mults span { flex:1; text-align:center; color:#9aa0b4; font-weight:700; font-size:.95rem; }
+</style>
+</section>
       <script>
       (function () {
         var $ = function (id) { return document.getElementById(id); };
@@ -1460,10 +1510,9 @@
           bar.style.background = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
           $('btc15RiskSub').textContent = 'Distancia: ' + fmtSign(distUsd) + ' · Movimiento típico: ±$' + fmt(r.typMove) + ' · Volteo: ' + pc + '%';
           var pv = prevWindows(r.wStart);
-          $('btc15Prev').innerHTML = pv.map(function (w) {
-            var lbl = new Date(w.s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return '<span class="chip ' + (w.up ? 'u' : 'd') + '">' + lbl + ' ' + (w.up ? '↑ subió' : '↓ bajó') + '</span>';
-          }).join('');
+          $('btc15Prev').innerHTML = '<span class="k15-antes">Antes</span>' + pv.map(function (w) {
+            return '<span class="k15-arr" style="color:' + (w.up ? '#22c55e' : '#ef4444') + '">' + (w.up ? '▲' : '▼') + '</span>';
+          }).join('') + '<span class="k15-vivo">EN VIVO</span>';
           var pSi = Math.round(r.pUp * 100), pNo = 100 - pSi;
           $('btc15PSi').textContent = pSi + '%';
           $('btc15PNo').textContent = pNo + '%';
@@ -1654,9 +1703,13 @@
           ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.fillStyle = '#8a8fa3'; ctx.lineWidth = 1;
           for (var g = 1; g <= 2; g++) { var gy = H * g / 3; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); var gp = max - (max - min) * g / 3; ctx.fillText('$' + fmt(gp), 4, gy - 3); }
           if (openRef) {
-            ctx.strokeStyle = '#f5c542'; ctx.setLineDash([6, 4]);
+            ctx.strokeStyle = 'rgba(245,197,66,0.55)'; ctx.setLineDash([6, 4]);
             ctx.beginPath(); ctx.moveTo(0, Y(openRef)); ctx.lineTo(W, Y(openRef)); ctx.stroke(); ctx.setLineDash([]);
-            ctx.fillStyle = '#f5c542'; ctx.fillText('apertura $' + fmt(openRef), 4, Y(openRef) - 4);
+            ctx.font = '900 13px sans-serif'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+            var twK = ctx.measureText('OBJETIVO').width;
+            ctx.strokeText('OBJETIVO', (W - twK) / 2, Y(openRef) + 4);
+            ctx.fillStyle = '#ffffff'; ctx.fillText('OBJETIVO', (W - twK) / 2, Y(openRef) + 4);
+            ctx.font = '10px sans-serif';
           }
           var last = data[data.length - 1].p;
           var col = (openRef && last < openRef) ? '#ef4444' : '#22c55e';
@@ -1848,6 +1901,30 @@
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
 
+
+        function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function paintK() {
+          var cEl = $('btc15KCount');
+          if (!cEl) return;
+          var r = compute();
+          if (!r || typeof price !== 'number' || !price) { cEl.textContent = '--:--'; return; }
+          var t = Math.max(0, Math.floor(r.tRemSec || 0));
+          cEl.textContent = Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
+          $('btc15KObj').textContent = '$' + fmtK(r.openRef);
+          var wEnd = (Math.floor(Date.now() / 900000) + 1) * 900000;
+          $('btc15KObjLbl').textContent = 'Objetivo ' + new Date(wEnd).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) + ' ET';
+          var d = price - r.openRef;
+          var dEl = $('btc15KDiff');
+          dEl.textContent = (d >= 0 ? '▲ $' : '▼ $') + fmtK(Math.abs(d));
+          dEl.style.color = d >= 0 ? '#22c55e' : '#ef4444';
+          $('btc15KNow').textContent = '$' + fmtK(price);
+          var pSi = Math.round(r.pUp * 100);
+          $('btc15BetSi').textContent = 'Sube · ' + pSi + '%';
+          $('btc15BetNo').textContent = 'Baja · ' + (100 - pSi) + '%';
+          $('btc15KMultSi').textContent = r.pUp > 0.02 ? (1 / r.pUp).toFixed(2) + 'x' : '—';
+          $('btc15KMultNo').textContent = r.pUp < 0.98 ? (1 / (1 - r.pUp)).toFixed(2) + 'x' : '—';
+        }
+        setInterval(paintK, 500);
         loadCandles().then(function () { loadPrice().then(render); });
         setInterval(function () {
           loadPrice().then(render);
@@ -2077,10 +2154,9 @@
           bar.style.background = lvl === 0 ? '#22c55e' : lvl === 1 ? '#f5c542' : '#ef4444';
           $('gold15RiskSub').textContent = 'Distancia: ' + fmtSign(distUsd) + ' · Movimiento típico: ±$' + fmt(r.typMove) + ' · Volteo: ' + pc + '%';
           var pv = prevWindows(r.wStart);
-          $('gold15Prev').innerHTML = pv.map(function (w) {
-            var lbl = new Date(w.s * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return '<span class="chip ' + (w.up ? 'u' : 'd') + '">' + lbl + ' ' + (w.up ? '↑ subió' : '↓ bajó') + '</span>';
-          }).join('');
+          $('gold15Prev').innerHTML = '<span class="k15-antes">Antes</span>' + pv.map(function (w) {
+            return '<span class="k15-arr" style="color:' + (w.up ? '#22c55e' : '#ef4444') + '">' + (w.up ? '▲' : '▼') + '</span>';
+          }).join('') + '<span class="k15-vivo">EN VIVO</span>';
           var pSi = Math.round(r.pUp * 100), pNo = 100 - pSi;
           $('gold15PSi').textContent = pSi + '%';
           $('gold15PNo').textContent = pNo + '%';
@@ -2271,9 +2347,13 @@
           ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.fillStyle = '#8a8fa3'; ctx.lineWidth = 1;
           for (var g = 1; g <= 2; g++) { var gy = H * g / 3; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); var gp = max - (max - min) * g / 3; ctx.fillText('$' + fmt(gp), 4, gy - 3); }
           if (openRef) {
-            ctx.strokeStyle = '#f5c542'; ctx.setLineDash([6, 4]);
+            ctx.strokeStyle = 'rgba(245,197,66,0.55)'; ctx.setLineDash([6, 4]);
             ctx.beginPath(); ctx.moveTo(0, Y(openRef)); ctx.lineTo(W, Y(openRef)); ctx.stroke(); ctx.setLineDash([]);
-            ctx.fillStyle = '#f5c542'; ctx.fillText('objetivo $' + fmt(openRef), 4, Y(openRef) - 4);
+            ctx.font = '900 13px sans-serif'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+            var twK = ctx.measureText('OBJETIVO').width;
+            ctx.strokeText('OBJETIVO', (W - twK) / 2, Y(openRef) + 4);
+            ctx.fillStyle = '#ffffff'; ctx.fillText('OBJETIVO', (W - twK) / 2, Y(openRef) + 4);
+            ctx.font = '10px sans-serif';
           }
           var last = data[data.length - 1].p;
           var col = (openRef && last < openRef) ? '#ef4444' : '#22c55e';
@@ -2424,21 +2504,11 @@
         function kalshiParse(j) {
           if (!j || !j.markets || !j.markets.length) return false;
           var nowS = Math.floor(Date.now() / 1000);
-          var cands = [];
+          var pick = null;
           j.markets.forEach(function (m) {
             var o = Date.parse(m.open_time) / 1000, c = Date.parse(m.close_time) / 1000;
-            if (o <= nowS && nowS < c) cands.push(m);
+            if (o <= nowS && nowS < c) pick = m;
           });
-          var pick = null;
-          if (cands.length) {
-            if (typeof price === 'number' && price > 0) {
-              var bestD = Infinity;
-              cands.forEach(function (m) { var d = Math.abs((parseFloat(m.floor_strike) || 0) - price); if (d < bestD) { bestD = d; pick = m; } });
-            } else {
-              cands.sort(function (x, y) { return (parseFloat(x.floor_strike) || 0) - (parseFloat(y.floor_strike) || 0); });
-              pick = cands[Math.floor(cands.length / 2)];
-            }
-          }
           if (!pick) {
             var fut = j.markets.filter(function (m) { return Date.parse(m.close_time) / 1000 > nowS; });
             fut.sort(function (x, y) { return Date.parse(x.close_time) - Date.parse(y.close_time); });
@@ -2458,7 +2528,7 @@
         function fetchKalshi() {
           if (kalshi.busy) return Promise.resolve(false);
           kalshi.busy = true;
-          var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXGOLDH&status=open&limit=10';
+          var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXGOLD15M&status=open&limit=10';
           var routes = [direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
@@ -2475,6 +2545,30 @@
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
 
+
+        function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function paintK() {
+          var cEl = $('gold15KCount');
+          if (!cEl) return;
+          var r = compute();
+          if (!r || typeof price !== 'number' || !price) { cEl.textContent = '--:--'; return; }
+          var t = Math.max(0, Math.floor(r.tRemSec || 0));
+          cEl.textContent = Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
+          $('gold15KObj').textContent = '$' + fmtK(r.openRef);
+          var wEnd = (Math.floor(Date.now() / 900000) + 1) * 900000;
+          $('gold15KObjLbl').textContent = 'Objetivo ' + new Date(wEnd).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) + ' ET';
+          var d = price - r.openRef;
+          var dEl = $('gold15KDiff');
+          dEl.textContent = (d >= 0 ? '▲ $' : '▼ $') + fmtK(Math.abs(d));
+          dEl.style.color = d >= 0 ? '#22c55e' : '#ef4444';
+          $('gold15KNow').textContent = '$' + fmtK(price);
+          var pSi = Math.round(r.pUp * 100);
+          $('gold15BetSi').textContent = 'Sube · ' + pSi + '%';
+          $('gold15BetNo').textContent = 'Baja · ' + (100 - pSi) + '%';
+          $('gold15KMultSi').textContent = r.pUp > 0.02 ? (1 / r.pUp).toFixed(2) + 'x' : '—';
+          $('gold15KMultNo').textContent = r.pUp < 0.98 ? (1 / (1 - r.pUp)).toFixed(2) + 'x' : '—';
+        }
+        setInterval(paintK, 500);
         loadCandles().then(function () { loadPrice().then(render); });
         setInterval(function () {
           loadPrice().then(render);
@@ -2956,7 +3050,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 39;
+  var PANEL_VER = 40;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
