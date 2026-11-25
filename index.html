@@ -1616,6 +1616,7 @@
             oEl.textContent = '⏳ En juego — ventana ' + lbl + ': ' + (ob.side === 'si' ? 'SÍ (sube)' : 'NO (baja)') + ' · ' + money(ob.amt) + ' a ' + Math.round(ob.price * 100) + '¢ → paga ' + money(ob.amt / ob.price) + ' si aciertas';
             if (r) {
               var sp = ob.side === 'si' ? r.pUp : 1 - r.pUp;
+              if (kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd) { var ksp = ob.side === 'si' ? kalshi.yesAsk : kalshi.noAsk; if (ksp > 0.01 && ksp < 0.99) sp = ksp; }
               sp = Math.max(0.01, Math.min(0.99, sp));
               var val = (ob.amt / ob.price) * sp;
               var pnlN = val - ob.amt;
@@ -1656,6 +1657,7 @@
           var r = compute();
           if (!r) { msg.textContent = 'Espera a que cargue el precio…'; return; }
           var sp = ob.side === 'si' ? r.pUp : 1 - r.pUp;
+          if (kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd) { var ksp = ob.side === 'si' ? kalshi.yesAsk : kalshi.noAsk; if (ksp > 0.01 && ksp < 0.99) sp = ksp; }
           sp = Math.max(0.01, Math.min(0.99, sp));
           var proceeds = (ob.amt / ob.price) * sp;
           sim.bal += proceeds;
@@ -2334,6 +2336,7 @@
             oEl.textContent = '⏳ En juego — ventana ' + lbl + ': ' + (ob.side === 'si' ? 'SÍ (sube)' : 'NO (baja)') + ' · ' + money(ob.amt) + ' a ' + Math.round(ob.price * 100) + '¢ → paga ' + money(ob.amt / ob.price) + ' si aciertas';
             if (r) {
               var sp = ob.side === 'si' ? r.pUp : 1 - r.pUp;
+              if (kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd) { var ksp = ob.side === 'si' ? kalshi.yesAsk : kalshi.noAsk; if (ksp > 0.01 && ksp < 0.99) sp = ksp; }
               sp = Math.max(0.01, Math.min(0.99, sp));
               var val = (ob.amt / ob.price) * sp;
               var pnlN = val - ob.amt;
@@ -2374,6 +2377,7 @@
           var r = compute();
           if (!r) { msg.textContent = 'Espera a que cargue el precio…'; return; }
           var sp = ob.side === 'si' ? r.pUp : 1 - r.pUp;
+          if (kalshi.ok && kalshi.openT <= r.wStart && kalshi.closeT >= r.wEnd) { var ksp = ob.side === 'si' ? kalshi.yesAsk : kalshi.noAsk; if (ksp > 0.01 && ksp < 0.99) sp = ksp; }
           sp = Math.max(0.01, Math.min(0.99, sp));
           var proceeds = (ob.amt / ob.price) * sp;
           sim.bal += proceeds;
@@ -3220,7 +3224,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 46;
+  var PANEL_VER = 47;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
