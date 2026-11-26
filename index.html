@@ -894,6 +894,7 @@
         <div class="btc15-card">
           <div class="k15-top"><div class="k15-title">BTC 15 min</div><div class="k15-count" id="btc15KCount">--:--</div></div>
           <div class="k15-nums"><div class="k15-num"><span id="btc15KObjLbl">Objetivo</span><b id="btc15KObj">—</b></div><div class="k15-num"><span>Ahora <em id="btc15KDiff"></em></span><b id="btc15KNow">—</b></div></div>
+          <div class="btc15-elite" id="btc15Elite"><div class="btc15-elite-head">🧠 ANALIZADOR ÉLITE <span>análisis propio del mercado · no usa el % de Kalshi</span></div><div class="btc15-elite-call" id="btc15EliteCall">Analizando el mercado…</div><div class="btc15-elite-sub" id="btc15EliteSub"></div><div class="btc15-elite-rows" id="btc15EliteRows"></div></div>
           <div class="btc15-verdict" id="btc15Verdict">Cargando…</div>
           <div class="btc15-prob" id="btc15Prob">--%</div>
           <div class="btc15-badge" id="btc15Badge"></div>
@@ -1083,6 +1084,19 @@
 #view-btc .btc15-prev .k15-vivo { margin-left:auto; color:#fff; font-weight:800; font-size:.85rem; letter-spacing:.08em; }
 #view-btc .btc15-sim { order:4; }
 #view-btc .btc15-verdict, #view-btc .btc15-prob, #view-btc .btc15-badge, #view-btc .btc15-yn, #view-btc #btc15Chart, #view-btc #btc15Legend, #view-btc .btc15-live-label, #view-btc .btc15-grid, #view-btc .btc15-risk, #view-btc .btc15-stats, #view-btc .btc15-hz, #view-btc .btc15-an, #view-btc .btc15-kal { display:none !important; }
+#view-btc .btc15-elite { order:2; margin:10px 0 4px; background:linear-gradient(180deg,#1e1f2c,#14141f); border:1px solid #f5c542; border-radius:12px; padding:12px; }
+#view-btc .btc15-elite-head { font-weight:900; color:#f5c542; font-size:.95rem; letter-spacing:.04em; }
+#view-btc .btc15-elite-head span { display:block; color:#9aa0b4; font-size:.72rem; font-weight:700; letter-spacing:0; margin-top:2px; }
+#view-btc .btc15-elite-call { margin-top:8px; font-size:1.55rem; font-weight:900; color:#fff; line-height:1.15; }
+#view-btc .btc15-elite-call.up { color:#22c55e; }
+#view-btc .btc15-elite-call.down { color:#ef4444; }
+#view-btc .btc15-elite-sub { margin-top:3px; color:#c9ccda; font-size:.85rem; font-weight:700; }
+#view-btc .btc15-elite-rows { margin-top:9px; }
+#view-btc .btc15-erow { display:flex; align-items:center; gap:8px; margin-top:5px; font-size:.8rem; color:#c9ccda; }
+#view-btc .btc15-erow .n { flex:0 0 118px; font-weight:700; }
+#view-btc .btc15-erow .bar { flex:1; height:7px; background:#101018; border-radius:99px; position:relative; overflow:hidden; }
+#view-btc .btc15-erow .bar i { position:absolute; top:0; bottom:0; border-radius:99px; }
+#view-btc .btc15-erow .v { flex:0 0 74px; text-align:right; font-weight:800; color:#fff; }
 #view-btc .btc15-bet { border-radius:999px !important; font-size:1.15rem !important; padding:16px 10px !important; }
 #view-btc .k15-mults { display:flex; gap:8px; margin-top:5px; }
 #view-btc .k15-mults span { flex:1; text-align:center; color:#9aa0b4; font-weight:700; font-size:.95rem; }
@@ -1104,6 +1118,7 @@
         <div class="btc15-card">
           <div class="k15-top"><div class="k15-title">ORO 15 min</div><div class="k15-count" id="gold15KCount">--:--</div></div>
           <div class="k15-nums"><div class="k15-num"><span id="gold15KObjLbl">Objetivo</span><b id="gold15KObj">—</b></div><div class="k15-num"><span>Ahora <em id="gold15KDiff"></em></span><b id="gold15KNow">—</b></div></div>
+          <div class="btc15-elite" id="gold15Elite"><div class="btc15-elite-head">🧠 ANALIZADOR ÉLITE <span>análisis propio del mercado · no usa el % de Kalshi</span></div><div class="btc15-elite-call" id="gold15EliteCall">Analizando el mercado…</div><div class="btc15-elite-sub" id="gold15EliteSub"></div><div class="btc15-elite-rows" id="gold15EliteRows"></div></div>
           <div class="btc15-verdict" id="gold15Verdict">Cargando…</div>
           <div class="btc15-prob" id="gold15Prob">--%</div>
           <div class="btc15-badge" id="gold15Badge"></div>
@@ -1293,6 +1308,19 @@
 #view-oro .btc15-prev .k15-vivo { margin-left:auto; color:#fff; font-weight:800; font-size:.85rem; letter-spacing:.08em; }
 #view-oro .btc15-sim { order:4; }
 #view-oro .btc15-verdict, #view-oro .btc15-prob, #view-oro .btc15-badge, #view-oro .btc15-yn, #view-oro #gold15Chart, #view-oro #gold15Legend, #view-oro .btc15-live-label, #view-oro .btc15-grid, #view-oro .btc15-risk, #view-oro .btc15-stats, #view-oro .btc15-hz, #view-oro .btc15-an, #view-oro .btc15-kal { display:none !important; }
+#view-oro .btc15-elite { order:2; margin:10px 0 4px; background:linear-gradient(180deg,#1e1f2c,#14141f); border:1px solid #f5c542; border-radius:12px; padding:12px; }
+#view-oro .btc15-elite-head { font-weight:900; color:#f5c542; font-size:.95rem; letter-spacing:.04em; }
+#view-oro .btc15-elite-head span { display:block; color:#9aa0b4; font-size:.72rem; font-weight:700; letter-spacing:0; margin-top:2px; }
+#view-oro .btc15-elite-call { margin-top:8px; font-size:1.55rem; font-weight:900; color:#fff; line-height:1.15; }
+#view-oro .btc15-elite-call.up { color:#22c55e; }
+#view-oro .btc15-elite-call.down { color:#ef4444; }
+#view-oro .btc15-elite-sub { margin-top:3px; color:#c9ccda; font-size:.85rem; font-weight:700; }
+#view-oro .btc15-elite-rows { margin-top:9px; }
+#view-oro .btc15-erow { display:flex; align-items:center; gap:8px; margin-top:5px; font-size:.8rem; color:#c9ccda; }
+#view-oro .btc15-erow .n { flex:0 0 118px; font-weight:700; }
+#view-oro .btc15-erow .bar { flex:1; height:7px; background:#101018; border-radius:99px; position:relative; overflow:hidden; }
+#view-oro .btc15-erow .bar i { position:absolute; top:0; bottom:0; border-radius:99px; }
+#view-oro .btc15-erow .v { flex:0 0 74px; text-align:right; font-weight:800; color:#fff; }
 #view-oro .btc15-bet { border-radius:999px !important; font-size:1.15rem !important; padding:16px 10px !important; }
 #view-oro .k15-mults { display:flex; gap:8px; margin-top:5px; }
 #view-oro .k15-mults span { flex:1; text-align:center; color:#9aa0b4; font-weight:700; font-size:.95rem; }
@@ -1453,7 +1481,76 @@
           if (price !== null) { ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(0, Y(price)); ctx.lineTo(W, Y(price)); ctx.stroke(); ctx.setLineDash([]); }
         }
 
+                var eliteC = [], eliteAt = 0, eliteBusy = false;
+        function eliteLoad() {
+          if (eliteBusy || Date.now() - eliteAt < 30000) return;
+          eliteBusy = true;
+          fetch('https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
+            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            out.sort(function (a, b) { return a.t - b.t; });
+            if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
+            eliteBusy = false;
+          }).catch(function () { eliteBusy = false; });
+        }
+        function eliteRender() {
+          var secE = $('view-btc'); if (secE && secE.offsetParent === null) return;
+          var callEl = $('btc15EliteCall'); if (!callEl) return;
+          eliteLoad();
+          var r = compute();
+          if (!r || eliteC.length < 250 || price === null) { callEl.textContent = 'Analizando el mercado…'; callEl.className = 'btc15-elite-call'; return; }
+          var closes = eliteC.map(function (c) { return c.c; });
+          var n = closes.length;
+          var rets = []; for (var i = 1; i < n; i++) rets.push(Math.log(closes[i] / closes[i - 1]));
+          function sdA(a) { if (a.length < 5) return 0.0004; var m = a.reduce(function (x, y) { return x + y; }, 0) / a.length; var v = a.reduce(function (x, y) { return x + (y - m) * (y - m); }, 0) / a.length; return Math.sqrt(v) || 0.0004; }
+          function clampE(x, a, b) { return Math.max(a, Math.min(b, x)); }
+          var sd1 = sdA(rets.slice(-60));
+          function retK(k) { return Math.log(closes[n - 1] / closes[n - 1 - k]); }
+          var t15 = clampE(retK(15) / (sd1 * Math.sqrt(15)) / 1.5, -1, 1);
+          var t60 = clampE(retK(60) / (sd1 * Math.sqrt(60)) / 1.5, -1, 1);
+          var t240 = clampE(retK(240) / (sd1 * Math.sqrt(240)) / 1.5, -1, 1);
+          function emaE(k) { var m = 2 / (k + 1), e = closes[0]; for (var j = 1; j < n; j++) e = closes[j] * m + e * (1 - m); return e; }
+          var emaS = clampE(((emaE(9) - emaE(21)) / price) / (sd1 * 2.5), -1, 1);
+          var rsiS = (r.rsi === null || r.rsi === undefined) ? 0 : clampE((r.rsi - 50) / 28, -1, 1);
+          var ocE = candleAt(r.wStart); var openCb = ocE ? ocE.o : r.openRef;
+          var tRemM = Math.max(0.05, r.tRemSec / 60);
+          var zW = (Math.log(price / openCb) + r.drift * tRemM) / (r.sd * Math.sqrt(tRemM));
+          var pWin = Phi(zW);
+          var fWin = clampE((pWin - 0.5) * 2, -1, 1);
+          var ddE = Math.log(price / openCb), sTE = r.sd * Math.sqrt(tRemM), aDE = Math.abs(ddE), mDE = ddE >= 0 ? r.drift : -r.drift, pFlip;
+          if (aDE < 1e-9) { pFlip = 1; } else { var exE = Math.max(-50, Math.min(50, -2 * mDE * aDE / (r.sd * r.sd))); pFlip = Phi((-aDE - mDE * tRemM) / sTE) + Math.exp(exE) * Phi((-aDE + mDE * tRemM) / sTE); }
+          pFlip = clampE(pFlip, 0, 1);
+          var volR = r.sd / sdA(rets);
+          var fTrend = 0.25 * t15 + 0.35 * t60 + 0.40 * t240;
+          var fMom = 0.6 * emaS + 0.4 * rsiS;
+          var score = 0.30 * fTrend + 0.20 * fMom + 0.15 * r.anFlow + 0.10 * r.anImb + 0.25 * fWin;
+          var pE = clampE(0.55 * Phi(score * 2.4) + 0.45 * pWin, 0.01, 0.99);
+          var up = pE >= 0.5, conf = Math.round((up ? pE : 1 - pE) * 100);
+          var tier = conf >= 72 ? 'ÉLITE \uD83D\uDD25' : conf >= 64 ? 'FUERTE \uD83D\uDCAA' : conf >= 57 ? 'LEVE' : 'SIN VENTAJA \uD83E\uDE99';
+          callEl.textContent = (up ? 'COGE SUBE \uD83D\uDFE2' : 'COGE BAJA \uD83D\uDD34') + ' · ' + conf + '%';
+          callEl.className = 'btc15-elite-call ' + (up ? 'up' : 'down');
+          var valTxt = '';
+          if (kalshi.ok && kalshi.yesAsk > 0 && kalshi.noAsk > 0) {
+            var eUp = pE - kalshi.yesAsk, eDn = (1 - pE) - kalshi.noAsk;
+            var bE = Math.max(eUp, eDn);
+            if (bE > 0.08 && (r.tRemSec <= 180 || bE > 0.15)) {
+              valTxt = ' · \uD83D\uDCB0 VALOR: ' + (eUp >= eDn ? 'SUBE' : 'BAJA') + ' a $' + (eUp >= eDn ? kalshi.yesAsk : kalshi.noAsk).toFixed(2) + ' (mi análisis: ' + Math.round((eUp >= eDn ? pE : 1 - pE) * 100) + '%)';
+            }
+          }
+          $('btc15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
+          function erow(nm, v) {
+            var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
+            var w = Math.round(Math.abs(v) * 50);
+            var left = v >= 0 ? 50 : 50 - w;
+            var col = v > 0.08 ? '#22c55e' : v < -0.08 ? '#ef4444' : '#9aa0b4';
+            return '<div class="btc15-erow"><span class="n">' + nm + '</span><span class="bar"><i style="left:' + left + '%;width:' + Math.max(3, w) + '%;background:' + col + '"></i></span><span class="v" style="color:' + col + '">' + dir + '</span></div>';
+          }
+          $('btc15EliteRows').innerHTML =
+            erow('Tendencia 4H', t240) + erow('Tendencia 1H', t60) + erow('Tendencia 15m', t15) +
+            erow('Impulso EMA/RSI', fMom) + erow('Flujo de compras', r.anFlow) + erow('Libro de órdenes', r.anImb) +
+            erow('Ventana (distancia)', fWin);
+        }
         function render() {
+          eliteRender();
           if (document.hidden) return;
           var secB = $('view-btc');
           if (secB && secB.offsetParent === null) return;
@@ -2181,7 +2278,76 @@
           if (price !== null) { ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(0, Y(price)); ctx.lineTo(W, Y(price)); ctx.stroke(); ctx.setLineDash([]); }
         }
 
+                var eliteC = [], eliteAt = 0, eliteBusy = false;
+        function eliteLoad() {
+          if (eliteBusy || Date.now() - eliteAt < 30000) return;
+          eliteBusy = true;
+          fetch('https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
+            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            out.sort(function (a, b) { return a.t - b.t; });
+            if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
+            eliteBusy = false;
+          }).catch(function () { eliteBusy = false; });
+        }
+        function eliteRender() {
+          var secE = $('view-oro'); if (secE && secE.offsetParent === null) return;
+          var callEl = $('gold15EliteCall'); if (!callEl) return;
+          eliteLoad();
+          var r = compute();
+          if (!r || eliteC.length < 250 || price === null) { callEl.textContent = 'Analizando el mercado…'; callEl.className = 'btc15-elite-call'; return; }
+          var closes = eliteC.map(function (c) { return c.c; });
+          var n = closes.length;
+          var rets = []; for (var i = 1; i < n; i++) rets.push(Math.log(closes[i] / closes[i - 1]));
+          function sdA(a) { if (a.length < 5) return 0.0004; var m = a.reduce(function (x, y) { return x + y; }, 0) / a.length; var v = a.reduce(function (x, y) { return x + (y - m) * (y - m); }, 0) / a.length; return Math.sqrt(v) || 0.0004; }
+          function clampE(x, a, b) { return Math.max(a, Math.min(b, x)); }
+          var sd1 = sdA(rets.slice(-60));
+          function retK(k) { return Math.log(closes[n - 1] / closes[n - 1 - k]); }
+          var t15 = clampE(retK(15) / (sd1 * Math.sqrt(15)) / 1.5, -1, 1);
+          var t60 = clampE(retK(60) / (sd1 * Math.sqrt(60)) / 1.5, -1, 1);
+          var t240 = clampE(retK(240) / (sd1 * Math.sqrt(240)) / 1.5, -1, 1);
+          function emaE(k) { var m = 2 / (k + 1), e = closes[0]; for (var j = 1; j < n; j++) e = closes[j] * m + e * (1 - m); return e; }
+          var emaS = clampE(((emaE(9) - emaE(21)) / price) / (sd1 * 2.5), -1, 1);
+          var rsiS = (r.rsi === null || r.rsi === undefined) ? 0 : clampE((r.rsi - 50) / 28, -1, 1);
+          var ocE = candleAt(r.wStart); var openCb = ocE ? ocE.o : r.openRef;
+          var tRemM = Math.max(0.05, r.tRemSec / 60);
+          var zW = (Math.log(price / openCb) + r.drift * tRemM) / (r.sd * Math.sqrt(tRemM));
+          var pWin = Phi(zW);
+          var fWin = clampE((pWin - 0.5) * 2, -1, 1);
+          var ddE = Math.log(price / openCb), sTE = r.sd * Math.sqrt(tRemM), aDE = Math.abs(ddE), mDE = ddE >= 0 ? r.drift : -r.drift, pFlip;
+          if (aDE < 1e-9) { pFlip = 1; } else { var exE = Math.max(-50, Math.min(50, -2 * mDE * aDE / (r.sd * r.sd))); pFlip = Phi((-aDE - mDE * tRemM) / sTE) + Math.exp(exE) * Phi((-aDE + mDE * tRemM) / sTE); }
+          pFlip = clampE(pFlip, 0, 1);
+          var volR = r.sd / sdA(rets);
+          var fTrend = 0.25 * t15 + 0.35 * t60 + 0.40 * t240;
+          var fMom = 0.6 * emaS + 0.4 * rsiS;
+          var score = 0.30 * fTrend + 0.20 * fMom + 0.15 * r.anFlow + 0.10 * r.anImb + 0.25 * fWin;
+          var pE = clampE(0.55 * Phi(score * 2.4) + 0.45 * pWin, 0.01, 0.99);
+          var up = pE >= 0.5, conf = Math.round((up ? pE : 1 - pE) * 100);
+          var tier = conf >= 72 ? 'ÉLITE \uD83D\uDD25' : conf >= 64 ? 'FUERTE \uD83D\uDCAA' : conf >= 57 ? 'LEVE' : 'SIN VENTAJA \uD83E\uDE99';
+          callEl.textContent = (up ? 'COGE SUBE \uD83D\uDFE2' : 'COGE BAJA \uD83D\uDD34') + ' · ' + conf + '%';
+          callEl.className = 'btc15-elite-call ' + (up ? 'up' : 'down');
+          var valTxt = '';
+          if (kalshi.ok && kalshi.yesAsk > 0 && kalshi.noAsk > 0) {
+            var eUp = pE - kalshi.yesAsk, eDn = (1 - pE) - kalshi.noAsk;
+            var bE = Math.max(eUp, eDn);
+            if (bE > 0.08 && (r.tRemSec <= 180 || bE > 0.15)) {
+              valTxt = ' · \uD83D\uDCB0 VALOR: ' + (eUp >= eDn ? 'SUBE' : 'BAJA') + ' a $' + (eUp >= eDn ? kalshi.yesAsk : kalshi.noAsk).toFixed(2) + ' (mi análisis: ' + Math.round((eUp >= eDn ? pE : 1 - pE) * 100) + '%)';
+            }
+          }
+          $('gold15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
+          function erow(nm, v) {
+            var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
+            var w = Math.round(Math.abs(v) * 50);
+            var left = v >= 0 ? 50 : 50 - w;
+            var col = v > 0.08 ? '#22c55e' : v < -0.08 ? '#ef4444' : '#9aa0b4';
+            return '<div class="btc15-erow"><span class="n">' + nm + '</span><span class="bar"><i style="left:' + left + '%;width:' + Math.max(3, w) + '%;background:' + col + '"></i></span><span class="v" style="color:' + col + '">' + dir + '</span></div>';
+          }
+          $('gold15EliteRows').innerHTML =
+            erow('Tendencia 4H', t240) + erow('Tendencia 1H', t60) + erow('Tendencia 15m', t15) +
+            erow('Impulso EMA/RSI', fMom) + erow('Flujo de compras', r.anFlow) + erow('Libro de órdenes', r.anImb) +
+            erow('Ventana (distancia)', fWin);
+        }
         function render() {
+          eliteRender();
           if (document.hidden) return;
           var secB = $('view-oro');
           if (secB && secB.offsetParent === null) return;
@@ -3232,7 +3398,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 49;
+  var PANEL_VER = 50;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
