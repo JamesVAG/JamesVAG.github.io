@@ -6089,7 +6089,7 @@
           }
           $('eth15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('eth15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -6899,7 +6899,7 @@
           }
           $('sol15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('sol15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -7709,7 +7709,7 @@
           }
           $('xrp15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('xrp15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -8519,7 +8519,7 @@
           }
           $('doge15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('doge15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -9329,7 +9329,7 @@
           }
           $('near15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('near15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -10139,7 +10139,7 @@
           }
           $('zec15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('zec15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -10941,7 +10941,7 @@
           }
           $('bnb15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('bnb15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -11728,7 +11728,7 @@
           }
           $('hype15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('hype15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -12515,7 +12515,7 @@
           }
           $('eur15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('eur15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -13302,7 +13302,7 @@
           }
           $('gbp15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('gbp15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -14089,7 +14089,7 @@
           }
           $('jpy15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('jpy15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -14876,7 +14876,7 @@
           }
           $('cad15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('cad15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -15663,7 +15663,7 @@
           }
           $('aud15EliteSub').textContent = 'Señal ' + tier + ' · riesgo de volteo ' + Math.round(pFlip * 100) + '% · volatilidad ' + (volR > 1.25 ? 'ALTA ⚡' : volR < 0.8 ? 'baja' : 'normal') + valTxt;
           var objEl = $('aud15EliteObj');
-          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + money(openCb) + ' · Ahora: ' + money(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
+          if (objEl) objEl.textContent = useStrike ? ('\uD83C\uDFAF Objetivo: ' + '$' + fmtK(openCb) + ' · Ahora: ' + '$' + fmtK(price) + ' · ' + (price >= openCb ? '+' : '') + ((price / openCb - 1) * 100).toFixed(3) + '% vs objetivo') : '\uD83C\uDFAF Objetivo: ··· (strike de Kalshi sin llegar — mido contra la apertura)';
           function erow(nm, v) {
             var dir = v > 0.08 ? 'SUBE ▲' : v < -0.08 ? 'BAJA ▼' : 'NEUTRO •';
             var w = Math.round(Math.abs(v) * 50);
@@ -16724,7 +16724,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 52;
+  var PANEL_VER = 53;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
