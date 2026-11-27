@@ -4995,17 +4995,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -5834,17 +5853,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Base spot XAU: PAXG cotiza unos $10 bajo el spot y el strike de
            Kalshi sale del spot. adj = spot - PAXG desplaza precio, ticks y velas
@@ -6696,17 +6734,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -7535,17 +7592,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -8374,17 +8450,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -9213,17 +9308,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -10052,17 +10166,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -10891,17 +11024,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -11714,17 +11866,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -12530,17 +12701,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -13346,17 +13536,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -14162,17 +14371,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -14978,17 +15206,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -15794,17 +16041,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -16610,17 +16876,36 @@
           var w = Math.floor(Date.now() / 900000);
           if (w !== lastWin) { lastWin = w; fetchKalshi(); fetchAsks(); }
         }, 5000);
-        // Objetivo rápido: si el strike aún no cubre la ventana, reintenta cada 3 s
-        // durante los primeros 150 s de la ventana; en los últimos 30 s precarga la
-        // siguiente ventana. Nunca inventa el objetivo: sin strike real sigue '···'.
-        setInterval(function () {
+        // Objetivo AUTOMÁTICO (v56): cazador persistente — mientras el strike no
+        // cubra la ventana actual busca cada 3 s durante TODA la ventana (ya no
+        // se rinde a los 150 s); en los últimos 30 s precarga la siguiente.
+        // Vigilancia de 5 s por si un temporizador estrangulado se saltó el
+        // cambio de ventana. Y al volver a la pestaña (visible/focus/pageshow)
+        // refresco inmediato de objetivo, asks y precio, con freno de 3 s.
+        // Nunca inventa el objetivo: sin strike real sigue '···'.
+        function strikeCovered() {
           var nowS = Math.floor(Date.now() / 1000);
           var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
-          var covered = kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE;
-          var into = nowS - wS, left = wE - nowS;
-          if (!covered && into < 150) { fetchKalshi(); return; }
-          if (left <= 30) fetchKalshi();
+          return !!(kalshi.ok && kalshi.openT <= wS && kalshi.closeT >= wE);
+        }
+        setInterval(function () {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wE = Math.floor(nowS / 900) * 900 + 900;
+          if (!strikeCovered()) { fetchKalshi(); return; }
+          if (wE - nowS <= 30) fetchKalshi();
         }, 3000);
+        setInterval(function () { if (!strikeCovered()) fetchKalshi(); }, 5000);
+        var wakeAt = 0;
+        function wakeRefresh() {
+          var t = Date.now();
+          if (t - wakeAt < 3000) return;
+          wakeAt = t;
+          fetchKalshi(); fetchAsks();
+          loadPrice().then(function () { render(); });
+        }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) wakeRefresh(); });
+        window.addEventListener('focus', wakeRefresh);
+        window.addEventListener('pageshow', wakeRefresh);
 
         /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
            indice, no contra este feed; adj desplaza precio, ticks y velas por
@@ -17184,7 +17469,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 55;
+  var PANEL_VER = 56;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
