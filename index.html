@@ -5080,6 +5080,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // PAXG crudo (Coinbase/Kraken), base del ajuste spot
+        var adj = 0;         // base spot: XAU (gold-api) - PAXG; 0 si el spot no responde fresco
+        var spotAt = 0;      // ultimo spot XAU valido (ms)
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -5109,15 +5112,15 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/PAXG-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+            if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
             }).catch(function () {});
           });
         }
@@ -5225,7 +5228,7 @@
           if (eliteBusy || Date.now() - eliteAt < 30000) return;
           eliteBusy = true;
           fetch('https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
-            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: a[1] + adj, h: a[2] + adj, o: a[3] + adj, c: a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -5515,12 +5518,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           var ws;
@@ -5811,6 +5815,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Base spot XAU: PAXG cotiza unos $10 bajo el spot y el strike de
+           Kalshi sale del spot. adj = spot - PAXG desplaza precio, ticks y velas
+           a base spot; si el spot no llega fresco (>60 s), adj decae a 0. ----- */
+        function spotPoll() {
+          fetchTO('https://api.gold-api.com/price/XAU', 5000).then(function (r) { return r.json(); }).then(function (j) {
+            var sp = j ? parseFloat(j.price) : NaN;
+            if (!sp || !isFinite(sp)) throw new Error('spot');
+            var ut = j.updatedAt ? Date.parse(j.updatedAt) : NaN;
+            if (isFinite(ut) && Date.now() - ut > 60000) throw new Error('stale');
+            spotAt = Date.now();
+            if (rawPrice !== null && rawPrice > 0) {
+              var target = sp - rawPrice;
+              if (Math.abs(target) < 80) adj += (target - adj) * 0.5;
+              price = rawPrice + adj;
+            }
+          }).catch(function () {
+            if (Date.now() - spotAt > 60000 && adj !== 0) {
+              adj *= 0.7; if (Math.abs(adj) < 0.05) adj = 0;
+              if (rawPrice !== null) price = rawPrice + adj;
+            }
+          });
+        }
+        spotPoll();
+        setInterval(spotPoll, 4000);
+
 
         function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         function paintK() {
@@ -5856,7 +5885,7 @@
                 var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
                 var hi = -Infinity, lo = Infinity;
                 arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
-                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+                return { time: +k, open: arr[0][3] + adj, high: hi + adj, low: lo + adj, close: arr[arr.length - 1][4] + adj };
               }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
@@ -16724,7 +16753,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 53;
+  var PANEL_VER = 54;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
