@@ -4268,6 +4268,9 @@
         var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -4297,15 +4300,15 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/BTC-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+            if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=XBTUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
             }).catch(function () {});
           });
         }
@@ -4413,7 +4416,7 @@
           if (eliteBusy || Date.now() - eliteAt < 30000) return;
           eliteBusy = true;
           fetch('https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
-            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: a[1] + adj, h: a[2] + adj, o: a[3] + adj, c: a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -4707,12 +4710,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           var ws;
@@ -5003,6 +5007,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         function paintK() {
@@ -5048,7 +5077,7 @@
                 var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
                 var hi = -Infinity, lo = Infinity;
                 arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
-                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+                return { time: +k, open: arr[0][3] + adj, high: hi + adj, low: lo + adj, close: arr[arr.length - 1][4] + adj };
               }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
@@ -5083,6 +5112,8 @@
         var rawPrice = null; // PAXG crudo (Coinbase/Kraken), base del ajuste spot
         var adj = 0;         // base spot: XAU (gold-api) - PAXG; 0 si el spot no responde fresco
         var spotAt = 0;      // ultimo spot XAU valido (ms)
+        var calOff = 0;      // calibracion residual por ventana: strike - apertura ya ajustada a spot
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -5120,7 +5151,7 @@
             if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj + calOff; }
             }).catch(function () {});
           });
         }
@@ -5520,11 +5551,11 @@
           if (!p || !isFinite(p)) return;
           rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p + adj });
+          ticks.push({ t: now, p: p + adj + calOff });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p + adj;
+          price = p + adj + calOff;
         }
         function connectWS() {
           var ws;
@@ -5828,17 +5859,40 @@
             if (rawPrice !== null && rawPrice > 0) {
               var target = sp - rawPrice;
               if (Math.abs(target) < 80) adj += (target - adj) * 0.5;
-              price = rawPrice + adj;
+              price = rawPrice + adj + calOff;
             }
           }).catch(function () {
             if (Date.now() - spotAt > 60000 && adj !== 0) {
               adj *= 0.7; if (Math.abs(adj) < 0.05) adj = 0;
-              if (rawPrice !== null) price = rawPrice + adj;
+              if (rawPrice !== null) price = rawPrice + adj + calOff;
             }
           });
         }
         spotPoll();
         setInterval(spotPoll, 4000);
+
+        /* ----- Calibracion residual por ventana (sobre la base spot): acerca
+           la apertura ya ajustada al strike de Kalshi. Sin strike: 0. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (calOff !== 0) { calOff = 0; if (rawPrice !== null) price = rawPrice + adj + calOff; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - fo;
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice + adj : fo;
+          calOff = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj + calOff;
+        }
+        calTick();
+        setInterval(calTick, 2000);
 
 
         function fmtK(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -5919,6 +5973,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -5948,15 +6005,15 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/ETH-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+            if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=ETHUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
             }).catch(function () {});
           });
         }
@@ -6064,7 +6121,7 @@
           if (eliteBusy || Date.now() - eliteAt < 30000) return;
           eliteBusy = true;
           fetch('https://api.exchange.coinbase.com/products/ETH-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
-            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: a[1] + adj, h: a[2] + adj, o: a[3] + adj, c: a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -6354,12 +6411,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           var ws;
@@ -6650,6 +6708,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 1 ? 2 : 4; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -6695,7 +6778,7 @@
                 var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
                 var hi = -Infinity, lo = Infinity;
                 arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
-                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+                return { time: +k, open: arr[0][3] + adj, high: hi + adj, low: lo + adj, close: arr[arr.length - 1][4] + adj };
               }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
@@ -6729,6 +6812,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -6758,15 +6844,15 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/SOL-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+            if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=SOLUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
             }).catch(function () {});
           });
         }
@@ -6874,7 +6960,7 @@
           if (eliteBusy || Date.now() - eliteAt < 30000) return;
           eliteBusy = true;
           fetch('https://api.exchange.coinbase.com/products/SOL-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
-            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: a[1] + adj, h: a[2] + adj, o: a[3] + adj, c: a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -7164,12 +7250,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           var ws;
@@ -7460,6 +7547,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 1 ? 2 : 4; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -7505,7 +7617,7 @@
                 var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
                 var hi = -Infinity, lo = Infinity;
                 arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
-                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+                return { time: +k, open: arr[0][3] + adj, high: hi + adj, low: lo + adj, close: arr[arr.length - 1][4] + adj };
               }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
@@ -7539,6 +7651,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -7568,15 +7683,15 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/XRP-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+            if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=XRPUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
             }).catch(function () {});
           });
         }
@@ -7684,7 +7799,7 @@
           if (eliteBusy || Date.now() - eliteAt < 30000) return;
           eliteBusy = true;
           fetch('https://api.exchange.coinbase.com/products/XRP-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
-            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: a[1] + adj, h: a[2] + adj, o: a[3] + adj, c: a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -7974,12 +8089,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           var ws;
@@ -8270,6 +8386,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 1 ? 2 : 4; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -8315,7 +8456,7 @@
                 var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
                 var hi = -Infinity, lo = Infinity;
                 arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
-                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+                return { time: +k, open: arr[0][3] + adj, high: hi + adj, low: lo + adj, close: arr[arr.length - 1][4] + adj };
               }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
@@ -8349,6 +8490,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -8378,15 +8522,15 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/DOGE-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+            if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=DOGEUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
             }).catch(function () {});
           });
         }
@@ -8494,7 +8638,7 @@
           if (eliteBusy || Date.now() - eliteAt < 30000) return;
           eliteBusy = true;
           fetch('https://api.exchange.coinbase.com/products/DOGE-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
-            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: a[1] + adj, h: a[2] + adj, o: a[3] + adj, c: a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -8784,12 +8928,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           var ws;
@@ -9080,6 +9225,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 1 ? 2 : 4; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -9125,7 +9295,7 @@
                 var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
                 var hi = -Infinity, lo = Infinity;
                 arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
-                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+                return { time: +k, open: arr[0][3] + adj, high: hi + adj, low: lo + adj, close: arr[arr.length - 1][4] + adj };
               }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
@@ -9159,6 +9329,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -9188,15 +9361,15 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/NEAR-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+            if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=NEARUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
             }).catch(function () {});
           });
         }
@@ -9304,7 +9477,7 @@
           if (eliteBusy || Date.now() - eliteAt < 30000) return;
           eliteBusy = true;
           fetch('https://api.exchange.coinbase.com/products/NEAR-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
-            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: a[1] + adj, h: a[2] + adj, o: a[3] + adj, c: a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -9594,12 +9767,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           var ws;
@@ -9890,6 +10064,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 1 ? 2 : 4; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -9935,7 +10134,7 @@
                 var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
                 var hi = -Infinity, lo = Infinity;
                 arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
-                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+                return { time: +k, open: arr[0][3] + adj, high: hi + adj, low: lo + adj, close: arr[arr.length - 1][4] + adj };
               }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
@@ -9969,6 +10168,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -9998,15 +10200,15 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.exchange.coinbase.com/products/ZEC-USD/ticker').then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.price) { price = parseFloat(j.price); pushTick(price); }
+            if (j && j.price) pushTick(parseFloat(j.price));
           }).catch(function () {
             return fetch('https://api.kraken.com/0/public/Ticker?pair=ZECUSD').then(function (r) { return r.json(); }).then(function (j) {
-              var k = Object.keys(j.result)[0]; if (k) price = parseFloat(j.result[k].c[0]);
+              var k = Object.keys(j.result)[0]; if (k) { rawPrice = parseFloat(j.result[k].c[0]); price = rawPrice + adj; }
             }).catch(function () {});
           });
         }
@@ -10114,7 +10316,7 @@
           if (eliteBusy || Date.now() - eliteAt < 30000) return;
           eliteBusy = true;
           fetch('https://api.exchange.coinbase.com/products/ZEC-USD/candles?granularity=60').then(function (r) { return r.json(); }).then(function (rows) {
-            var out = rows.map(function (a) { return { t: a[0], l: a[1], h: a[2], o: a[3], c: a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: a[1] + adj, h: a[2] + adj, o: a[3] + adj, c: a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -10404,12 +10606,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           var ws;
@@ -10700,6 +10903,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 1 ? 2 : 4; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -10745,7 +10973,7 @@
                 var arr = buckets[k].sort(function (a, b) { return a[0] - b[0]; });
                 var hi = -Infinity, lo = Infinity;
                 arr.forEach(function (a) { if (a[2] > hi) hi = a[2]; if (a[1] < lo) lo = a[1]; });
-                return { time: +k, open: arr[0][3], high: hi, low: lo, close: arr[arr.length - 1][4] };
+                return { time: +k, open: arr[0][3] + adj, high: hi + adj, low: lo + adj, close: arr[arr.length - 1][4] + adj };
               }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
@@ -10779,6 +11007,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -10802,12 +11033,12 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.kraken.com/0/public/Ticker?pair=BNBUSD').then(function (r) { return r.json(); }).then(function (j) {
-            var k = Object.keys(j.result)[0]; if (k) { price = parseFloat(j.result[k].c[0]); pushTick(price); }
+            var k = Object.keys(j.result)[0]; if (k) pushTick(parseFloat(j.result[k].c[0]));
           }).catch(function () {});
         }
 
@@ -10916,7 +11147,7 @@
           fetch('https://api.kraken.com/0/public/OHLC?pair=BNBUSD&interval=1').then(function (r) { return r.json(); }).then(function (j) {
             var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
             var rows = k ? j.result[k] : [];
-            var out = rows.map(function (a) { return { t: a[0], l: +a[3], h: +a[2], o: +a[1], c: +a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: +a[3] + adj, h: +a[2] + adj, o: +a[1] + adj, c: +a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -11206,12 +11437,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           setInterval(loadPrice, 3000);
@@ -11494,6 +11726,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 1 ? 2 : 4; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -11533,7 +11790,7 @@
             .then(function (j) {
               if (!j || !j.result || tfSec !== sec) return;
               var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0]; if (!k) return;
-              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1], high: +a[2], low: +a[3], close: +a[4] }; }).sort(function (a, b) { return a.time - b.time; });
+              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1] + adj, high: +a[2] + adj, low: +a[3] + adj, close: +a[4] + adj }; }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
         }
@@ -11566,6 +11823,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -11589,12 +11849,12 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.kraken.com/0/public/Ticker?pair=HYPEUSD').then(function (r) { return r.json(); }).then(function (j) {
-            var k = Object.keys(j.result)[0]; if (k) { price = parseFloat(j.result[k].c[0]); pushTick(price); }
+            var k = Object.keys(j.result)[0]; if (k) pushTick(parseFloat(j.result[k].c[0]));
           }).catch(function () {});
         }
 
@@ -11703,7 +11963,7 @@
           fetch('https://api.kraken.com/0/public/OHLC?pair=HYPEUSD&interval=1').then(function (r) { return r.json(); }).then(function (j) {
             var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
             var rows = k ? j.result[k] : [];
-            var out = rows.map(function (a) { return { t: a[0], l: +a[3], h: +a[2], o: +a[1], c: +a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: +a[3] + adj, h: +a[2] + adj, o: +a[1] + adj, c: +a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -11993,12 +12253,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           setInterval(loadPrice, 3000);
@@ -12281,6 +12542,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 1 ? 2 : 4; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -12320,7 +12606,7 @@
             .then(function (j) {
               if (!j || !j.result || tfSec !== sec) return;
               var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0]; if (!k) return;
-              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1], high: +a[2], low: +a[3], close: +a[4] }; }).sort(function (a, b) { return a.time - b.time; });
+              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1] + adj, high: +a[2] + adj, low: +a[3] + adj, close: +a[4] + adj }; }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
         }
@@ -12353,6 +12639,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -12376,12 +12665,12 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.kraken.com/0/public/Ticker?pair=EURUSD').then(function (r) { return r.json(); }).then(function (j) {
-            var k = Object.keys(j.result)[0]; if (k) { price = parseFloat(j.result[k].c[0]); pushTick(price); }
+            var k = Object.keys(j.result)[0]; if (k) pushTick(parseFloat(j.result[k].c[0]));
           }).catch(function () {});
         }
 
@@ -12490,7 +12779,7 @@
           fetch('https://api.kraken.com/0/public/OHLC?pair=EURUSD&interval=1').then(function (r) { return r.json(); }).then(function (j) {
             var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
             var rows = k ? j.result[k] : [];
-            var out = rows.map(function (a) { return { t: a[0], l: +a[3], h: +a[2], o: +a[1], c: +a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: +a[3] + adj, h: +a[2] + adj, o: +a[1] + adj, c: +a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -12780,12 +13069,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           setInterval(loadPrice, 3000);
@@ -13068,6 +13358,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 50 ? 3 : 5; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -13107,7 +13422,7 @@
             .then(function (j) {
               if (!j || !j.result || tfSec !== sec) return;
               var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0]; if (!k) return;
-              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1], high: +a[2], low: +a[3], close: +a[4] }; }).sort(function (a, b) { return a.time - b.time; });
+              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1] + adj, high: +a[2] + adj, low: +a[3] + adj, close: +a[4] + adj }; }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
         }
@@ -13140,6 +13455,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -13163,12 +13481,12 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.kraken.com/0/public/Ticker?pair=GBPUSD').then(function (r) { return r.json(); }).then(function (j) {
-            var k = Object.keys(j.result)[0]; if (k) { price = parseFloat(j.result[k].c[0]); pushTick(price); }
+            var k = Object.keys(j.result)[0]; if (k) pushTick(parseFloat(j.result[k].c[0]));
           }).catch(function () {});
         }
 
@@ -13277,7 +13595,7 @@
           fetch('https://api.kraken.com/0/public/OHLC?pair=GBPUSD&interval=1').then(function (r) { return r.json(); }).then(function (j) {
             var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
             var rows = k ? j.result[k] : [];
-            var out = rows.map(function (a) { return { t: a[0], l: +a[3], h: +a[2], o: +a[1], c: +a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: +a[3] + adj, h: +a[2] + adj, o: +a[1] + adj, c: +a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -13567,12 +13885,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           setInterval(loadPrice, 3000);
@@ -13855,6 +14174,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 50 ? 3 : 5; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -13894,7 +14238,7 @@
             .then(function (j) {
               if (!j || !j.result || tfSec !== sec) return;
               var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0]; if (!k) return;
-              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1], high: +a[2], low: +a[3], close: +a[4] }; }).sort(function (a, b) { return a.time - b.time; });
+              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1] + adj, high: +a[2] + adj, low: +a[3] + adj, close: +a[4] + adj }; }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
         }
@@ -13927,6 +14271,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -13950,12 +14297,12 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.kraken.com/0/public/Ticker?pair=USDJPY').then(function (r) { return r.json(); }).then(function (j) {
-            var k = Object.keys(j.result)[0]; if (k) { price = parseFloat(j.result[k].c[0]); pushTick(price); }
+            var k = Object.keys(j.result)[0]; if (k) pushTick(parseFloat(j.result[k].c[0]));
           }).catch(function () {});
         }
 
@@ -14064,7 +14411,7 @@
           fetch('https://api.kraken.com/0/public/OHLC?pair=USDJPY&interval=1').then(function (r) { return r.json(); }).then(function (j) {
             var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
             var rows = k ? j.result[k] : [];
-            var out = rows.map(function (a) { return { t: a[0], l: +a[3], h: +a[2], o: +a[1], c: +a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: +a[3] + adj, h: +a[2] + adj, o: +a[1] + adj, c: +a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -14354,12 +14701,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           setInterval(loadPrice, 3000);
@@ -14642,6 +14990,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 50 ? 3 : 5; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -14681,7 +15054,7 @@
             .then(function (j) {
               if (!j || !j.result || tfSec !== sec) return;
               var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0]; if (!k) return;
-              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1], high: +a[2], low: +a[3], close: +a[4] }; }).sort(function (a, b) { return a.time - b.time; });
+              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1] + adj, high: +a[2] + adj, low: +a[3] + adj, close: +a[4] + adj }; }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
         }
@@ -14714,6 +15087,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -14737,12 +15113,12 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.kraken.com/0/public/Ticker?pair=USDCAD').then(function (r) { return r.json(); }).then(function (j) {
-            var k = Object.keys(j.result)[0]; if (k) { price = parseFloat(j.result[k].c[0]); pushTick(price); }
+            var k = Object.keys(j.result)[0]; if (k) pushTick(parseFloat(j.result[k].c[0]));
           }).catch(function () {});
         }
 
@@ -14851,7 +15227,7 @@
           fetch('https://api.kraken.com/0/public/OHLC?pair=USDCAD&interval=1').then(function (r) { return r.json(); }).then(function (j) {
             var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
             var rows = k ? j.result[k] : [];
-            var out = rows.map(function (a) { return { t: a[0], l: +a[3], h: +a[2], o: +a[1], c: +a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: +a[3] + adj, h: +a[2] + adj, o: +a[1] + adj, c: +a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -15141,12 +15517,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           setInterval(loadPrice, 3000);
@@ -15429,6 +15806,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 50 ? 3 : 5; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -15468,7 +15870,7 @@
             .then(function (j) {
               if (!j || !j.result || tfSec !== sec) return;
               var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0]; if (!k) return;
-              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1], high: +a[2], low: +a[3], close: +a[4] }; }).sort(function (a, b) { return a.time - b.time; });
+              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1] + adj, high: +a[2] + adj, low: +a[3] + adj, close: +a[4] + adj }; }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
         }
@@ -15501,6 +15903,9 @@
                 var $ = function (id) { return document.getElementById(id); };
         var candles = []; // {t (s), o, h, l, c}
         var price = null;
+        var rawPrice = null; // precio crudo del feed, base de la calibracion
+        var adj = 0;         // calibracion por ventana: strike Kalshi - apertura del feed
+        var calWin = -1;     // ventana (wStart) ya calibrada
         var lastCandleFetch = 0;
 
         function erf(x) {
@@ -15524,12 +15929,12 @@
         }
         function loadCandles() {
           return fetchCoinbase().catch(function () { return fetchKraken(); }).then(function (cs) {
-            if (cs && cs.length > 20) { candles = cs; lastCandleFetch = Date.now(); }
+            if (cs && cs.length > 20) { var aS = adj; candles = cs.map(function (c) { return { t: c.t, o: c.o + aS, h: c.h + aS, l: c.l + aS, c: c.c + aS }; }); lastCandleFetch = Date.now(); }
           }).catch(function () {});
         }
         function loadPrice() {
           return fetch('https://api.kraken.com/0/public/Ticker?pair=AUDUSD').then(function (r) { return r.json(); }).then(function (j) {
-            var k = Object.keys(j.result)[0]; if (k) { price = parseFloat(j.result[k].c[0]); pushTick(price); }
+            var k = Object.keys(j.result)[0]; if (k) pushTick(parseFloat(j.result[k].c[0]));
           }).catch(function () {});
         }
 
@@ -15638,7 +16043,7 @@
           fetch('https://api.kraken.com/0/public/OHLC?pair=AUDUSD&interval=1').then(function (r) { return r.json(); }).then(function (j) {
             var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0];
             var rows = k ? j.result[k] : [];
-            var out = rows.map(function (a) { return { t: a[0], l: +a[3], h: +a[2], o: +a[1], c: +a[4] }; });
+            var out = rows.map(function (a) { return { t: a[0], l: +a[3] + adj, h: +a[2] + adj, o: +a[1] + adj, c: +a[4] + adj }; });
             out.sort(function (a, b) { return a.t - b.t; });
             if (out.length > 60) { eliteC = out; eliteAt = Date.now(); }
             eliteBusy = false;
@@ -15928,12 +16333,13 @@
         var ticks = []; // {t (ms), p}
         function pushTick(p) {
           if (!p || !isFinite(p)) return;
+          rawPrice = p;
           var now = Date.now();
-          ticks.push({ t: now, p: p });
+          ticks.push({ t: now, p: p + adj });
           var cut = now - 16 * 60000;
           var drp = 0; while (drp < ticks.length && ticks[drp].t < cut) drp++; if (drp) ticks.splice(0, drp);
           if (ticks.length > 2500) ticks.splice(0, ticks.length - 2500);
-          price = p;
+          price = p + adj;
         }
         function connectWS() {
           setInterval(loadPrice, 3000);
@@ -16216,6 +16622,31 @@
           if (left <= 30) fetchKalshi();
         }, 3000);
 
+        /* ----- Calibracion por ventana: el strike de Kalshi se fija contra el
+           indice, no contra este feed; adj desplaza precio, ticks y velas por
+           (strike - apertura del feed de la ventana). Sin strike que cubra la
+           ventana tras 120 s, adj queda en 0 (feed crudo). Tope: 1.5%. ----- */
+        function calTick() {
+          var nowS = Math.floor(Date.now() / 1000);
+          var wS = Math.floor(nowS / 900) * 900, wE = wS + 900;
+          if (calWin === wS) return;
+          var covered = kalshi.ok && kalshi.strike > 0 && kalshi.openT <= wS && kalshi.closeT >= wE;
+          if (!covered) {
+            if (nowS - wS >= 120) { if (adj !== 0) { adj = 0; if (rawPrice !== null) price = rawPrice + adj; } calWin = wS; }
+            return;
+          }
+          var ocC = candleAt(wS);
+          var fo = ocC ? ocC.o : lastCloseBefore(wS + 1);
+          if (!fo || !isFinite(fo)) return;
+          var off = kalshi.strike - (fo - adj);
+          var px = rawPrice !== null && rawPrice > 0 ? rawPrice : fo;
+          adj = Math.abs(off) <= 0.015 * px ? off : 0;
+          calWin = wS;
+          if (rawPrice !== null) price = rawPrice + adj;
+        }
+        calTick();
+        setInterval(calTick, 2000);
+
 
         function fmtK(x) { var d = x >= 50 ? 3 : 5; return x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
         function paintK() {
@@ -16255,7 +16686,7 @@
             .then(function (j) {
               if (!j || !j.result || tfSec !== sec) return;
               var k = Object.keys(j.result).filter(function (x) { return x !== 'last'; })[0]; if (!k) return;
-              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1], high: +a[2], low: +a[3], close: +a[4] }; }).sort(function (a, b) { return a.time - b.time; });
+              var out = j.result[k].map(function (a) { return { time: a[0], open: +a[1] + adj, high: +a[2] + adj, low: +a[3] + adj, close: +a[4] + adj }; }).sort(function (a, b) { return a.time - b.time; });
               if (out.length > 1) { proCandleSeries.setData(out); if (proChartC) proChartC.timeScale().fitContent(); }
             }).catch(function () {});
         }
@@ -16753,7 +17184,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 54;
+  var PANEL_VER = 55;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
