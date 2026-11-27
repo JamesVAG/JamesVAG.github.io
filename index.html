@@ -4886,7 +4886,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -4958,10 +4958,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M&status=open&limit=6';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -4972,7 +4973,7 @@
               .then(function (j) { return (j && (j.btc || j.gold) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -5744,7 +5745,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -5816,10 +5817,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXGOLD15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -5830,7 +5832,7 @@
               .then(function (j) { return (j && (j.btc || j.gold) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -6625,7 +6627,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -6697,10 +6699,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXETH15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -6711,7 +6714,7 @@
               .then(function (j) { return (j && (j.btc || j.eth) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -7483,7 +7486,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -7555,10 +7558,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXSOL15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -7569,7 +7573,7 @@
               .then(function (j) { return (j && (j.btc || j.sol) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -8341,7 +8345,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -8413,10 +8417,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXXRP15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -8427,7 +8432,7 @@
               .then(function (j) { return (j && (j.btc || j.xrp) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -9199,7 +9204,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -9271,10 +9276,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXDOGE15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -9285,7 +9291,7 @@
               .then(function (j) { return (j && (j.btc || j.doge) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -10057,7 +10063,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -10129,10 +10135,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXNEAR15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -10143,7 +10150,7 @@
               .then(function (j) { return (j && (j.btc || j.near) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -10915,7 +10922,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -10987,10 +10994,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXZEC15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -11001,7 +11009,7 @@
               .then(function (j) { return (j && (j.btc || j.zec) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -11753,7 +11761,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -11829,10 +11837,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBNB15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -11843,7 +11852,7 @@
               .then(function (j) { return (j && (j.btc || j.bnb) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -12588,7 +12597,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -12664,10 +12673,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXHYPE15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -12678,7 +12688,7 @@
               .then(function (j) { return (j && (j.btc || j.hype) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -13423,7 +13433,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -13499,10 +13509,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXEURUSD15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -13513,7 +13524,7 @@
               .then(function (j) { return (j && (j.btc || j.eur) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -14258,7 +14269,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -14334,10 +14345,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXGBPUSD15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -14348,7 +14360,7 @@
               .then(function (j) { return (j && (j.btc || j.gbp) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -15093,7 +15105,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -15169,10 +15181,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXUSDJPY15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -15183,7 +15196,7 @@
               .then(function (j) { return (j && (j.btc || j.jpy) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -15928,7 +15941,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -16004,10 +16017,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXUSDCAD15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -16018,7 +16032,7 @@
               .then(function (j) { return (j && (j.btc || j.cad) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -16763,7 +16777,7 @@
         function fetchTO(url, ms) {
           var c = new AbortController();
           var id = setTimeout(function () { c.abort(); }, ms || 8000);
-          return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
+          return fetch(url, { signal: c.signal, cache: 'no-store' }).then(function (r) { clearTimeout(id); return r; }, function (e) { clearTimeout(id); throw e; });
         }
         /* ----- Análisis de mercado en tiempo real (Coinbase) ----- */
         var mkt = { imb: 0, flow: 0, ok: false };
@@ -16839,10 +16853,11 @@
           return kalshi.ok;
         }
         function fetchKalshi() {
-          if (kalshi.busy) return Promise.resolve(false);
+          if (kalshi.busy && Date.now() - (kalshi.busyAt || 0) < 25000) return Promise.resolve(false);
           kalshi.busy = true;
+          kalshi.busyAt = Date.now();
           var direct = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXAUDUSD15M&status=open&limit=10';
-          var routes = [direct, 'strikes.json?t=' + Date.now(),
+          var routes = ['strikes.json?t=' + Date.now(), direct,
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
             'https://api.codetabs.com/v1/proxy?quest=' + direct];
           var i = 0;
@@ -16853,7 +16868,7 @@
               .then(function (j) { return (j && (j.btc || j.aud) ? kalshiParseS(j) : kalshiParse(j)) ? true : next(); })
               .catch(function () { return next(); });
           }
-          return next().then(function (r) { kalshi.busy = false; return r; });
+          return next().then(function (r) { kalshi.busy = false; kalshi.busyAt = 0; return r; }, function (e) { kalshi.busy = false; kalshi.busyAt = 0; throw e; });
         }
         fetchKalshi();
         setInterval(fetchKalshi, 20000);
@@ -17469,7 +17484,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 56;
+  var PANEL_VER = 57;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
