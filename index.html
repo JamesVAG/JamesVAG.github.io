@@ -908,6 +908,7 @@
           <div class="k15-top"><div class="k15-title">BTC 15 min</div><div class="k15-count" id="btc15KCount">--:--</div></div>
           <div class="k15-nums"><div class="k15-num"><span id="btc15KObjLbl">Objetivo</span><b id="btc15KObj">—</b></div><div class="k15-num"><span>Ahora <em id="btc15KDiff"></em></span><b id="btc15KNow">—</b></div></div>
           <div class="btc15-elite" id="btc15Elite"><div class="btc15-elite-head">🧠 ANALIZADOR ÉLITE <span>análisis propio del mercado · no usa el % de Kalshi</span></div><div class="btc15-elite-call" id="btc15EliteCall">Analizando el mercado…</div><div class="btc15-elite-sub" id="btc15EliteSub"></div><div class="btc15-elite-obj" id="btc15EliteObj"></div><div class="btc15-elite-rows" id="btc15EliteRows"></div></div>
+          <div class="btc15-hzs" id="btc15HzStrip"><div class="btc15-hzs-head">⏱ ¿PARA DÓNDE VA?</div><div class="btc15-hzs-grid" id="btc15HzGrid"><div class="btc15-hzs-chip"><span>10s</span><b>···</b></div><div class="btc15-hzs-chip"><span>30s</span><b>···</b></div><div class="btc15-hzs-chip"><span>1m</span><b>···</b></div><div class="btc15-hzs-chip"><span>2m</span><b>···</b></div><div class="btc15-hzs-chip"><span>3m</span><b>···</b></div><div class="btc15-hzs-chip"><span>4m</span><b>···</b></div><div class="btc15-hzs-chip"><span>5m</span><b>···</b></div><div class="btc15-hzs-chip"><span>10m</span><b>···</b></div><div class="btc15-hzs-chip"><span>15m</span><b>···</b></div></div></div>
           <div class="btc15-verdict" id="btc15Verdict">Cargando…</div>
           <div class="btc15-prob" id="btc15Prob">--%</div>
           <div class="btc15-badge" id="btc15Badge"></div>
@@ -1111,6 +1112,14 @@
 #view-btc .btc15-erow .bar { flex:1; height:7px; background:#101018; border-radius:99px; position:relative; overflow:hidden; }
 #view-btc .btc15-erow .bar i { position:absolute; top:0; bottom:0; border-radius:99px; }
 #view-btc .btc15-erow .v { flex:0 0 74px; text-align:right; font-weight:800; color:#fff; }
+#view-btc .btc15-hzs { order:2; margin:6px 0 4px; background:linear-gradient(180deg,#1e1f2c,#14141f); border:1px solid #34354a; border-radius:12px; padding:10px 12px; }
+#view-btc .btc15-hzs-head { font-weight:900; color:#fff; font-size:.9rem; letter-spacing:.05em; margin-bottom:8px; }
+#view-btc .btc15-hzs-grid { display:flex; flex-wrap:wrap; gap:6px; }
+#view-btc .btc15-hzs-chip { flex:1 1 30%; background:#101018; border:1px solid #2c2d3d; border-radius:10px; padding:7px 4px; text-align:center; }
+#view-btc .btc15-hzs-chip span { display:block; font-size:.68rem; color:#9aa0b4; font-weight:800; letter-spacing:.06em; }
+#view-btc .btc15-hzs-chip b { display:block; font-size:.92rem; margin-top:2px; color:#fff; font-variant-numeric:tabular-nums; }
+#view-btc .btc15-hzs-chip b.up { color:#22c55e; }
+#view-btc .btc15-hzs-chip b.down { color:#ef4444; }
 #view-btc .btc15-bet { border-radius:999px !important; font-size:1.15rem !important; padding:16px 10px !important; }
 #view-btc .k15-mults { display:flex; gap:8px; margin-top:5px; }
 #view-btc .k15-mults span { flex:1; text-align:center; color:#9aa0b4; font-weight:700; font-size:.95rem; }
@@ -4483,11 +4492,50 @@
             erow('Impulso EMA/RSI', fMom) + erow('Flujo de compras', r.anFlow) + erow('Libro de órdenes', r.anImb) +
             erow(useStrike ? 'Ventana vs Objetivo' : 'Ventana (distancia)', fWin);
         }
+        var HZ_LIST = [[10, '10s'], [30, '30s'], [60, '1m'], [120, '2m'], [180, '3m'], [240, '4m'], [300, '5m'], [600, '10m'], [900, '15m']];
+        var hzLastHtml = '';
+        function hzStripRender() {
+          var grid = $('btc15HzGrid'); if (!grid) return;
+          var now = Date.now();
+          var pts = [];
+          for (var i = ticks.length - 1; i >= 0; i--) { if (ticks[i].t < now - 180000) break; pts.push(ticks[i]); }
+          pts.reverse();
+          var ok = false, mu = 0, sg = 0;
+          if (pts.length >= 30) {
+            var T = (pts[pts.length - 1].t - pts[0].t) / 1000;
+            if (T >= 30 && pts[0].p > 0) {
+              mu = Math.log(pts[pts.length - 1].p / pts[0].p) / T;
+              var acc = 0;
+              for (var j = 1; j < pts.length; j++) {
+                var dt = (pts[j].t - pts[j - 1].t) / 1000;
+                if (dt <= 0 || pts[j - 1].p <= 0) continue;
+                var lr = Math.log(pts[j].p / pts[j - 1].p) - mu * dt;
+                acc += lr * lr;
+              }
+              sg = Math.sqrt(acc / T);
+              ok = isFinite(mu) && isFinite(sg) && sg > 1e-9;
+            }
+          }
+          var html = '';
+          for (var k = 0; k < HZ_LIST.length; k++) {
+            var cell;
+            if (!ok) cell = '<b>···</b>';
+            else {
+              var z = mu * Math.sqrt(HZ_LIST[k][0]) / sg;
+              var p = Math.max(0.01, Math.min(0.99, Phi(z)));
+              var up = p >= 0.5;
+              cell = '<b class="' + (up ? 'up' : 'down') + '">' + (up ? '\u25B2 SUBE ' : '\u25BC BAJA ') + Math.round((up ? p : 1 - p) * 100) + '%</b>';
+            }
+            html += '<div class="btc15-hzs-chip"><span>' + HZ_LIST[k][1] + '</span>' + cell + '</div>';
+          }
+          if (html !== hzLastHtml) { grid.innerHTML = html; hzLastHtml = html; }
+        }
         function render() {
           eliteRender();
           if (document.hidden) return;
           var secB = $('view-btc');
           if (secB && secB.offsetParent === null) return;
+          hzStripRender();
           var r = compute();
           gradeBets(); renderSim(r);
           var vEl = $('btc15Verdict'), pEl = $('btc15Prob'), bEl = $('btc15Badge');
@@ -17484,7 +17532,7 @@
   /* ===== Versión del panel (v3): si el servidor tiene una versión mayor,
      la página se recarga sola — una pestaña vieja nunca se queda jugando
      con el código anterior. El sessionStorage evita ciclos de recarga. ===== */
-  var PANEL_VER = 57;
+  var PANEL_VER = 58;
   function panelCheckVersion() {
     try {
       fetch('panel_version.json?ts=' + Date.now(), { cache: 'no-store' })
